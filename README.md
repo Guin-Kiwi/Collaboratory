@@ -85,7 +85,7 @@ The application interacts with the user via a web browser. Users can perform the
 
 
 
-	`Tables: "Projects", "Tasks", "Employees"`
+	Tables: "Projects", "Tasks", "Employees"
 
 ### ?Gui information:
 
@@ -150,9 +150,11 @@ advanced-prog-issue-tracker/
 
 - `json`: Used for
 - `random`: 
-- `string`: 
+- `string`:
+- nicegui (2.0.0):
+- sqlalchemy (2.0.0):
 
-These libraries are part of the Python standard library, so no external installation is required. They were chosen for their simplicity and effectiveness in handling file management tasks in a console application.
+The first three libraries are part of the Python standard library, so no external installation is required. They were chosen for their simplicity and effectiveness in handling file management tasks in a console application.
 
 
 ## 👥 Team & Contributions
