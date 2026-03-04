@@ -85,7 +85,7 @@ The application interacts with the user via a web browser. Users can perform the
 
 
 
-	`code`
+	`Tables: "Projects", "Tasks", "Employees"`
 
 ### ?Gui information:
 
