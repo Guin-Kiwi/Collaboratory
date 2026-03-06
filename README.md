@@ -80,7 +80,8 @@ The application interacts with the user via a web browser. Users can perform the
 
 	`code`
 
-### ?Database information:
+### Database information:
+-----
 
 Core entities:
 - Users — people who log in and get assigned tasks
@@ -90,7 +91,7 @@ Core entities:
 
 Schema:
 
-Users
+# Users
 
 	id          (PK)
 	username    (unique)
@@ -98,32 +99,32 @@ Users
 	password    (hashed)
 	created_at
 
-Projects
+# Projects
 
-id          (PK)
-name
-description
-owner_id    (FK → Users.id)
-created_at
+	id          (PK)
+	name
+	description
+	owner_id    (FK → Users.id)
+	created_at
 
-Tasks
------
-id          (PK)
-title
-description
-status      (e.g. "todo", "in_progress", "done")
-priority    (e.g. "low", "medium", "high")
-due_date
-project_id  (FK → Projects.id)
-created_by  (FK → Users.id)
-created_at
+# Tasks
 
-Assignments
------------
-id          (PK)
-task_id     (FK → Tasks.id)
-user_id     (FK → Users.id)
-assigned_at
+	id          (PK)
+	title
+	description
+	status      (e.g. "todo", "in_progress", "done")
+	priority    (e.g. "low", "medium", "high")
+	due_date
+	project_id  (FK → Projects.id)
+	created_by  (FK → Users.id)
+	created_at
+
+# Assignments
+
+	id          (PK)
+	task_id     (FK → Tasks.id)
+	user_id     (FK → Users.id)
+	assigned_at
 
 ### Architecture
 
