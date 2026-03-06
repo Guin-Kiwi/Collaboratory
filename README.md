@@ -91,7 +91,7 @@ Core entities:
 
 Schema:
 
-# Users
+#### Users
 
 	id          (PK)
 	username    (unique)
@@ -99,7 +99,7 @@ Schema:
 	password    (hashed)
 	created_at
 
-# Projects
+#### Projects
 
 	id          (PK)
 	name
@@ -107,7 +107,7 @@ Schema:
 	owner_id    (FK → Users.id)
 	created_at
 
-# Tasks
+#### Tasks
 
 	id          (PK)
 	title
@@ -119,7 +119,7 @@ Schema:
 	created_by  (FK → Users.id)
 	created_at
 
-# Assignments
+#### Assignments
 
 	id          (PK)
 	task_id     (FK → Tasks.id)
