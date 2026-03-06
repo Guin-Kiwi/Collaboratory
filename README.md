@@ -1,4 +1,4 @@
-# Semseter Two Project - Task Management Tracker?
+# Semester Two Project - Task Management Tracker?
 
 This project is intended to:
 
@@ -82,10 +82,70 @@ The application interacts with the user via a web browser. Users can perform the
 
 ### ?Database information:
 
+Core entities:
+Users — people who log in and get assigned tasks
+Projects — the top-level containers
+Tasks — the actual work items inside projects
+Assignments — links tasks to users (who's responsible)
 
+Schema:
 
+Users
+-----
+id          (PK)
+username    (unique)
+email       (unique)
+password    (hashed)
+created_at
 
-	Tables: "Projects", "Tasks", "Employees"
+Projects
+--------
+id          (PK)
+name
+description
+owner_id    (FK → Users.id)
+created_at
+
+Tasks
+-----
+id          (PK)
+title
+description
+status      (e.g. "todo", "in_progress", "done")
+priority    (e.g. "low", "medium", "high")
+due_date
+project_id  (FK → Projects.id)
+created_by  (FK → Users.id)
+created_at
+
+Assignments
+-----------
+id          (PK)
+task_id     (FK → Tasks.id)
+user_id     (FK → Users.id)
+assigned_at
+
+### Architecture
+
+This application follows a 3-tier architecture:
+
+### 1. Presentation Tier (Frontend)
+- **Technology:** NiceGUI
+- Renders the user interface directly from Python — no separate HTML/CSS/JS codebase
+- UI components (task boards, project views, dashboards) are defined and served by NiceGUI
+- Runs in the user's browser via NiceGUI's built-in web server
+
+### 2. Application Tier (Backend)
+- **Technology:** Python + NiceGUI (server-side logic)
+- Handles all business logic: task creation, assignment, deadlines, and user roles
+- Manages user sessions and authentication
+- Acts as the bridge between the UI layer and the database
+
+### 3. Data Tier (Database)
+- **Technology:** SQLAlchemy (ORM) + SQLite 
+- SQLAlchemy models define the database schema in Python classes
+- Stores all persistent data: users, projects, tasks, and assignments
+- The backend interacts with the database exclusively through SQLAlchemy sessions
 
 ### ?Gui information:
 
@@ -149,10 +209,10 @@ advanced-prog-issue-tracker/
 ### Libraries Used
 
 - `json`: used for working with JSON data.
-- `random`: for generating random numbers and making random selections
+- `random`: for generating random numbers and making random selections.
 - `string`: provides useful string constants and helpers, generating random strings, passwords, or validating characters.
 - `nicegui`: for building web-based user interface.
-- `sqlalchemy`: for working with databases.
+- `sqlalchemy`: for working with the database.
 
 The first three libraries are part of the Python standard library, so no external installation is required. They were chosen for their simplicity and effectiveness in handling file management tasks in a console application.
 
