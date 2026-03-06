@@ -91,15 +91,15 @@ Core entities:
 Schema:
 
 Users
------
-id          (PK)
-username    (unique)
-email       (unique)
-password    (hashed)
-created_at
+
+	id          (PK)
+	username    (unique)
+	email       (unique)
+	password    (hashed)
+	created_at
 
 Projects
---------
+
 id          (PK)
 name
 description
