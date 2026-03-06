@@ -83,10 +83,10 @@ The application interacts with the user via a web browser. Users can perform the
 ### ?Database information:
 
 Core entities:
-Users — people who log in and get assigned tasks
-Projects — the top-level containers
-Tasks — the actual work items inside projects
-Assignments — links tasks to users (who's responsible)
+- Users — people who log in and get assigned tasks
+- Projects — the top-level containers
+- Tasks — the actual work items inside projects
+- Assignments — links tasks to users (who's responsible)
 
 Schema:
 
