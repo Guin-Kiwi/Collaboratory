@@ -81,7 +81,6 @@ The application interacts with the user via a web browser. Users can perform the
 	`code`
 
 ### Database information:
------
 
 Core entities:
 - Users — people who log in and get assigned tasks
@@ -89,7 +88,8 @@ Core entities:
 - Tasks — the actual work items inside projects
 - Assignments — links tasks to users (who's responsible)
 
-Schema:
+#### Schema:
+-------
 
 #### Users
 
@@ -130,19 +130,19 @@ Schema:
 
 This application follows a 3-tier architecture:
 
-### 1. Presentation Tier (Frontend)
+#### 1. Presentation Tier (Frontend)
 - **Technology:** NiceGUI
 - Renders the user interface directly from Python — no separate HTML/CSS/JS codebase
 - UI components (task boards, project views, dashboards) are defined and served by NiceGUI
 - Runs in the user's browser via NiceGUI's built-in web server
 
-### 2. Application Tier (Backend)
+#### 2. Application Tier (Backend)
 - **Technology:** Python + NiceGUI (server-side logic)
 - Handles all business logic: task creation, assignment, deadlines, and user roles
 - Manages user sessions and authentication
 - Acts as the bridge between the UI layer and the database
 
-### 3. Data Tier (Database)
+#### 3. Data Tier (Database)
 - **Technology:** SQLAlchemy (ORM) + SQLite 
 - SQLAlchemy models define the database schema in Python classes
 - Stores all persistent data: users, projects, tasks, and assignments
