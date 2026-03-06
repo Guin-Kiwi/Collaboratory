@@ -151,8 +151,8 @@ advanced-prog-issue-tracker/
 - `json`: used for working with JSON data.
 - `random`: for generating random numbers and making random selections
 - `string`: provides useful string constants and helpers, generating random strings, passwords, or validating characters.
-- `nicegui`:
-- `sqlalchemy`:
+- `nicegui`: for building web-based user interface.
+- `sqlalchemy`: for working with databases.
 
 The first three libraries are part of the Python standard library, so no external installation is required. They were chosen for their simplicity and effectiveness in handling file management tasks in a console application.
 
