@@ -56,12 +56,26 @@ This project is intended to:
 
 ### User stories
 
-1. As a user, I want to see the pizza menu in the Browser App.
-2. As a user, I want to select pizzas and see the running total.
-3. As a user, I want a discount of 10% to be applied automatically, if the sum exceeds 50 Swiss Franks. 
-4. As a user, I want an invoice to be created and saved as a file.
-5. As an admin, I want to see all past transactions, ordered by date.
+## Standard User
 
+1. As a standard user, I want to create a new task so that I can report an issue.
+2. As a standard user, I want to edit my own tasks so that I can update the description if requirments change.
+3. As a standard user, I want to see the status of my tasks so that I know wether they are still open, in progress or completed.
+4. As a standard user, I want to assign a task to a specific user so that responsibility for the task is clear.
+5. As a standar user, I want to upload additional files or information to a task so that I can provide more details.
+
+## Asignee User
+
+6. As an assignee, I want to change the status of a task from "To Do" to "In Progress" and "Completed". So the team and the standard user knows the progress of the task.
+7. As an assignee, I want to view tasks assigned to me so that I know wich tasks I am responsible for.
+8. As an assignee, I want to add comments or updates to a task so that I can communicate progress or issues with the team.
+9. As an assignee, I want to receive updates when a task assigned to me is edited so that I stay informed about changes.
+
+
+## Administrator User
+
+10. As an adiminstrator, I want to delete any task so I can remove spam, duplicates or invalid tasks.
+11. As an administrator, I want to reassing tasks between users so that workload can be balanced across the team.
 ---
 
 ### Use cases
@@ -71,16 +85,27 @@ This project is intended to:
 ![UML Use Case Diagram](docs/architecture-diagrams/uml_use_case_diagram.png)
 
 **Use cases**
-- Show Menu (Customer)
-- Create Order / Add Items (Customer)
-- Show Current Order and Total (Customer)
-- Checkout & Print Invoice (Staff) → generates `invoice_xxx.pdf`
-- View Past Transactions (Admin)
+
+## Use Case 1 - Standard user
+- Create Task
+- Edit own task
+- Upload additional informations or files
+- View task status
+
+## Use Case 2 - Assignee
+- View assigned tasks
+- Change task status "To Do" - "In Progress" - "Completed"
+- Add comments or updates
+- Receive Updates when task is edited
+
+## Use Case 3 - Administrator
+- Delete Task
+- Reassign tasks between users
 
 **Actors**
-- Customer (places orders)
-- Staff (processes/prints invoices)
-- Admin (reviews transactions)
+- Standard user (creates a task)
+- Assignee (works on assigned tasks and updates progress)
+- Administrator (manages tasks and balances workload)
 
 ---
 
