@@ -1,4 +1,4 @@
-# Semester Two Project - Task Management Tracker
+# Semester Two Project - Collaboratory
 
 This project is intended to:
 
@@ -216,7 +216,7 @@ The application writes and reads data using a ** file with a ** structure :
 
 ### 📂 Repository Structure
 ```
-advanced-prog-issue-tracker/
+collaboratory/
 ├── database/            # physical data store connection and ORM models
 ├── logic/               # server-side business logic and state management
 ├── ui/                  # Python classes instantiating NiceGUI components
