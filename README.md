@@ -86,7 +86,7 @@ components (e.g., ui.button, ui.input etc.) are instantiated as Python objects o
 server. The state of these objects (their value, visibility, or enabled status) resides on the
 server. Teams will use object-orientation in Python to organize business logic into
 modular, reusable, and self-contained units.
-3.Persistence Layer (Database): The physical data store (SQLite). You interact with a
+3. Persistence Layer (Database): The physical data store (SQLite). You interact with a
 database using an Object-Relational Mapper (ORM) to avoid writing SQL statements
 directly.
 
