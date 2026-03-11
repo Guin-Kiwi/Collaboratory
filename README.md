@@ -38,8 +38,8 @@ This project is intended to:
 
 ## Administrator User
 
-10. As an adiminstrator, I want to delete any task so I can remove spam, duplicates or invalid tasks.
-11. As an administrator, I want to reassing tasks between users so that workload can be balanced across the team.
+10. As an administrator, I want to delete any task so I can remove spam, duplicates or invalid tasks.
+11. As an administrator, I want to reassign tasks between users so that workload can be balanced across the team.
 
 
 ### Use cases: 
