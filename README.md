@@ -23,11 +23,11 @@ This project is intended to:
 
 	1. As a user, I want to  *** in order to *** so I can (benefit).
 	2. As a user, I want to  *** in order to *** so I can (benefit). 
-	3.
+	3. As a user I want to be able to track my progress.
   4. 
 
 ### Use cases: 
--
+- 
 -
 -
 -
