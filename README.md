@@ -106,13 +106,11 @@ The application interacts with the user via a web browser. Users can perform the
 
 ### 2. Data Validation
 
+### Input validation and error handling
 
-### ?Information:
-
-	`code`
+The application validates all user input (for example, usernames, task titles, descriptions, and status values) before processing or storing it. Invalid or incomplete data is rejected with a clear error message, ensuring that only consistent, well‑formed information is written to the database and used in workflows.
 
 ### Database information:
-
 Core entities:
 - Users — people who log in and get assigned tasks
 - Projects — the top-level containers
