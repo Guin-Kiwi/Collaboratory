@@ -262,11 +262,10 @@ The first three libraries are part of the Python standard library, so no externa
 
 | Name                  | Final Contribution                                 |
 |-----------------------|----------------------------------------------|
-| Marta Greschuk        |  |
-| Polina Yemelianenkova |  |
-| Ayla Allen            |  |
-| Sümeyya Güçlü-Babür   |  |
-
+| Marta Greschuk        | document the work distribution |  
+| Polina Yemelianenkova | libraries, the 3-tier architecture plan, and the database schema within the read.me | 
+| Ayla Allen            | GitHub repository setup | 
+| Sümeyya Güçlü-Babür   | user stories and user cases | 
 
 ## 🤝 Contributing
 
