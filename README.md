@@ -92,7 +92,7 @@ directly.
 
 ---
 
-### 1. Interactive App (Console Input)
+### 1. Interactive App (GUI)
  
 ---
 The application interacts with the user via a web browser. Users can perform the following steps:
