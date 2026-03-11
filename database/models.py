@@ -18,7 +18,7 @@ class BaseModel(DeclarativeBase):
 
     Example::
 
-        class Item(TimestampMixin, BaseModel):
+        class Item(BaseModel, TimestampMixin):
             __tablename__ = "items"
 
             name: Mapped[str]

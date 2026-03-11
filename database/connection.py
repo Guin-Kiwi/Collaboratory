@@ -1,5 +1,5 @@
 """Database connection management using SQLAlchemy with a SQLite back-end."""
-
+from pathlib import Path
 from __future__ import annotations
 
 from sqlalchemy import create_engine, Engine
@@ -20,7 +20,11 @@ class DatabaseConnection:
             session.commit()
     """
 
-    def __init__(self, db_path: str = "app.db") -> None:
+    def __init__(self, db_path:  str | None = None) -> None:
+        
+        if db_path is None:
+            db_path = Path(__file__).resolve().parent / "tracker_app.db"
+        self._db_url = f"sqlite:///{db_path}"
         """Initialise the connection with the path to the SQLite file.
 
         Args:
