@@ -32,7 +32,7 @@ This project is intended to:
 ## Assignee User
 
 6. As an assignee, I want to change the status of a task from "To Do" to "In Progress" and "Completed". So the team and the standard user knows the progress of the task.
-7. As an assignee, I want to view tasks assigned to me so that I know wich tasks I am responsible for.
+7. As an assignee, I want to view tasks assigned to me so that I know which tasks I am responsible for.
 8. As an assignee, I want to add comments or updates to a task so that I can communicate progress or issues with the team.
 9. As an assignee, I want to receive updates when a task assigned to me is edited so that I stay informed about changes.
 
