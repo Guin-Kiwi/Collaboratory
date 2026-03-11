@@ -29,7 +29,7 @@ This project is intended to:
 4. As a standard user, I want to assign a task to a specific user so that responsibility for the task is clear.
 5. As a standard user, I want to upload additional files or information to a task so that I can provide more details.
 
-## Asignee User
+## Assignee User
 
 6. As an assignee, I want to change the status of a task from "To Do" to "In Progress" and "Completed". So the team and the standard user knows the progress of the task.
 7. As an assignee, I want to view tasks assigned to me so that I know wich tasks I am responsible for.
