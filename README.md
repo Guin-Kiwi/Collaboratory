@@ -214,7 +214,7 @@ The application writes and reads data using a ** file with a ** structure :
 ### Technology
 - Python 3.x
 - Environment: GitHub Codespaces
-- No external libraries
+- External libraries: `nicegui` (web-based UI), `sqlalchemy` (ORM/database)
 
 ### 📂 Repository Structure
 ```
@@ -246,7 +246,7 @@ advanced-prog-issue-tracker/
 - `nicegui`: for building web-based user interface.
 - `sqlalchemy`: for working with the database.
 
-The first three libraries are part of the Python standard library, so no external installation is required. They were chosen for their simplicity and effectiveness in handling file management tasks in a console application.
+The first three libraries (`json`, `random`, `string`) are part of the Python standard library and require no installation. `nicegui` and `sqlalchemy` are external dependencies and must be installed before running the application (e.g., via `pip install -r requirements.txt`).
 
 
 ## 👥 Team & Contributions
