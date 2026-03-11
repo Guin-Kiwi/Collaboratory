@@ -24,10 +24,10 @@ This project is intended to:
 ## Standard User
 
 1. As a standard user, I want to create a new task so that I can report an issue.
-2. As a standard user, I want to edit my own tasks so that I can update the description if requirments change.
-3. As a standard user, I want to see the status of my tasks so that I know wether they are still open, in progress or completed.
+2. As a standard user, I want to edit my own tasks so that I can update the description if requirements change.
+3. As a standard user, I want to see the status of my tasks so that I know whether they are still open, in progress or completed.
 4. As a standard user, I want to assign a task to a specific user so that responsibility for the task is clear.
-5. As a standar user, I want to upload additional files or information to a task so that I can provide more details.
+5. As a standard user, I want to upload additional files or information to a task so that I can provide more details.
 
 ## Asignee User
 
