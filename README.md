@@ -97,18 +97,10 @@ directly.
 ---
 The application interacts with the user via a web browser. Users can perform the following steps:
 
-1. User Login:
-   1. 
-
-2. Task Status:
-	1. 
-   
-3. Task Assignment:
-	1. 
-
-4. Manage Workflows/Tasks:
-	1. 
-
+1. User Login
+2. Task Status
+3. Task Assignment
+4. Manage Workflows/Tasks
 ---
 
 
