@@ -259,14 +259,12 @@ The first three libraries are part of the Python standard library, so no externa
 
 ## 👥 Team & Contributions
 
-
-| Name                  | Final Contribution                                 |
-|-----------------------|----------------------------------------------|
-| Marta Greschuk        | document the work distribution |  
-| Polina Yemelianenkova | libraries, the 3-tier architecture plan, and the database schema within the read.me | 
-| Ayla Allen            | GitHub repository setup | 
-| Sümeyya Güçlü-Babür   | user stories and user cases | 
-
+| Name                  | Final Contribution                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| Marta Greschuk        | document the work distribution                                                       |
+| Polina Yemelianenkova | libraries, the 3-tier architecture plan, and the database schema within the read.me |
+| Ayla Allen            | GitHub repository setup                                                              |
+| Sümeyya Güçlü-Babür   | user stories and user cases                                                          |
 ## 🤝 Contributing
 
 - Use this repository as a starting point by importing it into your own GitHub account or VScode on Desktop.  
