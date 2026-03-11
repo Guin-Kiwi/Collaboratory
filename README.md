@@ -1,4 +1,4 @@
-# Semester Two Project - Task Management Tracker?
+# Semester Two Project - Task Management Tracker
 
 This project is intended to:
 
