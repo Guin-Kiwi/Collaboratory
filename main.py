@@ -14,9 +14,10 @@ Run
 
 from __future__ import annotations
 
+from database import db
+
 import nicegui.ui as ui
 
-from database import DatabaseConnection
 from ui import BaseView
 
 
@@ -24,8 +25,8 @@ def main() -> None:
     """Initialise each layer and register NiceGUI routes."""
 
     # ── Data tier ──────────────────────────────────────────────────────────
-    db = DatabaseConnection()
-    db.init()
+   # db = DatabaseConnection()
+    #db.init()
 
     # ── Logic tier ─────────────────────────────────────────────────────────
     # Services are instantiated per-request (inside route handlers) so that

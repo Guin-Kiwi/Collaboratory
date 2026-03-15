@@ -1,6 +1,5 @@
 """Database layer: connection management and ORM model definitions."""
 
-from pathlib import Path
 from .connection import DatabaseConnection
 from .models import BaseModel
 
