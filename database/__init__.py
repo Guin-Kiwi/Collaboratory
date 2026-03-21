@@ -4,7 +4,7 @@ from .connection import DatabaseConnection
 from .models import BaseModel
 
 # Shared instance — import this in your other modules
-db = DatabaseConnection()
-db.init()
+db_conn = DatabaseConnection()
+db_conn.init()
 
 __all__ = ["db", "DatabaseConnection", "BaseModel"]
