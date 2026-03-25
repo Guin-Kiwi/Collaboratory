@@ -40,7 +40,7 @@ class User(BaseModel, TimestampMixin):
     username   = Column(String(50), unique=True, nullable=False)
     email      = Column(String(120), unique=True, nullable=False)
     password   = Column(String(255), nullable=False)  # store hashed passwords only!
-
+    role       = Column(String (50), default="user", nullable=False)  # e.g. "admin", "user"
     # Relationships
     owned_projects = relationship("Project", back_populates="owner", cascade="all, delete")
     created_tasks  = relationship("Task", back_populates="creator", cascade="all, delete")
