@@ -42,8 +42,8 @@ class User(BaseModel, TimestampMixin):
     password   = Column(String(255), nullable=False)  # store hashed passwords only!
     role       = Column(String (50), default="user", nullable=False)  # e.g. "admin", "user"
     # Relationships
-    owned_projects = relationship("Project", back_populates="owner", cascade="all, delete") # why does that backpopulate?
-    created_tasks  = relationship("Task", back_populates="creator", cascade="all, delete")
+    owned_projects = relationship("Project", back_populates="owner") # why does that backpopulate?
+    created_tasks  = relationship("Task", back_populates="creator")
     assignments    = relationship("Assignment", back_populates="user", cascade="all, delete")
 
     def __repr__(self):
