@@ -14,7 +14,7 @@ Run
 
 from __future__ import annotations
 
-from database import db
+from database.connection import DatabaseConnection
 
 import nicegui.ui as ui
 
