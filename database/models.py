@@ -6,7 +6,7 @@ from .mixins import TimestampMixin
 
 import datetime
 
-from sqlalchemy import DateTime, Integer, func
+from sqlalchemy import Boolean, DateTime, Integer, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import (
     Column, String, Text,
@@ -40,6 +40,7 @@ class User(BaseModel, TimestampMixin):
     username   = Column(String(50), unique=True, nullable=False)
     email      = Column(String(120), unique=True, nullable=False)
     password   = Column(String(255), nullable=False)  # store hashed passwords only!
+    is_admin = Column(Boolean, default=False)  # True = admin, False = standard user
 
     # Relationships
     owned_projects = relationship("Project", back_populates="owner", cascade="all, delete") # why does that backpopulate?
