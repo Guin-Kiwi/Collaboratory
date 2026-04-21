@@ -38,13 +38,13 @@ class AppState:
             return None
         return self.current_user.username
 
-    def get_current_role(self) -> str | None:
-        if self.current_user is None:
-            return None
-        return self.current_user.role
+#    def get_current_role(self) -> str | None:
+#        if self.current_user is None:
+#            return None
+#        return self.current_user.role
 
-    def is_admin(self) -> bool:
-        return self.get_current_role() == "admin"
+#    def is_admin(self) -> bool:
+#        return self.get_current_role() == "admin"
 
 
 # shared global instance
