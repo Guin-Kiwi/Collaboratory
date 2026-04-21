@@ -45,7 +45,11 @@ class User(BaseModel, TimestampMixin):
     owned_projects = relationship("Project", back_populates="owner", cascade="all, delete") # why does that backpopulate?
     created_tasks  = relationship("Task", back_populates="creator", cascade="all, delete")
     assignments    = relationship("Assignment", back_populates="user", cascade="all, delete-orphan")
-    project_memberships = relationship("ProjectMember", back_populates="user", cascade="all, delete-orphan")
+    collaborator_memberships = relationship(
+        "ProjectMember",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self):
         return f"<User id={self.id} username={self.username!r}>"
@@ -65,7 +69,11 @@ class Project(BaseModel, TimestampMixin):
     # Relationships
     owner = relationship("User", back_populates="owned_projects")
     tasks = relationship("Task", back_populates="project", cascade="all, delete")
-    members = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
+    collaborator_memberships = relationship(
+        "ProjectMember",
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self):
         return f"<Project id={self.id} name={self.name!r}>"
@@ -132,7 +140,7 @@ class Assignment(BaseModel):
 # ProjectMember (project collaborators)
 # ---------------------------------------------------------------------------
 class ProjectMember(BaseModel, TimestampMixin):
-    __tablename__ = "collaborator_memberships"
+    __tablename__ = "project_members"
     __table_args__ = (
         UniqueConstraint("project_id", "user_id", name="uq_project_member"),
     )
@@ -141,7 +149,7 @@ class ProjectMember(BaseModel, TimestampMixin):
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
-    project = relationship("Project", back_populates="members")
+    project = relationship("Project", back_populates="collaborator_memberships")
     user = relationship("User", back_populates="collaborator_memberships")
 
     def __repr__(self):
