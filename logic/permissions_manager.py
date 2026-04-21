@@ -38,3 +38,10 @@ def is_collaborator(user, project, session: Session) -> bool:
 def is_assignee_on_task(user, task) -> bool:
     """User is assigned to this specific task."""
     return any(a.user_id == user.id for a in task.assignments)
+
+def is_assignee_in_project(user, project, session: Session) -> bool:
+    """User is assigned to at least one task in this project."""
+    return session.query(Assignment).join(Assignment.task).filter(
+        Assignment.user_id == user.id,
+        Assignment.task.has(project_id=project.id),
+    ).first() is not None
