@@ -132,7 +132,7 @@ class Assignment(BaseModel):
 # ProjectMember (project collaborators)
 # ---------------------------------------------------------------------------
 class ProjectMember(BaseModel, TimestampMixin):
-    __tablename__ = "project_members"
+    __tablename__ = "collaborator_memberships"
     __table_args__ = (
         UniqueConstraint("project_id", "user_id", name="uq_project_member"),
     )
@@ -142,7 +142,7 @@ class ProjectMember(BaseModel, TimestampMixin):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     project = relationship("Project", back_populates="members")
-    user = relationship("User", back_populates="project_memberships")
+    user = relationship("User", back_populates="collaborator_memberships")
 
     def __repr__(self):
         return f"<ProjectMember project_id={self.project_id} user_id={self.user_id}>"
