@@ -11,14 +11,15 @@ class TaskManager:
 
     def create_task(self, title: str, description: str, owner_id: int, due_date: int, priority: str, status: str) -> Task:
         """Create a new task"""
+        #require_permission(...)
         task = Task(
             title = title,
             description = description,
-            owner_id = owner_id,
+            created_by = created_by,
+            project_id = project_id,
             due_date = due_date,
             priority = priority,
             status = status,
-            is_completed = False,
         )
         self.session.add(task)
         self.session.commit()
@@ -26,14 +27,18 @@ class TaskManager:
 
     def get_task_by_id(self, task_id: int) -> Task | None:
         """Get task by ID"""
+        #require_permission(...)
         return self.session.query(Task).filter_by(id = task_id).first()
 
     def get_tasks_by_user(self, user_id: int) -> list[Task]:
         """Get all tasks of a user"""
-        return self.session.query(Task).filter_by(owner_id = user_id).all()
+        return self.session.query(Task).join(Assignment).filter(
+            Assignment.user_id == user_id
+        ).all()
 
     def update_task(self, task_id: int, title: str, description: str) -> bool:
         """Update a task"""
+        #require_permission(...)
         task = self.get_task_by_id(task_id)
         if not task:
             return False
@@ -45,6 +50,7 @@ class TaskManager:
 
     def delete_task(self, task_id: int) -> bool:
         """Delete a task"""
+        #require_permission(...)
         task = self.get_task_by_id(task_id)
         if not task:
             return False
