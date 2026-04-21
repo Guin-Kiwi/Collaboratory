@@ -10,7 +10,7 @@ from sqlalchemy import Boolean, DateTime, Integer, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import (
     Column, String, Text,
-    ForeignKey, Enum
+    ForeignKey, Enum, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 
@@ -40,12 +40,12 @@ class User(BaseModel, TimestampMixin):
     username   = Column(String(50), unique=True, nullable=False)
     email      = Column(String(120), unique=True, nullable=False)
     password   = Column(String(255), nullable=False)  # store hashed passwords only!
-    is_admin = Column(Boolean, default=False)  # True = admin, False = standard user
 
     # Relationships
     owned_projects = relationship("Project", back_populates="owner", cascade="all, delete") # why does that backpopulate?
     created_tasks  = relationship("Task", back_populates="creator", cascade="all, delete")
-    assignments    = relationship("Assignment", back_populates="user", cascade="all, delete")
+    assignments    = relationship("Assignment", back_populates="user", cascade="all, delete-orphan")
+    project_memberships = relationship("ProjectMember", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User id={self.id} username={self.username!r}>"
@@ -65,6 +65,7 @@ class Project(BaseModel, TimestampMixin):
     # Relationships
     owner = relationship("User", back_populates="owned_projects")
     tasks = relationship("Task", back_populates="project", cascade="all, delete")
+    members = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Project id={self.id} name={self.name!r}>"
@@ -96,7 +97,7 @@ class Task(BaseModel, TimestampMixin):
     # Relationships
     project     = relationship("Project", back_populates="tasks")
     creator     = relationship("User", back_populates="created_tasks")
-    assignments = relationship("Assignment", back_populates="task", cascade="all, delete")
+    assignments = relationship("Assignment", back_populates="task", cascade="all, delete-orphan")
     # why does that backpopulate? if an assignment is deleted, the task should not be deleted, right? 
     # but if the task is deleted, then the assignment should be deleted, right?
 
@@ -109,6 +110,7 @@ class Task(BaseModel, TimestampMixin):
 # ---------------------------------------------------------------------------
 class Assignment(BaseModel):
     __tablename__ = "assignments"
+    __table_args__ = (UniqueConstraint("task_id", "user_id", name="uq_task_assignment"),)
 
     id          = Column(Integer, primary_key=True, index=True)
     task_id     = Column(Integer, ForeignKey("tasks.id"), nullable=False)
@@ -125,5 +127,22 @@ class Assignment(BaseModel):
 
     def __repr__(self):
         return f"<Assignment task_id={self.task_id} user_id={self.user_id}>"
+        
+# ---------------------------------------------------------------------------
+# ProjectMember (project collaborators)
+# ---------------------------------------------------------------------------
+class ProjectMember(BaseModel, TimestampMixin):
+    __tablename__ = "project_members"
+    __table_args__ = (
+        UniqueConstraint("project_id", "user_id", name="uq_project_member"),
+    )
 
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
+    project = relationship("Project", back_populates="members")
+    user = relationship("User", back_populates="project_memberships")
+
+    def __repr__(self):
+        return f"<ProjectMember project_id={self.project_id} user_id={self.user_id}>"
