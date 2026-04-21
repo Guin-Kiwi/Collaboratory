@@ -156,7 +156,7 @@ Core entities:
 	user_id     (FK → Users.id)
 	assigned_at
 
-<img width="4224" height="1734" alt="image" src="https://github.com/user-attachments/assets/fe5b2c5b-fbb3-46e3-9eca-0b6e54e62456" />
+<img width="4224" height="1734" alt="Entity relationship diagram showing the Users, Projects, Tasks, and Assignments tables and their foreign key relationships" src="https://github.com/user-attachments/assets/fe5b2c5b-fbb3-46e3-9eca-0b6e54e62456" />
 
 
 ### Architecture
