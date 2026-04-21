@@ -38,12 +38,13 @@ class User(BaseModel, TimestampMixin):
 
     id         = Column(Integer, primary_key=True, index=True)
     username   = Column(String(50), unique=True, nullable=False)
+    name       = Column(String(100), nullable=False)
     email      = Column(String(120), unique=True, nullable=False)
     password   = Column(String(255), nullable=False)  # store hashed passwords only!
-    is_admin = Column(Boolean, default=False)  # True = admin, False = standard user
+    is_admin   = Column(Boolean, default=False)  # True = admin, False = standard user
 
     # Relationships
-    owned_projects = relationship("Project", back_populates="owner", cascade="all, delete") # why does that backpopulate?
+    owned_projects = relationship("Project", back_populates="owner", cascade="all, delete")
     created_tasks  = relationship("Task", back_populates="creator", cascade="all, delete")
     assignments    = relationship("Assignment", back_populates="user", cascade="all, delete")
 
@@ -97,8 +98,6 @@ class Task(BaseModel, TimestampMixin):
     project     = relationship("Project", back_populates="tasks")
     creator     = relationship("User", back_populates="created_tasks")
     assignments = relationship("Assignment", back_populates="task", cascade="all, delete")
-    # why does that backpopulate? if an assignment is deleted, the task should not be deleted, right? 
-    # but if the task is deleted, then the assignment should be deleted, right?
 
     def __repr__(self):
         return f"<Task id={self.id} title={self.title!r} status={self.status!r}>"
