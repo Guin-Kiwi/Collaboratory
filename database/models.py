@@ -107,7 +107,7 @@ class Task(BaseModel, TimestampMixin):
     # Relationships
     project     = relationship("Project", back_populates="tasks")
     creator     = relationship("User", back_populates="created_tasks")
-    assignments = relationship("Assignment", back_populates="task", cascade="all, delete-orphan")
+    assignments = list["Assignment"] = relationship("Assignment", back_populates="task", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Task id={self.id} title={self.title!r} status={self.status!r}>"
