@@ -15,6 +15,7 @@ class UserManager:
 
     def __init__(self):
         self.db = DatabaseConnection()
+        self.db.init()
         self.session = self.db.get_session()
 
     def validate_login(self, username: str, password: str) -> User | None:

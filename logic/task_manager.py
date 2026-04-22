@@ -1,7 +1,10 @@
 # logic/task_manager.py
 
-from database.models import Task
+from datetime import datetime
+
+from database.models import Assignment, Task, User, Project
 from database.connection import DatabaseConnection
+from logic.permissions_manager import require_permission, PermissionAction
 
 class TaskManager:
 
@@ -9,13 +12,52 @@ class TaskManager:
         self.db = DatabaseConnection()
         self.session = self.db.get_session()
 
-    def create_task(self, title: str, description: str, owner_id: int, due_date: int, priority: str, status: str) -> Task:
+
+    def create_project(
+    self,
+    user: User,  # Ayla added for permissions
+    project : Project,  # Ayla added for permissions
+    title: str,
+    description: str,
+    owner_id: int,
+    due_date: datetime | None,
+    priority: str,
+    status: str,
+    ) -> Task:
         """Create a new task"""
-        #require_permission(...)
+        require_permission(user)  
+        # Ayla added for permissions
+        
+        project = Project(
+            title = title,
+            description = description,
+            created_by = owner_id,
+            project_id = project_id,
+            due_date = due_date,
+            priority = priority,
+            status = status,
+        )
+
+    def create_task(
+        self: Task,
+        user: User,  # Ayla added for permissions
+        project : Project,  # Ayla added for permissions
+        title: str,
+        description: str,
+        owner_id: int,
+        project_id: int,
+        due_date: datetime | None,
+        priority: str,
+        status: str,
+    ) -> Task:
+        """Create a new task"""
+        require_permission(user, PermissionAction.CREATE_TASK, self.session, project = project)  
+        # Ayla added for permissions
+        
         task = Task(
             title = title,
             description = description,
-            created_by = created_by,
+            created_by = owner_id,
             project_id = project_id,
             due_date = due_date,
             priority = priority,
@@ -27,7 +69,6 @@ class TaskManager:
 
     def get_task_by_id(self, task_id: int) -> Task | None:
         """Get task by ID"""
-        #require_permission(...)
         return self.session.query(Task).filter_by(id = task_id).first()
 
     def get_tasks_by_user(self, user_id: int) -> list[Task]:
@@ -36,9 +77,11 @@ class TaskManager:
             Assignment.user_id == user_id
         ).all()
 
-    def update_task(self, task_id: int, title: str, description: str) -> bool:
+    def update_task(self, user, task_id: int, title: str, description: str, project = Project) -> bool:
         """Update a task"""
-        #require_permission(...)
+        require_permission(user, PermissionAction.EDIT_TASK_DETAILS, self.session, project = project)  
+        # Ayla added for permissions
+        
         task = self.get_task_by_id(task_id)
         if not task:
             return False

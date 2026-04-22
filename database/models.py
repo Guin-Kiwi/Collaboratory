@@ -5,6 +5,7 @@ from __future__ import annotations
 from .mixins import TimestampMixin
 
 import datetime
+import bcrypt
 
 from sqlalchemy import Boolean, DateTime, Integer, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -38,7 +39,7 @@ class User(BaseModel, TimestampMixin):
 
     id         = Column(Integer, primary_key=True, index=True)
     username   = Column(String(50), unique=True, nullable=False)
-    name       = Column(String(100), nullable=False)
+    name       = Column(String(100), nullable=True)
     email      = Column(String(120), unique=True, nullable=False)
     password   = Column(String(255), nullable=False)  # store hashed passwords only!
     is_admin   = Column(Boolean, default=False)  # True = admin, False = standard user
@@ -107,7 +108,7 @@ class Task(BaseModel, TimestampMixin):
     # Relationships
     project     = relationship("Project", back_populates="tasks")
     creator     = relationship("User", back_populates="created_tasks")
-    assignments = relationship("Assignment", back_populates="task", cascade="all, delete-orphan")
+    assignments = list["Assignment"] = relationship("Assignment", back_populates="task", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Task id={self.id} title={self.title!r} status={self.status!r}>"

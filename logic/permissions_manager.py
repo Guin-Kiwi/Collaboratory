@@ -6,42 +6,109 @@ Authenticates users for interactions
 import enum
 
 from sqlalchemy.orm import Session
-from database.models import ProjectMember, Assignment 
+from database.models import User, ProjectMember, Assignment, Project, Task
 
 
 class PermissionAction(enum.Enum):
+    CREATE_PROJECT = "create project"
     VIEW_PROJECT = "view_project"
-    WRITE_PROJECT_NOTE = "write_project_note" # project NOTES for owners and collaborators only
-    ADD_COLLABORATOR = "add_collaborator" # adding collaborators is done by owners only 
-                                        #(collaborators can assign other users to tasks)
+    # WRITE_PROJECT_NOTE = "write_project_note" # project NOTES for owners and collaborators only
+    # ADD_COLLABORATOR = "add_collaborator" # adding collaborators is done by owners only 
+    #                                     #(collaborators can assign other users to tasks)
     CREATE_TASK = "create_task"
     EDIT_TASK_DETAILS = "edit_task_details" # title / description
     ASSIGN_TASK = "assign_task" # assigning users to tasks is done by owners or collaborators
-    VIEW_TASK = "view_task" # Tasks are viewable by owners and collaborators not assigned to the task 
-    CHANGE_TASK_STATUS = "change_task_status" # task statuses are logged as EVENTS (by the system)
-    WRITE_TASK_NOTE = "write_task_note" # NOTES are how progress is logged
+    VIEW_TASK = "view_task" # Tasks are viewable by owners and collaborators not assigned to the Taskask 
+    CHANGE_TASK_STATUS = "change_task_status" # Taskask statuses are logged as EVENTS (by the system)
+    # WRITE_TASK_NOTE = "write_task_note" # NOTES are how progress is logged
+    DELETE_TASK = "delete_task" # Tasks can be deleted
 
 class PermissionDenied(Exception):
     def __init__(self, action: PermissionAction):
         super().__init__(f"Permission denied: {action.value}")
         self.action = action
 
+# --- Checker functions: Checking for true or false to assign users permissions ---        
+
 def is_owner(user, project) -> bool:
+    """user is assigned as the Project Owner (for when a user creates a project)"""
     return project.owner_id == user.id
 
 def is_collaborator(user, project, session: Session) -> bool:
+    """user is assigned as a Collaborator (owners can add users with collaborator attribute: collaborators can assign users to tasks)"""
     return session.query(ProjectMember).filter_by(
         project_id = project.id,
         user_id = user.id
         ).first() is not None
 
-def is_assignee_on_task(user, task) -> bool:
-    """User is assigned to this specific task."""
+def is_assignee_on_task(user: User, task: Task) -> bool:
+    """user is assigned to this specific Taskask."""
     return any(a.user_id == user.id for a in task.assignments)
 
-def is_assignee_in_project(user, project, session: Session) -> bool:
-    """User is assigned to at least one task in this project."""
+def is_assignee_in_project(user : User, project : Project, session: Session) -> bool:
+    """user is assigned to at least one Taskask in this project."""
     return session.query(Assignment).join(Assignment.task).filter(
         Assignment.user_id == user.id,
-        Assignment.task.has(project_id=project.id),
+        Assignment.task.has(project_id = project.id),
     ).first() is not None
+
+#  --- core functions of the permission manager ---
+
+def check_permission(
+    user: User, 
+    action: PermissionAction, 
+    session: Session, 
+) -> bool:
+    match action:
+        case PermissionAction.CREATE_PROJECT:
+            return user is not None
+
+        case PermissionAction.VIEW_PROJECT:
+            return (
+                user.is_admin
+                or is_owner(user, project)
+                or is_collaborator(user, project, session)
+                or is_assignee_in_project(user, project, session)
+            )
+
+        case PermissionAction.CREATE_TASK:
+            return user.is_admin or is_owner(user, project) or is_collaborator(user, project, session)
+        
+        # case PermissionAction.WRITE_PROJECT_NOTE:
+        #     return user.is_admin or is_owner(user, project) or is_collaborator(user, project, session)
+        
+        # case PermissionAction.ADD_COLLABORATOR:
+        #     return user.is_admin or is_owner(user, project)
+        
+        case PermissionAction.ASSIGN_TASK:
+            return user.is_admin or is_owner(user, project) or is_collaborator(user, project, session)
+        
+        case PermissionAction.CHANGE_TASK_STATUS:
+            return user.is_admin or is_assignee_on_task(user, task)
+        
+        # case PermissionAction.WRITE_TASK_NOTE:
+        #     return user.is_admin or is_assignee_on_task(user, task)
+        
+        case PermissionAction.EDIT_TASK_DETAILS:
+            return user.is_admin or is_owner(user, project) or is_collaborator(user, project, session)
+        
+        case PermissionAction.DELETE_TASK:
+            return user.is_admin or is_owner(user, project) or is_collaborator(user, project, session)
+        
+        case _:
+            return False
+#-------------------------------------------------------------------
+
+"""Call this require_permission function at the top of any write method.  Raises PermissionDenied if not allowed"""
+
+#-------------------------------------------------------------------
+def require_permission(
+        user: User,
+        action: PermissionAction,
+        session: Session,
+        *,
+        project = None,
+        task = None,
+) -> None:
+    if not check_permission(user, action, session, project = project, task = task):
+        raise PermissionDenied(action)
