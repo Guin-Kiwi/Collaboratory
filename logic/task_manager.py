@@ -9,7 +9,7 @@ class TaskManager:
         self.db = DatabaseConnection()
         self.session = self.db.get_session()
 
-    def create_task(self, title: str, description: str, owner_id: int, due_date: int, priority: str, status: str) -> Task:
+    def create_task(self, title: str, description: str, owner_id: int, due_date: DateTime, priority: str, status: str) -> Task:
         """Create a new task"""
         #require_permission(...)
         task = Task(
