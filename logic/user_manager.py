@@ -1,6 +1,12 @@
 # logic/user_manager.py
+from pathlib import Path
+import sys
 
-from logic.app_state import AppState
+import bcrypt
+
+if __package__ in {None, ""}:
+    sys.path.append(str(Path(__file__).resolve().parents[1]))
+
 from database.models import User
 from database.connection import DatabaseConnection
 
@@ -14,7 +20,7 @@ class UserManager:
     def validate_login(self, username: str, password: str) -> User | None:
         """Returns the User object if credentials are valid, else None."""
         user = self.session.query(User).filter_by(username=username).first()
-        if user and user.password == password:
+        if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
             return user
         return None
 
