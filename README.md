@@ -124,7 +124,7 @@ Core entities:
 
 	id          (PK)
 	username    (unique)
-	name		(unique)
+	name
 	email       (unique)
 	password    (hashed)
 	is_admin	(bool)
