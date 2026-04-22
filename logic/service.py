@@ -80,6 +80,9 @@ class BaseService(Generic[ModelT]):
         return instance
 
     def delete(self, record_id: int) -> bool:
+        #if that was sql, it would be 
+        # #stringComm = "DELETE from table self.tablename  WHERE id = record_id". but here, we have to first get the ORM instance, then delete it.
+        #sqlite.conn(stringComm).execute (conceptually, not actual code!!!)
         """Delete a record by primary key.
 
         Args:
