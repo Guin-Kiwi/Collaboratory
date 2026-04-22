@@ -1,6 +1,8 @@
 # logic/task_manager.py
 
-from database.models import Task, Assignment
+from datetime import datetime
+
+from database.models import Assignment, Task
 from database.connection import DatabaseConnection
 
 class TaskManager:
@@ -9,13 +11,22 @@ class TaskManager:
         self.db = DatabaseConnection()
         self.session = self.db.get_session()
 
-    def create_task(self, title: str, description: str, owner_id: int, due_date: DateTime, priority: str, status: str) -> Task:
+    def create_task(
+        self,
+        title: str,
+        description: str,
+        owner_id: int,
+        project_id: int,
+        due_date: datetime | None,
+        priority: str,
+        status: str,
+    ) -> Task:
         """Create a new task"""
         #require_permission(...)
         task = Task(
             title = title,
             description = description,
-            created_by = created_by,
+            created_by = owner_id,
             project_id = project_id,
             due_date = due_date,
             priority = priority,
