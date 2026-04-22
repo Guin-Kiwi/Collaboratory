@@ -12,8 +12,34 @@ class TaskManager:
         self.db = DatabaseConnection()
         self.session = self.db.get_session()
 
+
+    def create_project(
+    self,
+    user: User,  # Ayla added for permissions
+    project : Project,  # Ayla added for permissions
+    title: str,
+    description: str,
+    owner_id: int,
+    due_date: datetime | None,
+    priority: str,
+    status: str,
+    ) -> Task:
+        """Create a new task"""
+        require_permission(user)  
+        # Ayla added for permissions
+        
+        project = Project(
+            title = title,
+            description = description,
+            created_by = owner_id,
+            project_id = project_id,
+            due_date = due_date,
+            priority = priority,
+            status = status,
+        )
+
     def create_task(
-        self,
+        self: Task,
         user: User,  # Ayla added for permissions
         project : Project,  # Ayla added for permissions
         title: str,
@@ -53,7 +79,7 @@ class TaskManager:
 
     def update_task(self, user, task_id: int, title: str, description: str, project = Project) -> bool:
         """Update a task"""
-        require_permission(user, PermissionAction.CREATE_TASK, self.session, project = project)  
+        require_permission(user, PermissionAction.EDIT_TASK_DETAILS, self.session, project = project)  
         # Ayla added for permissions
         
         task = self.get_task_by_id(task_id)
