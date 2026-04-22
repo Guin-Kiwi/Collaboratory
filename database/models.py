@@ -38,7 +38,7 @@ class User(BaseModel, TimestampMixin):
 
     id         = Column(Integer, primary_key=True, index=True)
     username   = Column(String(50), unique=True, nullable=False)
-    name       = Column(String(100), nullable=False)
+    name       = Column(String(100), nullable=True)
     email      = Column(String(120), unique=True, nullable=False)
     password   = Column(String(255), nullable=False)  # store hashed passwords only!
     is_admin   = Column(Boolean, default=False)  # True = admin, False = standard user
