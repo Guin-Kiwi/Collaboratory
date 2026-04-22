@@ -1,6 +1,6 @@
 # logic/task_manager.py
 
-from database.models import Task
+from database.models import Task, Assignment
 from database.connection import DatabaseConnection
 
 class TaskManager:
