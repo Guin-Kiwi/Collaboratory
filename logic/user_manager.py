@@ -1,6 +1,5 @@
 # logic/user_manager.py
 
-from logic.app_state import AppState
 from database.models import User
 from database.connection import DatabaseConnection
 
