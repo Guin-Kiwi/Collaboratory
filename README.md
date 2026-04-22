@@ -23,7 +23,7 @@ This project is intended to:
 
 ## Standard User
 
-1. As a standard user, I want to create a new task so that I can report an issue.
+1. As a standard user, I want to create a new task.
 2. As a standard user, I want to edit my own tasks so that I can update the description if requirements change.
 3. As a standard user, I want to see the status of my tasks so that I know whether they are still open, in progress or completed.
 4. As a standard user, I want to assign a task to a specific user so that responsibility for the task is clear.
@@ -124,8 +124,10 @@ Core entities:
 
 	id          (PK)
 	username    (unique)
+	name		(unique)
 	email       (unique)
 	password    (hashed)
+	is_admin	(bool)
 	created_at
 
 #### Projects
