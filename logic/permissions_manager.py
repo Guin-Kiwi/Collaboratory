@@ -58,6 +58,9 @@ def check_permission(
     user: User, 
     action: PermissionAction, 
     session: Session, 
+    *,
+    task: Task = None,
+    project: Project = None
 ) -> bool:
     match action:
         case PermissionAction.CREATE_PROJECT:
@@ -107,8 +110,8 @@ def require_permission(
         action: PermissionAction,
         session: Session,
         *,
-        project = None,
-        task = None,
+        task: Task = None,
+        project: Project = None
 ) -> None:
     if not check_permission(user, action, session, project = project, task = task):
         raise PermissionDenied(action)

@@ -15,27 +15,19 @@ class TaskManager:
 
     def create_project(
     self,
-    user: User,  # Ayla added for permissions
-    project : Project,  # Ayla added for permissions
+    user: User,
     title: str,
     description: str,
     owner_id: int,
-    due_date: datetime | None,
-    priority: str,
-    status: str,
-    ) -> Task:
-        """Create a new task"""
-        require_permission(user)  
+    ) -> Project:
+        """Create a new Project"""
+        require_permission(user, PermissionAction.CREATE_PROJECT, self.session, project)  
         # Ayla added for permissions
         
         project = Project(
             title = title,
             description = description,
-            created_by = owner_id,
-            project_id = project_id,
-            due_date = due_date,
-            priority = priority,
-            status = status,
+            owner_id = owner_id,
         )
 
     def create_task(

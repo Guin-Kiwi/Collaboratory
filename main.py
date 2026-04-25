@@ -17,6 +17,8 @@ from __future__ import annotations
 from database.connection import DatabaseConnection
 
 import nicegui.ui as ui
+import logging
+import bcrypt
 
 from ui import BaseView
 
@@ -25,13 +27,14 @@ def main() -> None:
     """Initialise each layer and register NiceGUI routes."""
 
     # ── Data tier ──────────────────────────────────────────────────────────
-   # db = DatabaseConnection()
-    #db.init()
+    db = DatabaseConnection()
+    db.init()
 
     # ── Logic tier ─────────────────────────────────────────────────────────
     # Services are instantiated per-request (inside route handlers) so that
     # each handler receives its own SQLAlchemy session.  Place shared,
     # stateless service configuration here if required.
+
 
     # ── Presentation tier ──────────────────────────────────────────────────
     @ui.page("/")

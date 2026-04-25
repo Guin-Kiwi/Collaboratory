@@ -18,6 +18,16 @@ class UserManager:
         self.db.init()
         self.session = self.db.get_session()
 
+    def create_user():
+        
+        pass
+
+    def delete_user():
+        pass
+
+    def update_user(self, username: str, password: str) -> User | None:
+        pass
+
     def validate_login(self, username: str, password: str) -> User | None:
         """Returns the User object if credentials are valid, else None."""
         user = self.session.query(User).filter_by(username=username).first()

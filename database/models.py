@@ -5,7 +5,6 @@ from __future__ import annotations
 from .mixins import TimestampMixin
 
 import datetime
-import bcrypt
 
 from sqlalchemy import Boolean, DateTime, Integer, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
