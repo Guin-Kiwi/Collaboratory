@@ -91,7 +91,7 @@ class Task(BaseModel, TimestampMixin):
     title       = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
     status      = Column(
-                    Enum("todo", "in_progress", "done", name="task_status"),
+                    Enum("todo", "in_progress", "completed", name="task_status"),
                     default="todo",
                     nullable=False
                   )
