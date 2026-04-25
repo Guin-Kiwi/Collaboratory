@@ -2,9 +2,8 @@
 
 from datetime import datetime
 
-from database.models import Assignment, Task, User, Project
+from database.models import Assignment, Task
 from database.connection import DatabaseConnection
-from logic.permissions_manager import require_permission, PermissionAction
 
 class TaskManager:
 
@@ -12,28 +11,8 @@ class TaskManager:
         self.db = DatabaseConnection()
         self.session = self.db.get_session()
 
-
-    def create_project(
-    self,
-    user: User,
-    title: str,
-    description: str,
-    ) -> Project:
-        """Create a new Project"""   
-        require_permission(user, PermissionAction.CREATE_PROJECT, self.session)  # just to check that a user isnt None
-        project = Project(
-            title = title,
-            description = description,
-            owner_id = user.id
-            )
-        self.session.add(project)
-        self.session.commit()
-        return project
-
     def create_task(
-        self: Task,
-        user: User,  # Ayla added for permissions
-        project : Project,  # Ayla added for permissions
+        self,
         title: str,
         description: str,
         owner_id: int,
@@ -43,6 +22,7 @@ class TaskManager:
         status: str,
     ) -> Task:
         """Create a new task"""
+        #require_permission(...)
         task = Task(
             title = title,
             description = description,
@@ -52,35 +32,24 @@ class TaskManager:
             priority = priority,
             status = status,
         )
-        self.session.add(project)
+        self.session.add(task)
         self.session.commit()
-        require_permission(user, PermissionAction.CREATE_TASK, self.session, project = project)  
-        # Ayla added for permissions    
         return task
 
     def get_task_by_id(self, task_id: int) -> Task | None:
         """Get task by ID"""
+        #require_permission(...)
         return self.session.query(Task).filter_by(id = task_id).first()
 
     def get_tasks_by_user(self, user_id: int) -> list[Task]:
-        """Get all tasks assigned to a user"""
+        """Get all tasks of a user"""
         return self.session.query(Task).join(Assignment).filter(
             Assignment.user_id == user_id
         ).all()
 
-    def get_project_by_id(self, project_id: int) -> Project | None:
-        """Get Projects by ID"""
-        return self.session.query(Project).filter_by(id = project_id).first()
-
-    def get_project_by_user(self, user_id: int) -> list[Project]:
-        """Get all projects owned by a user"""
-        return self.session.query(Project).filter_by(owner_id = user_id).all()
-
-    def update_task(self, user, task_id: int, title: str, description: str, project = Project) -> bool:
+    def update_task(self, task_id: int, title: str, description: str) -> bool:
         """Update a task"""
-        require_permission(user, PermissionAction.EDIT_TASK_DETAILS, self.session, project = project)  
-        # Ayla added for permissions
-        
+        #require_permission(...)
         task = self.get_task_by_id(task_id)
         if not task:
             return False
