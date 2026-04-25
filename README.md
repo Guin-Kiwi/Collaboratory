@@ -143,7 +143,7 @@ Core entities:
 	id          (PK)
 	title
 	description
-	status      (e.g. "todo", "in_progress", "done")
+	status      (e.g. "todo", "in_progress", "completed")
 	priority    (e.g. "low", "medium", "high")
 	due_date
 	project_id  (FK → Projects.id)
