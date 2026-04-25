@@ -64,7 +64,7 @@ class TaskManager:
 
     def delete_task(self, task_id: int) -> bool:
         """Delete a task"""
-        require_permission(user, PermissionAction.DELETE_TASK, self.session, project, task = task) 
+        require_permission(user, PermissionAction.DELETE_TASK, self.session, project = project, task = task) 
         task = self.get_task_by_id(task_id)
         if not task:
             return False

@@ -1,4 +1,4 @@
-# logic/task_manager.py
+# logic/project_manager.py
 
 from datetime import datetime
 

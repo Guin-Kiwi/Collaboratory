@@ -15,12 +15,11 @@ Run
 from __future__ import annotations
 
 from database.connection import DatabaseConnection
+from ui.view import BaseView
+from logic import app_state
 
 import nicegui.ui as ui
-import logging
-import bcrypt
 
-from ui import BaseView
 
 
 def main() -> None:
@@ -43,11 +42,9 @@ def main() -> None:
 
         When adding a feature, pass ``db.get_session()`` to the relevant
         service before constructing the view::
-
             session = db.get_session()
-            service = SomeService(SomeModel, session)
-            SomeView(service).render()
         """
+        session = db.get_session()
         view = BaseView()
         view.render()
 
