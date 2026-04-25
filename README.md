@@ -157,6 +157,13 @@ Core entities:
 	user_id     (FK → Users.id)
 	assigned_at
 
+#### ProjectMember
+
+	id          (PK)
+	project_id     (FK → Projects.id)
+	user_id     (FK → Users.id)
+	created_at
+
 ### Architecture
 
 This application follows a 3-tier architecture:
