@@ -18,17 +18,17 @@ class TaskManager:
     user: User,
     title: str,
     description: str,
-    owner_id: int,
     ) -> Project:
-        """Create a new Project"""
-        require_permission(user, PermissionAction.CREATE_PROJECT, self.session, project)  
-        # Ayla added for permissions
-        
+        """Create a new Project"""   
+        require_permission(user, PermissionAction.CREATE_PROJECT, self.session)  # just to check that a user isnt None
         project = Project(
             title = title,
             description = description,
-            owner_id = owner_id,
-        )
+            owner_id = user.id
+            )
+        self.session.add(project)
+        self.session.commit()
+        return project
 
     def create_task(
         self: Task,
@@ -43,9 +43,6 @@ class TaskManager:
         status: str,
     ) -> Task:
         """Create a new task"""
-        require_permission(user, PermissionAction.CREATE_TASK, self.session, project = project)  
-        # Ayla added for permissions
-        
         task = Task(
             title = title,
             description = description,
@@ -55,8 +52,10 @@ class TaskManager:
             priority = priority,
             status = status,
         )
-        self.session.add(task)
+        self.session.add(project)
         self.session.commit()
+        require_permission(user, PermissionAction.CREATE_TASK, self.session, project = project)  
+        # Ayla added for permissions    
         return task
 
     def get_task_by_id(self, task_id: int) -> Task | None:
@@ -64,10 +63,18 @@ class TaskManager:
         return self.session.query(Task).filter_by(id = task_id).first()
 
     def get_tasks_by_user(self, user_id: int) -> list[Task]:
-        """Get all tasks of a user"""
+        """Get all tasks assigned to a user"""
         return self.session.query(Task).join(Assignment).filter(
             Assignment.user_id == user_id
         ).all()
+
+    def get_project_by_id(self, project_id: int) -> Project | None:
+        """Get Projects by ID"""
+        return self.session.query(Project).filter_by(id = project_id).first()
+
+    def get_project_by_user(self, user_id: int) -> list[Project]:
+        """Get all projects owned by a user"""
+        return self.session.query(Project).filter_by(owner_id = user_id).all()
 
     def update_task(self, user, task_id: int, title: str, description: str, project = Project) -> bool:
         """Update a task"""
