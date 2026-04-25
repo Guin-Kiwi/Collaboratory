@@ -10,8 +10,11 @@ from database.models import User, ProjectMember, Assignment, Project, Task
 
 
 class PermissionAction(enum.Enum):
-    CREATE_PROJECT = "create project"
+    CREATE_PROJECT = "create_project"
     VIEW_PROJECT = "view_project"
+    CHANGE_PROJECT_STATUS = "change_project_status"
+    EDIT_PROJECT_DETAILS = "edit_project"
+    DELETE_PROJECT = "delete_project"
     # WRITE_PROJECT_NOTE = "write_project_note" # project NOTES for owners and collaborators only
     # VIEW_PROJECT_NOTE = "view_project_note" # project NOTES
     # ADD_COLLABORATOR = "add_collaborator" # adding collaborators is done by owners only 
@@ -75,24 +78,33 @@ def check_permission(
                 or is_collaborator(user, project, session)
                 or is_assignee_in_project(user, project, session)
             )
-
-        case PermissionAction.CREATE_TASK:
-            return user.is_admin or is_owner(user, task.project) or is_collaborator(user, task.project, session)
         
-        case PermissionAction.VIEW_TASK:
-            return user.is_admin or is_owner(user, task.project) or is_collaborator(user, task.project, session) or is_assignee_on_task(user, task)
+        case PermissionAction.CHANGE_PROJECT_STATUS:
+            return user.is_admin or is_owner(user, project) #or is_collaborator(user, project, session)
+
+        case PermissionAction.EDIT_PROJECT_DETAILS:
+            return user.is_admin or is_owner(user, project) #or is_collaborator(user, project, session)
         
         # case PermissionAction.WRITE_PROJECT_NOTE:
         #     return user.is_admin or is_owner(user, project) or is_collaborator(user, project, session)
                 
         # case PermissionAction.VIEW_PROJECT_NOTE:
         #     return user.is_admin or is_owner(user, project) or is_collaborator(user, project, session)
+    
+        case PermissionAction.DELETE_PROJECT:
+            return user.is_admin or is_owner(user, project)
         
         # case PermissionAction.ADD_COLLABORATOR:
         #     return user.is_admin or is_owner(user, project)
         
         case PermissionAction.ASSIGN_TASK:
-            return user.is_admin or is_owner(user, task.project) or is_collaborator(user, task.project, session)
+            return user.is_admin or is_owner(user, task.project) #or is_collaborator(user, task.project, session)
+
+        case PermissionAction.CREATE_TASK:
+            return user.is_admin or is_owner(user, task.project) #or is_collaborator(user, task.project, session)
+        
+        case PermissionAction.VIEW_TASK:
+            return user.is_admin or is_owner(user, task.project) or is_assignee_on_task(user, task) #or is_collaborator(user, task.project, session)
         
         case PermissionAction.CHANGE_TASK_STATUS:
             return user.is_admin or is_assignee_on_task(user, task)
@@ -104,10 +116,10 @@ def check_permission(
         #     return user.is_admin or is_assignee_on_task(user, task)
         
         case PermissionAction.EDIT_TASK_DETAILS:
-            return user.is_admin or is_owner(user, task.project) or is_collaborator(user, task.project, session)
+            return user.is_admin or is_owner(user, task.project) #or is_collaborator(user, task.project, session)
         
         case PermissionAction.DELETE_TASK:
-            return user.is_admin or is_owner(user, task.project) or is_collaborator(user, task.project, session)
+            return user.is_admin or is_owner(user, task.project) #or is_collaborator(user, task.project, session)
         
         case _:
             return False
