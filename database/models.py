@@ -139,7 +139,7 @@ class Assignment(BaseModel):
 # ---------------------------------------------------------------------------
 # ProjectMember (project collaborators)
 # ---------------------------------------------------------------------------
-class ProjectMember(BaseModel, TimestampMixin):
+class ProjectMember(BaseModel):
     __tablename__ = "project_members"
     __table_args__ = (
         UniqueConstraint("project_id", "user_id", name="uq_project_member"),
