@@ -145,9 +145,9 @@ class ProjectMember(BaseModel):
         UniqueConstraint("project_id", "user_id", name="uq_project_member"),
     )
 
-    id = Column(Integer, primary_key=True)
+    id         = Column(Integer, primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id    = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     project = relationship("Project", back_populates="collaborator_memberships")
     user = relationship("User", back_populates="collaborator_memberships")
