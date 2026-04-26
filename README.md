@@ -143,7 +143,7 @@ Core entities:
 	id          (PK)
 	title
 	description
-	status      (e.g. "todo", "in_progress", "done")
+	status      (e.g. "todo", "in_progress", "completed")
 	priority    (e.g. "low", "medium", "high")
 	due_date
 	project_id  (FK → Projects.id)
@@ -156,6 +156,13 @@ Core entities:
 	task_id     (FK → Tasks.id)
 	user_id     (FK → Users.id)
 	assigned_at
+
+#### ProjectMember
+
+	id          (PK)
+	project_id     (FK → Projects.id)
+	user_id     (FK → Users.id)
+	created_at
 
 ### Architecture
 
