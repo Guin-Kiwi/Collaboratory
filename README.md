@@ -160,9 +160,8 @@ Core entities:
 #### ProjectMember
 
 	id          (PK)
-	project_id     (FK → Projects.id)
+	project_id  (FK → Projects.id)
 	user_id     (FK → Users.id)
-	created_at
 
 ### Architecture
 
