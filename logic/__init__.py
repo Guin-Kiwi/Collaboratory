@@ -1,5 +1,5 @@
-"""Logic layer: server-side business logic and state management."""
+"""Likely unused service layer, hashed out to check if its needed"""
 
-from .service import BaseService
+# from .services import BaseService
 
-__all__ = ["BaseService"]
+# __all__ = ["BaseService"]

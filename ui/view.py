@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 from typing import Any
+from nicegui import ui
+from sqlalchemy.orm import Session
 
-import nicegui.ui as ui
+#from database import db
+from logic import task_manager, user_manager, permissions_manager, app_state
+from database.models import User, Project, Task
 
 
 class BaseView:
@@ -26,15 +30,3 @@ class BaseView:
 
     def __init__(self, service: Any = None) -> None:
         self._service = service
-
-    def render(self) -> None:
-        """Render the NiceGUI components for this view.
-
-        Override in concrete subclasses.  The default implementation shows a
-        placeholder label so that the skeleton runs without errors.
-        """
-        with ui.card().classes("w-full max-w-lg mx-auto mt-8"):
-            ui.label(self.__class__.__name__).classes("text-2xl font-bold")
-            ui.label(
-                "Override BaseView.render() to build your page content here."
-            ).classes("text-gray-500")

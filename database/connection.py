@@ -10,8 +10,8 @@ from .models import BaseModel
 
 class DatabaseConnection:
     """Manages the SQLAlchemy engine and session factory for a SQLite database.
-    """
-
+    """ 
+    
     def __init__(self, db_path:  str | None = None) -> None:
         
         
