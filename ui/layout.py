@@ -1,11 +1,12 @@
 from nicegui import ui 
+
 from database.models import User, Task, Project, Assignment
 
 
 def frame(page: str, user: User, project: Project) -> None :
     with ui.header(elevated=True).style('background-color: #3874c8').classes('items-center justify-between'):
-        ui.label('Collaboratory')
-        ui.label(page)
+        ui.Button('Collaboratory').mark('important')
+        ui.header(page).style
         ui.button('Logout')
         ui.button('Dashboard')
         ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
@@ -29,4 +30,6 @@ def frame(page: str, user: User, project: Project) -> None :
 def test():
     frame('Dashboard', user=None, project=None)
 
-ui.run()
+
+if __name__ in {"__main__", "__mp_main__"}:
+    ui.run(host='0.0.0.0')

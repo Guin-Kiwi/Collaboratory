@@ -29,14 +29,14 @@ class ProjectManager:
     def create_project(
         self,
         user: User,
-        title: str,
+        name: str,
         description: str,
         owner_id: int,
         ) -> Project:
             """Create a new Project"""
             require_permission(user, PermissionAction.CREATE_PROJECT, self.session) 
             project = Project(
-                title = title,
+                name = name,
                 description = description,
                 owner_id = owner_id,
             )

@@ -30,3 +30,7 @@ class BaseView:
 
     def __init__(self, service: Any = None) -> None:
         self._service = service
+
+    def render(self) -> None:
+        with BaseView as frame:
+            ui.run()
