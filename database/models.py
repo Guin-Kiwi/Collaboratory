@@ -71,6 +71,7 @@ class Project(BaseModel, TimestampMixin):
     # Relationships
     owner = relationship("User", back_populates="owned_projects")
     tasks = relationship("Task", back_populates="project", cascade="all, delete")
+    notes = relationship("ProjectNote", back_populates="project", cascade="all, delete")
     collaborator_memberships = relationship(
         "ProjectMember",
         back_populates="project",
@@ -108,6 +109,7 @@ class Task(BaseModel, TimestampMixin):
     project     = relationship("Project", back_populates="tasks")
     creator     = relationship("User", back_populates="created_tasks")
     assignments = relationship("Assignment", back_populates="task", cascade="all, delete-orphan")
+    notes       = relationship("TaskNote", back_populates="task", cascade="all, delete")
 
     def __repr__(self):
         return f"<Task id={self.id} title={self.title!r} status={self.status!r}>"
@@ -135,22 +137,6 @@ class Assignment(BaseModel):
 
     def __repr__(self):
         return f"<Assignment task_id={self.task_id} user_id={self.user_id}>"
-        
-# ---------------------------------------------------------------------------
-# ProjectMember (project collaborators)
-# ---------------------------------------------------------------------------
-class ProjectMember(BaseModel):
-    __tablename__ = "project_members"
-    __table_args__ = (
-        UniqueConstraint("project_id", "user_id", name="uq_project_member"),
-    )
-
-    id         = Column(Integer, primary_key=True)
-    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
-    user_id    = Column(Integer, ForeignKey("users.id"), nullable=False)
-
-    project = relationship("Project", back_populates="collaborator_memberships")
-    user = relationship("User", back_populates="collaborator_memberships")
-
-    def __repr__(self):
-        return f"<ProjectMember project_id={self.project_id} user_id={self.user_id}>"
+#----
+#The ProjectMember class is now in collab_models.py
+#----

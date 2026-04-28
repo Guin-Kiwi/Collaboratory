@@ -2,10 +2,10 @@
 
 from datetime import datetime
 
-from database.models import Assignment, Task
+from database.models import Assignment, Task, User
 from database.connection import DatabaseConnection
 from logic.permissions_manager import require_permission, PermissionAction
-from database.models import User, Project
+
 
 class TaskManager:
 
@@ -72,23 +72,3 @@ class TaskManager:
         self.session.delete(task)
         self.session.commit()
         return True
-
-
-# @Sümeyya: please add user: User and project: Project as parameters in your functions: def func(parameters)
-# and call require_permission at the top of this method: from permissions_manager import require_permission, PermissionAction
-##    def assign_task(self, task_id: int, user_id: int) -> bool:
-        # """Assign a task to a user"""
-        # task = self.session.query(Task).filter_by(id = task_id).first()
-        # if not task:
-        #     return False
-        
-        # require_permission(user, PermissionAction.ASSIGN_TASK, self.session, task = task) 
-        # assignment = Assignment(user_id=user_id, task_id=task_id)
-        # self.session.add(assignment)
-        # self.session.commit()
-        # return True
-
-
-
-#  We also need a function to assign a task to a user, and a function to change the status of a task. Please add those as well
-# and call require_permission at the top of those methods as well.

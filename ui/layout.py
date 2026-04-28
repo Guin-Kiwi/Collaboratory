@@ -3,7 +3,20 @@ from nicegui import ui
 from database.models import User, Task, Project, Assignment
 
 
-def frame(page: str, user: User, project: Project) -> None :
+def public_frame() -> None:
+    with ui.header(elevated=True).style('background-color: #3874c8').classes('items-center justify-between', "text-2x1"):
+        ui.label("Collaboratory")
+    with ui.column().classes("items-center justify-between"):
+        with ui.card():
+            ui.label("Sign In")
+            ui.label("Enter your details or Sign Up")
+            ui.input("Username")
+            ui.input("Password", password = True)
+            ui.button("Login")
+            ui.button("Sign Up")
+
+
+def project_frame(page: str, user: User, project: Project) -> None:
     with ui.header(elevated=True).style('background-color: #3874c8').classes('items-center justify-between'):
         ui.Button('Collaboratory').mark('important')
         ui.header(page).style
@@ -26,9 +39,9 @@ def frame(page: str, user: User, project: Project) -> None :
                     ui.link(f"{proj.title}", f"/{proj.id}")
 
 
-@ui.page('/')
+@ui.page('/dashboard')
 def test():
-    frame('Dashboard', user=None, project=None)
+    public_frame(user=None, project=None)
 
 
 if __name__ in {"__main__", "__mp_main__"}:
