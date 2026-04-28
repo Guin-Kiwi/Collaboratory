@@ -9,6 +9,7 @@ from logic.permissions_manager import require_permission, PermissionAction
 class CollabManager:
     def __init__(self):
         self.db = DatabaseConnection()
+        self.db.init()
         self.session = self.db.get_session()
 
 #------- helper functions for the collaboration association
@@ -83,15 +84,19 @@ class CollabManager:
     def create_project_notes(self, user : User, project_id: int, content: str):
         pass
 
-    def edit_project_notes(self, user: User, project_id: int, content: str) -> bool:
+    def edit_project_notes(self, user: User, project_id: int, pnote_id: int, content: str) -> bool:
         """Edit a project note"""
+        
         project = self.get_project_by_id(project_id)
         if not project:
             return False
 
+        note = self.session.query(PNote).filter_by(id = pnote_id).first()
+        if not note:
+            return False
+
         require_permission(user, PermissionAction.WRITE_PROJECT_NOTE, self.session, project = project)
-        note = PNote(content=content, project_id=project_id, created_by=user.id)
-        self.session.add(note)
+        note.content = content
         self.session.commit()
         return True
 
@@ -104,7 +109,19 @@ class CollabManager:
         require_permission(user, PermissionAction.VIEW_PROJECT_NOTE, self.session, project = project)
         return project.notes
 
-    def delte_project_notes():
+    def delete_project_notes(self, user: User, project_id: int) -> None :
+        """Delete notes of a Project"""
+        project = self.get_project_by_id()
+        if not project:
+            return[]
+
+        target_note=self.session.query(Project).filter_by(id = note_id).first()
+
+        require_permission(user, PermissionAction.VIEW_PROJECT_NOTE, self.session, project = project)
+        note = PNote(content = content, project_id = project_id, created_by = user_id)
+        self.session.delete(note)
+        self.session.commit()
+        return project.notes
         pass
 
     def create_task_note():

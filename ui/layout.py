@@ -4,16 +4,16 @@ from database.models import User, Task, Project, Assignment
 
 
 def public_frame() -> None:
-    with ui.header(elevated=True).style('background-color: #3874c8').classes('items-center justify-between', "text-2x1"):
-        ui.label("Collaboratory")
-    with ui.column().classes("items-center justify-between"):
-        with ui.card():
-            ui.label("Sign In")
-            ui.label("Enter your details or Sign Up")
-            ui.input("Username")
-            ui.input("Password", password = True)
-            ui.button("Login")
-            ui.button("Sign Up")
+    with ui.header(elevated=True).style('background-color: #3874c8').classes('justify-between'):
+        ui.label("Collaboratory").classes("text-3xl")
+        ui.label('"where collaboration thrives"').classes("text-2xl text-italic")
+    with ui.column().classes("w-full items-center mx-auto q-gutter-md"):
+        with ui.card().style('background-color: #d7e3f4').classes("items-center"):
+            ui.label("Login or Sign Up").classes("font-bold text-2xl text-center")
+            ui.input("Username").props('bordered').classes('border border-solid border-gray-400 rounded justify-center').style("background-color: #FFFFFF")
+            ui.input("Password", password = True).props('bordered').classes('border border-solid border-gray-400 rounded justify-center').style("background-color: #FFFFFF")
+            ui.button("Login").style("hover:background-color: #3874c8")
+            ui.button("Sign Up").style("hover:background-color: #3874c8")
 
 
 def project_frame(page: str, user: User, project: Project) -> None:

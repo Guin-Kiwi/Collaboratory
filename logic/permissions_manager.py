@@ -34,22 +34,6 @@ class PermissionDenied(Exception):
         super().__init__(f"Permission denied: {action.value}")
         self.action = action
 
-#-------------------------------------------------------------------
-
-"""Call this require_permission function at the top of any write method.  Raises PermissionDenied if not allowed"""
-
-#-------------------------------------------------------------------
-def require_permission(
-        user: User,
-        action: PermissionAction,
-        session: Session,
-        *,
-        task: Task = None,
-        project: Project = None
-) -> None:
-    if not check_permission(user, action, session, project = project, task = task):
-        raise PermissionDenied(action)
-
 # --- Checker functions: Checking for true or false to assign users permissions ---        
 
 def is_owner(user, project) -> bool:
@@ -140,3 +124,19 @@ def check_permission(
         
         case _:
             return False
+
+#-------------------------------------------------------------------
+
+"""Call this require_permission function at the top of any write method.  Raises PermissionDenied if not allowed"""
+
+#-------------------------------------------------------------------
+def require_permission(
+        user: User,
+        action: PermissionAction,
+        session: Session,
+        *,
+        task: Task = None,
+        project: Project = None
+) -> None:
+    if not check_permission(user, action, session, project = project, task = task):
+        raise PermissionDenied(action)
