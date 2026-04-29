@@ -32,7 +32,7 @@ def main() -> None:
     db.init()
 
     # ── Start the NiceGUI server ────────────────────────────────────────────
-    ui.run(title="Collaboratory")
+    ui.run(title="Collaboratory", host="0.0.0.0")
 
 
 if __name__ in {"__main__", "__mp_main__"}:
