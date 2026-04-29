@@ -20,8 +20,7 @@ import ui.pages.login_page      # registers @ui.page('/')
 import ui.pages.dashboard_page  # registers @ui.page('/dashboard')
 import ui.pages.task_page       # registers @ui.page('/task/{task_id}')
 
-import nicegui.ui as ui
-
+from nicegui import ui
 
 
 def main() -> None:
@@ -32,7 +31,7 @@ def main() -> None:
     db.init()
 
     # ── Start the NiceGUI server ────────────────────────────────────────────
-    ui.run(title="Project Template")
+    ui.run(title="Collaboratory")
 
 
 if __name__ in {"__main__", "__mp_main__"}:

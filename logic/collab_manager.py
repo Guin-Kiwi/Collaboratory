@@ -49,6 +49,12 @@ class CollabManager:
         target_user = self.session.query(User).filter_by(id = user_id).first()
         if not target_user:
             return False
+        if (target_user.is_admin
+            or target_user.id == user.id 
+            or target_user.id == project.owner_id 
+            or target_user in project.collaborator_memberships
+        ):
+            return False
 
         require_permission(user, PermissionAction.ADD_COLLABORATOR, self.session, project = project)
         membership = PMember(project_id=project_id, user_id=user_id)
@@ -81,12 +87,19 @@ class CollabManager:
 
 #---------- Project and Task Note CRUD functions
 
-    def create_project_notes(self, user : User, project_id: int, content: str):
-        pass
+    def create_project_note(self, user : User, content: str) -> bool:
+        """Create a project note"""
+        if user is None:
+            return False
 
-    def edit_project_notes(self, user: User, project_id: int, pnote_id: int, content: str) -> bool:
+        require_permission(user, PermissionAction.WRITE_PROJECT_NOTE, self.session, project = project)
+        note = PNote(content = content, project_id = project_id, created_by = user.id)
+        self.session.add(note)
+        self.session.commit()
+        return True
+
+    def edit_project_note(self, user: User, project_id: int, pnote_id: int, content: str) -> bool:
         """Edit a project note"""
-        
         project = self.get_project_by_id(project_id)
         if not project:
             return False
@@ -95,12 +108,15 @@ class CollabManager:
         if not note:
             return False
 
+        if not note.created_by == user.id:
+            return False
+
         require_permission(user, PermissionAction.WRITE_PROJECT_NOTE, self.session, project = project)
         note.content = content
         self.session.commit()
         return True
 
-    def view_project_notes(self, user: User, project_id: int) -> list[PNote]:
+    def view_project_note(self, user: User, project_id: int) -> list[PNote]:
         """View notes of a project"""
         project = self.get_project_by_id(project_id)
         if not project:
@@ -109,26 +125,71 @@ class CollabManager:
         require_permission(user, PermissionAction.VIEW_PROJECT_NOTE, self.session, project = project)
         return project.notes
 
-    def delete_project_notes(self, user: User, project_id: int) -> None :
+    def delete_project_note(self, user: User, project_id: int, pnote_id: int) -> bool :
         """Delete notes of a Project"""
-        project = self.get_project_by_id()
+        project = self.get_project_by_id(project_id = project_id)
         if not project:
-            return[]
+            return False
 
-        target_note=self.session.query(Project).filter_by(id = note_id).first()
+        target_note=self.session.query(PNote).filter_by(id = pnote_id).first()
+        if not target_note:
+            return False
+        
+        if not (target_note.created_by == user.id 
+            or user.is_admin
+            or project.owner_id == user.id
+        ):
+            return False
 
-        require_permission(user, PermissionAction.VIEW_PROJECT_NOTE, self.session, project = project)
-        note = PNote(content = content, project_id = project_id, created_by = user_id)
-        self.session.delete(note)
+        require_permission(user, PermissionAction.DELETE_PROJECT_NOTE, self.session, project = project)
+        self.session.delete(target_note)
         self.session.commit()
-        return project.notes
-        pass
+        return True
 
-    def create_task_note():
-        pass
+    def create_task_note(self, user: User, task_id: int, content: str) -> bool:
+        """Create a task note"""
+        task = self.session.query(Task).filter_by(id = task_id).first()
+        if not task:
+            return False
 
-    def edit_task_notes():
-        pass
+        require_permission(user, PermissionAction.WRITE_TASK_NOTE, self.session, task = task)
+        note = TNote(content = content, task_id = task_id, created_by = user.id)
+        self.session.add(note)
+        self.session.commit()
+        return True
 
-    def delete_project_notes():
-        pass
+    def edit_task_note(self, user: User, task_id: int, tnote_id: int, content: str) -> bool:
+        """Edit a task note"""
+        task = self.session.query(Task).filter_by(id = task_id).first()
+        if not task:
+            return False
+        note = self.session.query(TNote).filter_by(id = tnote_id).first()
+        if not note:
+            return False
+        if not note.created_by == user.id:
+            return False
+
+        require_permission(user, PermissionAction.WRITE_TASK_NOTE, self.session, task = task)
+        note.content = content
+        self.session.commit()
+        return True
+
+    def delete_task_note(self, user: User, task_id: int, tnote_id: int) -> bool:
+        """Delete note of a Task"""
+        task = self.session.query(Task).filter_by(id = task_id).first()
+        if not project:
+            return False
+
+        target_note = self.session.query(TNote).filter_by(id = tnote_id).first()
+        if not target_note:
+            return False
+
+        if not (target_note.created_by == user.id 
+            or user.is_admin
+        ):
+            return False
+
+        require_permission(user, PermissionAction.DELETE_PROJECT_NOTE, self.session, project = project)
+        self.session.delete(target_note)
+        self.session.commit()
+        return True
