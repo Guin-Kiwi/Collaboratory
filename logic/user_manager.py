@@ -19,7 +19,6 @@ class UserManager:
         self.session = self.db.get_session()
 
     def create_user(self):
-        
         pass
 
     def delete_user(self):
