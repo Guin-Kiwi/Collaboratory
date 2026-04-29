@@ -18,11 +18,11 @@ class UserManager:
         self.db.init()
         self.session = self.db.get_session()
 
-    def create_user():
+    def create_user(self):
         
         pass
 
-    def delete_user():
+    def delete_user(self):
         pass
 
     def update_user(self, username: str, password: str) -> User | None:
