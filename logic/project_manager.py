@@ -2,7 +2,8 @@
 
 from datetime import datetime
 
-from database.models import Assignment, Task, User, Project, ProjectMember#, ProjectNote
+from database.models import Assignment, Task, User, Project
+from database.collab_models import ProjectMember, ProjectNote
 from database.connection import DatabaseConnection
 from logic.permissions_manager import require_permission, PermissionAction
 
@@ -29,14 +30,14 @@ class ProjectManager:
     def create_project(
         self,
         user: User,
-        title: str,
+        name: str,
         description: str,
         owner_id: int,
         ) -> Project:
             """Create a new Project"""
             require_permission(user, PermissionAction.CREATE_PROJECT, self.session) 
             project = Project(
-                title = title,
+                name = name,
                 description = description,
                 owner_id = owner_id,
             )
@@ -78,30 +79,6 @@ class ProjectManager:
         return True
 
 
-## ------- functions related to project children (e.g. Notes and Tasks) -------
-## IF ADDED, can Uncomment
-
-    # def edit_project_notes(self, user: User, project_id: int, content: str) -> bool:
-    #     """Edit a project note"""
-    #     project = self.get_project_by_id(project_id)
-    #     if not project:
-    #         return False
- 
-    #     require_permission(user, PermissionAction.WRITE_PROJECT_NOTE, self.session, project = project) 
-    #     note = ProjectNote(content=content, project_id=project_id, created_by=user.id)
-    #     self.session.add(note)
-    #     self.session.commit()
-    #     return True
-    
-    # def view_project_notes(self, user: User, project_id: int) -> list[ProjectNote]:
-    #     """View notes of a project"""
-    #     project = self.get_project_by_id(project_id)
-    #     if not project:
-    #         return []
-
-    #     require_permission(user, PermissionAction.VIEW_PROJECT_NOTE, self.session, project = project) 
-    #     return project.notes
-
     def view_project_tasks(self, user: User, project_id: int) -> list[Task]:
         """View all tasks of a project"""
         project = self.get_project_by_id(project_id)
@@ -112,62 +89,6 @@ class ProjectManager:
         return project.tasks
 
 
-## ------- functions related to project collaborators (e.g. add/remove collaborator, view collaborators) -------
-## uncomment if used
-## fix this 
-# """1. add_collaborator and remove_collaborator — user gets overwritten
-# Both methods receive user: User as a parameter (the person performing the action), but then immediately overwrite it:
-# pythonuser = self.session.query(User).filter_by(id = user_id).first()
-# Now when require_permission(user, ...) runs, user is the target collaborator, not the actor. The permission check runs on the wrong person.
-# Rename the looked-up user to something like target_user to keep them separate."""
-
-
-    # def add_collaborator(self, user: User, project_id: int, user_id: int) -> bool:
-    #     """Add a collaborator to a project"""
-    #     project = self.get_project_by_id(project_id)
-    #     if not project:
-    #         return False
-        
-    #     user = self.session.query(User).filter_by(id = user_id).first()
-    #     if not user:
-    #         return False     
-
-    #     require_permission(user, PermissionAction.ADD_COLLABORATOR, self.session, project = project) 
-    #     membership = ProjectMember(project_id=project_id, user_id=user_id)
-    #     self.session.add(membership)
-    #     self.session.commit()
-    #     return True
-
-    # def view_collaborators(self, user: User, project_id: int) -> list[User]:
-    #     """View collaborators of a project"""
-    #     project = self.get_project_by_id(project_id)
-    #     if not project:
-    #         return []
-
-    #     require_permission(user, PermissionAction.VIEW_PROJECT, self.session, project = project) 
-    #     return [membership.user for membership in project.collaborator_memberships]
-
-    # def remove_collaborator(self, user: User, project_id: int, user_id: int) -> bool:
-    #     """Remove a collaborator from a project"""
-    #     project = self.get_project_by_id(project_id)
-    #     if not project:
-    #         return False   
-
-    #     user = self.session.query(User).filter_by(id = user_id).first()
-    #     if not user:
-    #         return False  
-
-    #     membership = self.session.query(ProjectMember).filter_by(
-    #         user_id=user_id,
-    #         project_id = project_id,
-    #     ).first()
-    #     if not membership:
-    #         return False
-
-    #     require_permission(user, PermissionAction.ADD_COLLABORATOR, self.session, project = project) 
-     #    self.session.delete(membership)
-      #   self.session.commit()
-       #  return True
 
 
 
