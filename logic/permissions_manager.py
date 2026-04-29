@@ -24,7 +24,7 @@ class PermissionAction(enum.Enum):
     # Project Notes
     VIEW_PROJECT_NOTE   = "view_project_note"       # owners and collaborators
     WRITE_PROJECT_NOTE  = "write_project_note"      # owners and collaborators
-    DELETE_PROJECT_NOTE = "delete_project_note"     # TODO
+    DELETE_PROJECT_NOTE = "delete_project_note"     # owners and collaborators
 
     # Tasks
     CREATE_TASK         = "create_task"
@@ -37,7 +37,7 @@ class PermissionAction(enum.Enum):
     # Task Notes
     VIEW_TASK_NOTE      = "view_task_note"          # owners, collaborators, and assignees
     WRITE_TASK_NOTE     = "write_task_note"         # assignees only
-    DELETE_TASK_NOTE    = "delete_task_note"        # TODO
+    DELETE_TASK_NOTE    = "delete_task_note"        # owners, and assignees
 
 class PermissionDenied(Exception):
     def __init__(self, action: PermissionAction):
@@ -82,6 +82,7 @@ def check_permission(
         case PermissionAction.CREATE_PROJECT:
             if user is None:
                 return False
+            return True
 
         case PermissionAction.VIEW_PROJECT:
             if project is None:
@@ -131,7 +132,13 @@ def check_permission(
             )
 
         case PermissionAction.DELETE_PROJECT_NOTE:
-            pass  # TODO
+            if project is None:
+                return False
+            return (
+                user.is_admin 
+                or is_owner(user, project) 
+                or is_collaborator(user, project, session)
+            )
 
         case PermissionAction.DELETE_PROJECT:
             if project is None:
@@ -198,7 +205,11 @@ def check_permission(
             return (user.is_admin or is_assignee_on_task(user, task))
 
         case PermissionAction.DELETE_TASK_NOTE:
-            pass  # TODO
+            if task is None:
+                return False
+            return (user.is_admin 
+                or is_owner(user, task.project) 
+                or is_assignee_on_task(user, task))
 
         case PermissionAction.EDIT_TASK_DETAILS:
             if task is None:

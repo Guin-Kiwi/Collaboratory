@@ -19,6 +19,12 @@
 #       -> list of notes on a project (owners and collaborators only)
 #   manager.create_project_note(user, project_id, content)
 #       -> add a note to a project (owners and collaborators only)
+#   manager.edit_project_note(user, project_id, pnote_id, content)
+#       -> only the original author of the note can edit it
+#   manager.delete_project_note(user, project_id, pnote_id)
+#       -> the note author, project owner, or admin can delete it
+#   manager.view_task_note(user, task_id)
+#       -> list of notes on a task (owners, collaborators, and assignees)
 #
 # The logged-in user is always available via: app_state.get_current_user()
 #

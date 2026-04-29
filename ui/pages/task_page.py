@@ -1,20 +1,32 @@
 # --- FOR UI DEVELOPERS ---
+# To run the app locally:
+#   python main.py
+# Then open your browser at: http://localhost:8080/task/{task_id}
+#
 # This page will need data from CollabManager (logic/collab_manager.py).
 # Create an instance with: manager = CollabManager()
 #
+# The current task is passed into TaskPage.render(task) — use task.id to get the task ID.
+# To get the project this task belongs to, use task.project.id
+#
 # Useful calls for the task page:
-#   manager.create_task_note(user, task_id, content)
+#   manager.view_task_note(user, task.id)
+#       -> list of notes on this task (owners, collaborators, and assignees)
+#   manager.create_task_note(user, task.id, content)
 #       -> assignees only — lets an assignee log a progress note on this task
-#   manager.view_project_note(user, project_id)
+#   manager.edit_task_note(user, task.id, tnote_id, content)
+#       -> assignees only — only the original author of the note can edit it
+#   manager.delete_task_note(user, task.id, tnote_id)
+#       -> the note author or an admin can delete it
+#   manager.view_project_note(user, task.project.id)
 #       -> owners and collaborators can see project-level notes from this page too
 #
 # Permissions to be aware of (logic/permissions_manager.py):
-#   - Only the task's assignees can write task notes or change task status
+#   - Only the task's assignees can write or edit task notes
 #   - Owners and collaborators can view task notes but cannot write them
 #   - Task status is changed by assignees only — owners cannot override this
 #
 # The logged-in user is always available via: app_state.get_current_user()
-# The current task is passed into TaskPage.render(task) — use task.id and task.project_id
 # -------------------------
 
 from nicegui import ui
