@@ -55,9 +55,12 @@ def project_frame(page: str, user: User, project: Project) -> None:
                         with ui.row().classes('w-full justify-between'):
                             ui.label(f"{note.author.username}").classes('text-sm text-grey')
                             ui.label(f"{note.created_at}").classes('text-sm text-grey')
+                        with ui.page_sticky(x_offset=18, y_offset=18):
+                            ui.button('Create Note')
 
 def task_frame(page: str, user: User, task: Task) -> None:
     with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
+        ui.button("Assign User to Task")
         ui.label("Users Assigned to Tasks")
         with ui.column().props('bordered separator'):
             if task and task.assignments:
@@ -88,6 +91,10 @@ def task_frame(page: str, user: User, task: Task) -> None:
                         ui.label(f"{note.content}")
                         ui.label(f"{note.author.username}")
                         ui.label(f"{note.created_at}")
+                    with ui.page_sticky(x_offset=18, y_offset=18):
+                        ui.button('Create Note')
+
+
 
 def dashboard_frame(page: str, user: User,) -> None:
     """A frame for the user's main dashboard page."""
