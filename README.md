@@ -112,16 +112,16 @@ The application validates all user input (for example, usernames, task titles, d
 
 ### Database information:
 Core entities:
-- Users — people who log in and get assigned tasks
-- Projects — the top-level containers
-- Tasks — the actual work items inside projects
-- Assignments — links tasks to users (who's responsible)
+- User — people who log in and get assigned tasks
+- Project — the top-level containers
+- Task — the actual work items inside projects
+- Assignment — links tasks to users (who's responsible)
 - ProjectMember - links projects to users (who's owner)
 
 #### Schema:
 -------
 
-#### Users
+#### User
 
 	id          (PK)
 	username    (unique)
@@ -131,7 +131,7 @@ Core entities:
 	is_admin	(bool)
 	created_at
 
-#### Projects
+#### Project
 
 	id          (PK)
 	name
@@ -139,7 +139,7 @@ Core entities:
 	owner_id    (FK → Users.id)
 	created_at
 
-#### Tasks
+#### Task
 
 	id          (PK)
 	title
@@ -151,7 +151,7 @@ Core entities:
 	created_by  (FK → Users.id)
 	created_at
 
-#### Assignments
+#### Assignment
 
 	id          (PK)
 	task_id     (FK → Tasks.id)
