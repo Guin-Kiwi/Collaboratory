@@ -116,6 +116,7 @@ Core entities:
 - Projects — the top-level containers
 - Tasks — the actual work items inside projects
 - Assignments — links tasks to users (who's responsible)
+- ProjectMember - links projects to users (who's owner)
 
 #### Schema:
 -------
