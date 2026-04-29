@@ -18,6 +18,7 @@ def public_frame() -> None:
 
 def project_frame(page: str, user: User, project: Project) -> None:
     with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
+        ui.button("Add Collaborator")
         ui.label("Collaborators")
         with ui.column().props('w-full bordered separator'):
             if project and project.collaborator_memberships:
@@ -28,13 +29,16 @@ def project_frame(page: str, user: User, project: Project) -> None:
                         ui.label(membership.user.email).classes('text-sm text-grey')
 
     with ui.header(elevated=True).style('background-color: #3874c8').classes('items-center justify-between'):
-        ui.button('Logout')
-        ui.button('Dashboard')
-        ui.label(f"{project.name}").classes('text-3xl')
-        ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
+        with ui.row():
+            ui.button('Logout')
+            ui.button('Dashboard')
+        with ui.row():
+            ui.label(f"{project.name}").classes('text-3xl')
+            ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
 
     with ui.left_drawer().style('background-color: #d7e3f4'):
         with ui.column().props('dense separator'):
+            ui.button("Create Task")
             ui.label('Tasks')
             if project and project.tasks:
                 for task in project.tasks:
@@ -62,10 +66,12 @@ def task_frame(page: str, user: User, task: Task) -> None:
 
 
     with ui.header(elevated=True).style('background-color: #3874c8').classes('items-center justify-between'):
-        ui.button('Logout')
-        ui.button('Dashboard')
-        ui.label(f"{task.title}").classes('text-3xl')
-        ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
+        with ui.row():
+            ui.button('Logout')
+            ui.button('Dashboard')
+        with ui.row():
+            ui.label(f"{task.title}").classes('text-3xl')
+            ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
 
     with ui.left_drawer().style('background-color: #d7e3f4'):
         with ui.column().props('dense separator'):
@@ -94,10 +100,12 @@ def dashboard_frame(page: str, user: User,) -> None:
                     task = assignment.task
                     ui.link(f"{task.title}", f"/{task.id}")
 
-    with ui.header(elevated=True).style('background-color: #3874c8').classes('justify-between'):
-        ui.button('Logout')
-        ui.label("User Dashboard").classes("text-3xl")
-        ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')                        
+    with ui.header(elevated=True).style('background-color: #3874c8').classes("justify-between"):
+        with ui.row():
+            ui.button('Logout')
+        with ui.row():
+            ui.label(f"Hello, {user.name}!").classes("position-centre text-3xl")
+            ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')                      
 
     with ui.left_drawer().style('background-color: #d7e3f4'):
         with ui.column().props('dense separator'):
@@ -117,10 +125,12 @@ def dashboard_frame(page: str, user: User,) -> None:
                 for note in task.notes:
                     if note.author == user:
                         with ui.list().props('bordered separator').classes('w-full'):
-                            with ui.item():
+                            with ui.column().classes('w-full p-4'):
                                 ui.label(f"{note.content}")
-                                ui.label(f"{note.created_at}")
-
+                                with ui.row().classes('w-full justify-between'):
+                                    ui.label(f"{note.created_at}").classes('text-sm text-grey')
+                                                
+                    
 
 
 
