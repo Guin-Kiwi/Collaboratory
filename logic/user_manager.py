@@ -18,14 +18,34 @@ class UserManager:
         self.db.init()
         self.session = self.db.get_session()
 
-    def create_user(self):
-        pass
+    def create_user(self, username: str, password: str, is_admin: bool = False) -> User:
+        """Creates a new user with a hashed password."""
+        hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+        user = User(username=username, password=hashed.decode("utf-8"), is_admin=is_admin)
+        self.session.add(user)
+        self.session.commit()
+        return user
 
-    def delete_user(self):
-        pass
+    def delete_user(self, user_id: int) -> bool:
+        """Deletes a user by ID. Returns True if successful."""
+        user = self.get_user_by_id(user_id)
+        if user:
+            self.session.delete(user)
+            self.session.commit()
+            return True
+        return False
 
-    def update_user(self, username: str, password: str) -> User | None:
-        pass
+    def update_user(self, user_id: int, username: str = None, password: str = None) -> User | None:
+        """Updates username and/or password for a given user."""
+        user = self.get_user_by_id(user_id)
+        if not user:
+            return None
+        if username:
+            user.username = username
+        if password:
+            user.password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        self.session.commit()
+        return user
 
     def validate_login(self, username: str, password: str) -> User | None:
         """Returns the User object if credentials are valid, else None."""
