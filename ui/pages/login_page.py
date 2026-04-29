@@ -1,7 +1,8 @@
 # --- FOR UI DEVELOPERS ---
 # To run the app locally:
-#   python main.py
-# Then open your browser at: http://localhost:8080
+# To view this page locally:
+#   1. Run: python main.py
+#   2. Open: http://localhost:8080/
 #
 # This page handles login. Authentication is managed through AppState (logic/app_state.py).
 #

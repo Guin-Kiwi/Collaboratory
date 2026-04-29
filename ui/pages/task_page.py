@@ -1,8 +1,10 @@
-# --- FOR UI DEVELOPERS ---
-# To run the app locally:
-#   python main.py
-# Then open your browser at: http://localhost:8080/task/{task_id}
+# # --- FOR UI DEVELOPERS ---
+# To view this page locally:
+#   1. Run: python main.py
+#   2. Open: http://localhost:8080/task/1
+#      (replace 1 with any valid task ID from the seeded database)
 #
+# ...rest of the existing collab manager notes...
 # This page will need data from CollabManager (logic/collab_manager.py).
 # Create an instance with: manager = CollabManager()
 #
@@ -32,15 +34,15 @@
 from nicegui import ui
 
 from ui.view import BaseView
-from ui.layout import project_frame
+from ui.layout import task_frame
 from logic.app_state import app_state
 from database import db_conn
-from database.models import Task
+from database.models import Task, User
 
 
 class TaskPage(BaseView):
     def render(self, task: Task) -> None:
-        project_frame(page=task.title, user=app_state.get_current_user(), project=task.project)
+        task_frame(page=task.title, user=app_state.get_current_user(), task = task)
 
 
 @ui.page('/task/{task_id}')
@@ -50,4 +52,11 @@ def task(task_id: int) -> None:
     if task is None:
         ui.label('Task not found.')
         return
-    TaskPage().render(task)
+
+    # TODO: remove once login is wired up
+    # DEV BYPASS: auto-logs in as alice (admin user) so you can view this page directly.
+    # To test as a different user, comment out this block and go to http://localhost:8080 first.
+    if not app_state.is_authenticated():
+        alice = session.query(User).filter_by(username="alice").first()
+        app_state.login(alice)
+    TaskPage().render(task)  #keep this though

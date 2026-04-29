@@ -1,6 +1,7 @@
 # --- FOR UI DEVELOPERS ---
-# To run the app locally:
-#   python main.py
+# To view this page locally:
+#   1. Run: python main.py
+#   2. Open: http://localhost:8080
 # Then open your browser at: http://localhost:8080/project/<id>
 #
 # This page will need data from CollabManager (logic/collab_manager.py).
@@ -52,8 +53,11 @@ class ProjectPage(BaseView):
 def project(project_id: int) -> None:
     session = db_conn.get_session()
     proj = session.query(Project).filter_by(id=project_id).first()
+
     # TODO: remove once login is wired up
+    # DEV BYPASS: auto-logs in as alice (admin user) so you can view this page directly.
+    # To test as a different user, comment out this block and go to http://localhost:8080 first.
     if not app_state.is_authenticated():
         alice = session.query(User).filter_by(username="alice").first()
         app_state.login(alice)
-    ProjectPage().render(proj)
+    ProjectPage().render(proj) #keep this though

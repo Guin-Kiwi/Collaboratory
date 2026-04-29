@@ -1,7 +1,7 @@
 # --- FOR UI DEVELOPERS ---
 # To run the app locally:
-#   python main.py
-# Then open your browser at: http://localhost:8080/dashboard
+#   1. Run: python main.py
+#   2. Open: http://localhost:8080/dashboard
 #
 # This page will need data from CollabManager (logic/collab_manager.py).
 # Create an instance with: manager = CollabManager()
@@ -55,8 +55,10 @@ class DashboardPage(BaseView):
 @ui.page('/dashboard')
 def dashboard() -> None:
     # TODO: remove once login is wired up
+    # DEV BYPASS: auto-logs in as alice (admin user) so you can view this page directly.
+    # To test as a different user, comment out this block and go to http://localhost:8080 first.
     if not app_state.is_authenticated():
         session = db_conn.get_session()
         alice = session.query(User).filter_by(username="alice").first()
         app_state.login(alice)
-    DashboardPage().render()
+    DashboardPage().render() #keep this though
