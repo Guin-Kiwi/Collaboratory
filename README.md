@@ -77,19 +77,19 @@ Maximum roles Collaboratory Admin and Owner or Collaborator of a Project, and As
 > Users with `is_admin = true` have Owner-level access across all projects.
 > This is a simple override for recovery/admin purposes, not a normal role.
 
-| Action                         | Owner | Assignee | * Collaborator |
-|--------------------------------|-------|----------|---------------|
-| View project & tasks           | ✅    | ✅       | ✅            |
-| Create task                    | ✅    | —        | ✅             |
-| Assign task to user            | ✅    | —        | ✅             |
-| Edit task details              | ✅    | —        | ✅             |
-| Change task status             | —     | ✅       | —              |
-| Delete task                    | ✅    | —        | —              |
-| Add/remove collaborators       | ✅    | —        | —              |
-*| Add Project Note              | ✅    | —        | ✅             |
-*| View Project Notes            | ✅    | ✅       |✅             |
-*| Add Task Note                 | —     | ✅       | —              |
-*| View Task Note s              | ✅    | ✅       | ✅            |
+| Action                        | Owner | Assignee | * Collaborator |
+|-------------------------------|-------|----------|---------------|
+| View project & tasks          | ✅    | ✅       | ✅            |
+| Create task                   | ✅    | —        | ✅             |
+| Assign task to user           | ✅    | —        | ✅             |
+| Edit task details             | ✅    | —        | ✅             |
+| Change task status            | —     | ✅       | —              |
+| Delete task                   | ✅    | —        | —              |
+| Add/remove collaborators      | ✅    | —        | —              |
+| Add Project Note              | ✅    | —        | ✅             |
+| View Project Notes            | ✅    | ✅       |✅             |
+| Add Task Note                 | —     | ✅       | —              |
+| View Task Notes               | ✅    | ✅       | ✅            |
 
 ---
 
