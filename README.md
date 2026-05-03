@@ -19,57 +19,77 @@ This project is intended to:
 ### Scenario
 
 
-### User stories: stakeholder (for whom?), functionality (what do they want?), benefit (why is it useful?)
+## User Stories
 
-## Standard User
+### Owner
 
-1. As a standard user, I want to create a new task.
-2. As a standard user, I want to edit my own tasks so that I can update the description if requirements change.
-3. As a standard user, I want to see the status of my tasks so that I know whether they are still open, in progress or completed.
-4. As a standard user, I want to assign a task to a specific user so that responsibility for the task is clear.
-5. As a standard user, I want to upload additional files or information to a task so that I can provide more details.
+1. As an Owner, I want to create a new project so that I can organise tasks for my team in one place.
+2. As an Owner, I want to manage collaborators so that I can control who has access to the project.
+3. As an Owner, I want to create and assign tasks so that work is clearly distributed.
+4. As an Owner, I want to edit and delete tasks so that the project stays organised and up to date.
+5. As an Owner, I want to add and view project notes so that important information is documented and accessible.
 
-## Assignee User
+### Assignee
 
-6. As an assignee, I want to change the status of a task from "To Do" to "In Progress" and "Completed". So the team and the standard user knows the progress of the task.
-7. As an assignee, I want to view tasks assigned to me so that I know which tasks I am responsible for.
-8. As an assignee, I want to add comments or updates to a task so that I can communicate progress or issues with the team.
-9. As an assignee, I want to receive updates when a task assigned to me is edited so that I stay informed about changes.
+1. As an Assignee, I want to view projects and tasks so that I understand my responsibilities clearly.
+2. As an Assignee, I want to update the status of my tasks so that I can show my progress.
+3. As an Assignee, I want to add and view task notes so that I can share updates and understand task context.
 
-## Administrator User
+### Collaborator
 
-10. As an administrator, I want to delete any task so I can remove spam, duplicates or invalid tasks.
-11. As an administrator, I want to reassign tasks between users so that workload can be balanced across the team.
+1. As a Collaborator, I want to view projects and tasks so that I can support the Owner.
+2. As a Collaborator, I want to create and edit tasks so that I can help organise the project work.
+3. As a Collaborator, I want to assign tasks to users so that work is distributed effectively.
+4. As a Collaborator, I want to add and view project notes so that important information is shared within the team.
 
+## Use Case Diagram – Collaboratory
 
-### Use cases: 
+![Use Case Diagram](usecase_collaboratory.png)
 
-> 🚧 Name actors and briefly describe each use case. Ideally, a UML use case diagram specifies use cases and relationships.
+### Main Use Cases
 
-![UML Use Case Diagram](docs/architecture-diagrams/uml_use_case_diagram.png)
+- **View Projects & Tasks**: Users can view projects and tasks they have access to.
+- **Manage Tasks**: Tasks can be created, edited, and assigned within a project.
+- **Delete Task**: The Owner can remove tasks.
+- **Manage Collaborators**: The Owner adds or removes collaborators.
+- **Change Task Status**: Assignees update the progress of tasks.
+- **Add & View Project Notes**: Owners and Collaborators document project information.
+- **Add & View Task Notes**: Assignees add updates or comments to tasks.
 
-**Use cases**
+### Actors
 
-## Use Case 1 - Standard user
-- Create Task
-- Edit own task
-- Upload additional informations or files
-- View task status
+- **Owner**: Creates and manages projects, tasks, collaborators, and project notes.
+- **Collaborator**: Supports the Owner by managing tasks and project notes.
+- **Assignee**: Works on assigned tasks and updates their status.
 
-## Use Case 2 - Assignee
-- View assigned tasks
-- Change task status "To Do" - "In Progress" - "Completed"
-- Add comments or updates
-- Receive Updates when task is edited
+## Roles & Permissions
 
-## Use Case 3 - Administrator
-- Delete Task
-- Reassign tasks between users
+A user's role is specific to each project — it depends on their relationship
+to that project, not a global setting. Users can be Owners or Collaborators, as well as Assignees and Admins.
+Maximum roles Collaboratory Admin and Owner or Collaborator of a Project, and Assigned to a Project's Task.
 
-**Actors**
-- Standard user (creates a task)
-- Assignee (works on assigned tasks and updates progress)
-- Administrator (manages tasks and balances workload)
+| Role | How you get it |
+|---|---|
+| **Owner** | You created the project |
+| **Assignee** | You have been assigned to at least one task in the project |
+| **\* Collaborator** | The Owner added you to the project |
+
+> Users with `is_admin = true` have Owner-level access across all projects.
+> This is a simple override for recovery/admin purposes, not a normal role.
+
+| Action                         | Owner | Assignee | * Collaborator |
+|--------------------------------|-------|----------|---------------|
+| View project & tasks           | ✅    | ✅       | ✅            |
+| Create task                    | ✅    | —        | ✅             |
+| Assign task to user            | ✅    | —        | ✅             |
+| Edit task details              | ✅    | —        | ✅             |
+| Change task status             | —     | ✅       | —              |
+| Delete task                    | ✅    | —        | —              |
+| Add/remove collaborators       | ✅    | —        | —              |
+*| Add Project Note              | ✅    | —        | ✅             |
+*| View Project Notes            | ✅    | ✅       |✅             |
+*| Add Task Note                 | —     | ✅       | —              |
+*| View Task Note s              | ✅    | ✅       | ✅            |
 
 ---
 
