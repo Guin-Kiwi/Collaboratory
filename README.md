@@ -183,6 +183,10 @@ Core entities:
 	project_id  (FK → Projects.id)
 	user_id     (FK → Users.id)
 
+#### Entity Relationship Diagram
+
+<img width="4440" height="1941" alt="erdplus (1)" src="https://github.com/user-attachments/assets/3c824994-f82c-4f1c-aa92-bbefdf25160c" />
+
 ### Architecture
 
 This application follows a 3-tier architecture:
