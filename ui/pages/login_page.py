@@ -29,11 +29,48 @@ from nicegui import ui
 
 from ui.view import BaseView
 from ui.layout import public_frame
+from logic.app_state import app_state
+from logic.user_manager import UserManager
 
 
 class LoginPage(BaseView):
+
+    def __init__(self):
+        super().__init__(service=UserManager())
+
     def render(self) -> None:
         public_frame()
+
+        error_label = ui.label("").classes("text-red text-sm")
+
+        def handle_login():
+            username = username_input.value.strip()
+            password = password_input.value.strip()
+
+            if not username or not password:
+                error_label.set_text("Please fill in both fields.")
+                return
+
+            user = self._service.validate_login(username, password)
+
+            if user:
+                app_state.login(user)
+                ui.navigate.to("/dashboard")
+            else:
+                error_label.set_text("Invalid username or password.")
+
+        username_input = ui.input("Username") \
+            .props('bordered') \
+            .classes('border border-solid border-gray-400 rounded') \
+            .style("background-color: #FFFFFF")
+
+        password_input = ui.input("Password", password=True) \
+            .props('bordered') \
+            .classes('border border-solid border-gray-400 rounded') \
+            .style("background-color: #FFFFFF")
+
+        ui.button("Login", on_click=handle_login)
+        error_label
 
 
 @ui.page('/')
