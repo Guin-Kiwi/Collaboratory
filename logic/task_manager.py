@@ -17,6 +17,7 @@ class TaskManager:
 
     def __init__(self):
         self.db = DatabaseConnection()
+        self.db.init()
         self.session = self.db.get_session()
 
     def create_task(self, user: User, project: Project, title: str, description: str, due_date: datetime | None, priority: str, status: str,) -> Task:
