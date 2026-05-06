@@ -3,18 +3,18 @@ from nicegui import ui
 from database.models import User, Task, Project, Assignment
 
 
-def public_frame() -> None:
+def public_frame(on_login=None, on_signup_open=None) -> None:
     with ui.header(elevated=True).style('background-color: #3874c8').classes('justify-between'):
         ui.label("Collaboratory").classes("text-3xl")
         ui.label('"where collaboration thrives"').classes("text-2xl italic")
     with ui.column().classes("w-full items-center mx-auto"):
         with ui.card().style('background-color: #d7e3f4').classes("items-center"):
             ui.label("Login or Sign Up").classes("font-bold text-2xl text-center")
-            ui.input("Username").props('bordered').classes('border border-solid border-gray-400 rounded justify-center').style("background-color: #FFFFFF")
-            ui.input("Password", password = True).props('bordered').classes('border border-solid border-gray-400 rounded justify-center').style("background-color: #FFFFFF")
-            ui.button("Login")
-            ui.button("Sign Up")
-
+            username_input = ui.input("Username").props('bordered').classes('border border-solid border-gray-400 rounded justify-center').style("background-color: #FFFFFF")
+            password_input = ui.input("Password", password=True).props('bordered').classes('border border-solid border-gray-400 rounded justify-center').style("background-color: #FFFFFF")
+            error_label = ui.label("").classes("text-red text-sm")
+            ui.button("Login", on_click=lambda: on_login(username_input.value, password_input.value, error_label) if on_login else None)
+            ui.button("Sign Up", on_click=lambda: on_signup_open() if on_signup_open else None)
 
 def project_frame(page: str, user: User, project: Project) -> None:
     with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:

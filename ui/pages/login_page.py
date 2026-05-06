@@ -25,6 +25,8 @@
 #   Add any extra ui elements after the call and they will appear in the main body.
 # -------------------------
 
+# ui/login_page.py
+
 from nicegui import ui
 
 from ui.view import BaseView
@@ -39,19 +41,80 @@ class LoginPage(BaseView):
         super().__init__(service=UserManager())
 
     def render(self) -> None:
-        public_frame()
 
-        error_label = ui.label("").classes("text-red text-sm")
+        # --- signup dialog ---
+        with ui.dialog() as signup_dialog, ui.card().style('background-color: #d7e3f4').classes("items-center"):
+            ui.label("Create an Account").classes("font-bold text-2xl text-center")
 
-        def handle_login():
-            username = username_input.value.strip()
-            password = password_input.value.strip()
+            signup_name = ui.input("Full Name") \
+                .props('bordered') \
+                .classes('border border-solid border-gray-400 rounded') \
+                .style("background-color: #FFFFFF")
 
+            signup_email = ui.input("Email") \
+                .props('bordered') \
+                .classes('border border-solid border-gray-400 rounded') \
+                .style("background-color: #FFFFFF")
+
+            signup_username = ui.input("Username") \
+                .props('bordered') \
+                .classes('border border-solid border-gray-400 rounded') \
+                .style("background-color: #FFFFFF")
+
+            signup_password = ui.input("Password", password=True) \
+                .props('bordered') \
+                .classes('border border-solid border-gray-400 rounded') \
+                .style("background-color: #FFFFFF")
+
+            signup_confirm = ui.input("Confirm Password", password=True) \
+                .props('bordered') \
+                .classes('border border-solid border-gray-400 rounded') \
+                .style("background-color: #FFFFFF")
+
+            signup_is_admin = ui.checkbox("Register as Admin")
+
+            signup_error = ui.label("").classes("text-red text-sm")
+
+            def handle_signup():
+                name = signup_name.value.strip()
+                email = signup_email.value.strip()
+                username = signup_username.value.strip()
+                password = signup_password.value.strip()
+                confirm = signup_confirm.value.strip()
+                is_admin = signup_is_admin.value
+
+                if not name or not email or not username or not password or not confirm:
+                    signup_error.set_text("Please fill in all fields.")
+                    return
+
+                if "@" not in email or "." not in email:
+                    signup_error.set_text("Please enter a valid email.")
+                    return
+
+                if password != confirm:
+                    signup_error.set_text("Passwords do not match.")
+                    return
+
+                if self._service.user_exists(username):
+                    signup_error.set_text("Username already taken.")
+                    return
+
+                user = self._service.create_user(username, password, name, email, is_admin)
+                app_state.login(user)
+                signup_dialog.close()
+                ui.navigate.to("/dashboard")
+
+            with ui.row():
+                ui.button("Create Account", on_click=handle_signup)
+                ui.button("Cancel", on_click=signup_dialog.close).props('flat')
+
+        # --- login handler ---
+        def handle_login(username, password, error_label):
             if not username or not password:
                 error_label.set_text("Please fill in both fields.")
                 return
 
-            user = self._service.validate_login(username, password)
+            user = self._service.validate_login(username.strip(), password.strip())
 
             if user:
                 app_state.login(user)
@@ -59,18 +122,7 @@ class LoginPage(BaseView):
             else:
                 error_label.set_text("Invalid username or password.")
 
-        username_input = ui.input("Username") \
-            .props('bordered') \
-            .classes('border border-solid border-gray-400 rounded') \
-            .style("background-color: #FFFFFF")
-
-        password_input = ui.input("Password", password=True) \
-            .props('bordered') \
-            .classes('border border-solid border-gray-400 rounded') \
-            .style("background-color: #FFFFFF")
-
-        ui.button("Login", on_click=handle_login)
-        error_label
+        public_frame(on_login=handle_login, on_signup_open=signup_dialog.open)
 
 
 @ui.page('/')
