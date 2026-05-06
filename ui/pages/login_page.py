@@ -41,6 +41,9 @@ class LoginPage(BaseView):
         super().__init__(service=UserManager())
 
     def render(self) -> None:
+        if app_state.is_authenticated():
+            ui.navigate.to("/dashboard")
+            return
 
         # --- signup dialog ---
         with ui.dialog() as signup_dialog, ui.card().style('background-color: #d7e3f4').classes("items-center"):
