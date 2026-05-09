@@ -7,7 +7,6 @@ from nicegui import ui
 from sqlalchemy.orm import Session
 
 #from database import db
-from ui.layout import public_frame
 from logic import task_manager, user_manager, permissions_manager, app_state
 from database.models import User, Project, Task
 

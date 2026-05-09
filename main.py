@@ -17,7 +17,7 @@ from __future__ import annotations
 from database.connection import DatabaseConnection
 from logic import app_state
 from nicegui import ui
-import ui.pages
+import ui.pages as pages
 
 def main() -> None:
     """Initialise each layer and register NiceGUI routes."""

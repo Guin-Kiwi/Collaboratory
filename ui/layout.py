@@ -3,6 +3,76 @@ from database.models import User, Project, Task
 from logic.app_state import app_state
 from ui.view import BaseView
 
+
+def public_frame(on_login, on_signup_open) -> None:
+    """Helper to render the login form. Colleagues don't need to edit this."""
+    with ui.column().classes("w-full items-center mx-auto"):
+        with ui.card().style('background-color: #d7e3f4').classes("items-center"):
+            ui.label("Login or Sign Up").classes("font-bold text-2xl text-center")
+            username_input = ui.input("Username").props('bordered').classes('border border-solid border-gray-400 rounded justify-center').style("background-color: #FFFFFF")
+            password_input = ui.input("Password", password=True).props('bordered').classes('border border-solid border-gray-400 rounded justify-center').style("background-color: #FFFFFF")
+            error_label = ui.label("").classes("text-red text-sm")
+            
+            with ui.row():
+                ui.button("Login", on_click=lambda: on_login(username_input.value, password_input.value, error_label))
+                ui.button("Sign Up", on_click=on_signup_open)
+
+
+## TO be removed
+def task_frame(page, user, task) -> None:
+    with ui.column().classes('w-full p-4 gap-2'):
+        ui.label(page).classes('text-2xl font-bold')
+        if user is not None:
+            ui.label(f'Logged in as {user.username}').classes('text-sm text-grey')
+        if task is not None and getattr(task, 'project', None) is not None:
+            ui.label(f'Project: {task.project.name}').classes('text-sm text-grey')
+
+
+class UnauthenticatedFrame(BaseView):
+    """Base frame for unauthenticated pages. 
+    
+    implement on_login(), on_signup_open(), and render_content().
+    You can call public_frame() in render_content() or comment it out to use built-in form.
+    """
+
+    def render(self) -> None:
+        if app_state.is_authenticated():
+            ui.navigate.to('/dashboard')
+            return
+        
+        # Render the public header
+        with ui.header(elevated=True).style('background-color: #3874c8').classes('justify-between'):
+            ui.label("Collaboratory").classes("text-3xl font-bold")
+            ui.label('"where collaboration thrives"').classes("text-2xl italic")
+        
+        # Render the login form (new built-in way)
+        with ui.column().classes("w-full items-center mx-auto"):
+            with ui.card().style('background-color: #d7e3f4').classes("items-center"):
+                ui.label("Login or Sign Up").classes("font-bold text-2xl text-center")
+                username_input = ui.input("Username").props('bordered').classes('border border-solid border-gray-400 rounded justify-center').style("background-color: #FFFFFF")
+                password_input = ui.input("Password", password=True).props('bordered').classes('border border-solid border-gray-400 rounded justify-center').style("background-color: #FFFFFF")
+                error_label = ui.label("").classes("text-red text-sm")
+                
+                with ui.row():
+                    ui.button("Login", on_click=lambda: self.on_login(username_input.value, password_input.value, error_label))
+                    ui.button("Sign Up", on_click=lambda: self.on_signup_open())
+        
+        # Subclasses render additional content (e.g., signup dialog, or call public_frame())
+        self.render_content()
+
+    def on_login(self, username: str, password: str, error_label) -> None:
+        """Override this to handle login."""
+        raise NotImplementedError("Subclasses must implement on_login()")
+
+    def on_signup_open(self) -> None:
+        """Override this to handle signup dialog opening."""
+        raise NotImplementedError("Subclasses must implement on_signup_open()")
+
+    def render_content(self) -> None:
+        """Override this to render additional content (e.g., signup dialog)."""
+        pass  # Default: no additional content
+
+
 class AuthenticatedFrame(BaseView):
 
     def __init__(self, user: User) -> None:
