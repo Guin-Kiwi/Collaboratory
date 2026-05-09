@@ -2,6 +2,10 @@ from nicegui import ui
 from database.models import User, Project, Task
 from logic.app_state import app_state
 from ui.view import BaseView
+from database.connection import DatabaseConnection
+from logic.permissions_manager import check_permission, PermissionAction, PermissionDenied
+from logic.project_manager import ProjectManager
+from logic.collab_manager import CollabManager
 
 
 def public_frame(on_login, on_signup_open) -> None:
@@ -108,6 +112,7 @@ class NoteableFrame(AuthenticatedFrame):
                 ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
 
     def render_notes(self, notes) -> None:
+        ui.button('Manage Notes', on_click=self.on_manage_notes)
         for note in notes:
             with ui.list().props('bordered separator').classes('w-full'):
                 with ui.column().classes('w-full p-4'):
@@ -115,9 +120,21 @@ class NoteableFrame(AuthenticatedFrame):
                     with ui.row().classes('w-full justify-between'):
                         ui.label(note.author.username).classes('text-sm text-grey')
                         ui.label(str(note.created_at)).classes('text-sm text-grey')
-        ui.button('Create Note', on_click=self.on_create_note)
+                    # If the current user authored this note, show an Edit button.
+                    # The frame only decides whether to show the button and
+                    # delegates the edit action to the page via `on_edit_note`.
+                    if self.user and getattr(note, 'created_by', None) == self.user.id:
+                        ui.button('Edit', on_click=lambda _=None, n=note: self.on_edit_note(n)).classes('ml-2')
+        # Floating sticky create button for long pages — preserves original UX
+        with ui.page_sticky(x_offset=18, y_offset=18):
+            ui.button('Create Note', on_click=self.on_create_note).props('fab')
 
     def on_create_note(self) -> None:
+        raise NotImplementedError
+
+    def on_edit_note(self, note) -> None:
+        """Called when the user clicks Edit on a note. Pages should override
+        this to open an edit dialog and perform the update via managers."""
         raise NotImplementedError
 
     def render_content(self) -> None:
@@ -150,10 +167,32 @@ class DashboardFrame(AuthenticatedFrame):
         with ui.left_drawer().style('background-color: #d7e3f4'):
             with ui.column().props('dense separator'):
                 ui.button('Create Project', on_click=self.on_create_project)
-                ui.label('Projects')
-                if self.user and self.user.owned_projects:
-                    for proj in self.user.owned_projects:
+                # Show owned projects and collaborations separately so that
+                # users who are collaborators (but not owners) see their projects.
+                pm = ProjectManager()
+                owned_projects = []
+                collab_projects = []
+                try:
+                    if self.user:
+                        owned_projects = pm.session.query(Project).filter_by(owner_id=self.user.id).all()
+                        collab_projects = pm.get_projects_by_user(self.user.id)
+                except Exception:
+                    owned_projects = []
+                    collab_projects = []
+
+                ui.label('Owned Projects')
+                if owned_projects:
+                    for proj in owned_projects:
                         ui.link(proj.name, f'/project/{proj.id}')
+                else:
+                    ui.label('—').classes('text-sm text-grey')
+
+                ui.label('Collaborations')
+                if collab_projects:
+                    for proj in collab_projects:
+                        ui.link(proj.name, f'/project/{proj.id}')
+                else:
+                    ui.label('—').classes('text-sm text-grey')
 
         with ui.column().classes('items-center mx-auto p-4'):
             ui.label('Welcome to your dashboard!')
@@ -175,21 +214,32 @@ class ProjectFrame(NoteableFrame):
 
     def render_content(self) -> None:
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
-            ui.button('Add Collaborator', on_click=self.on_add_collaborator)
+            # Only show Manage Collaborators to users who may add collaborators
+            db = DatabaseConnection()
+            db.init()
+            session = db.get_session()
+            try:
+                can_manage_collabs = check_permission(self.user, PermissionAction.ADD_COLLABORATOR, session, project=self.project)
+            except Exception:
+                can_manage_collabs = False
+            if can_manage_collabs:
+                ui.button('Manage Collaborators', on_click=self.on_manage_collaborators)
             ui.label('Collaborators')
             with ui.column().props('w-full bordered separator'):
                 if self.project.collaborator_memberships:
                     for membership in self.project.collaborator_memberships:
                         with ui.card().classes('w-full p-2'):
-                            ui.label(membership.user.username).classes('font-bold')
-                            ui.label(membership.user.name).classes('text-sm text-grey')
-                            ui.label(membership.user.email).classes('text-sm text-grey')
+                            with ui.row().classes('items-center justify-between'):
+                                with ui.column():
+                                    ui.label(membership.user.username).classes('font-bold')
+                                    ui.label(membership.user.name).classes('text-sm text-grey')
+                                    ui.link(membership.user.email, f'mailto:{membership.user.email}').classes('text-sm text-grey')
 
         self.render_header(self.project.name, right_drawer)
 
         with ui.left_drawer().style('background-color: #d7e3f4'):
             with ui.column().props('dense separator'):
-                ui.button('Create Task', on_click=self.on_create_task)
+                ui.button('Add or Remove Tasks', on_click=self.on_manage_tasks)
                 ui.label('Tasks')
                 if self.project.tasks:
                     for task in self.project.tasks:
@@ -198,7 +248,14 @@ class ProjectFrame(NoteableFrame):
         with ui.column().classes('items-center mx-auto p-4'):
             ui.label(self.project.name)
             ui.label(self.project.description or '')
-            self.render_notes(self.project.notes)
+            # Load notes through the CollabManager to ensure they are bound
+            # to an active session and avoid DetachedInstanceError.
+            cm = CollabManager()
+            try:
+                notes = cm.view_project_note(self.user, self.project.id) or []
+            except Exception:
+                notes = []
+            self.render_notes(notes)
 
 class TaskFrame(NoteableFrame):
 
@@ -214,7 +271,7 @@ class TaskFrame(NoteableFrame):
 
     def render_content(self) -> None:
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
-            ui.button('Assign User to Task', on_click=self.on_assign_user)
+            ui.button('Manage Assignees', on_click=self.on_manage_assignees)
             ui.label('Users Assigned to Tasks')
             with ui.column().props('bordered separator'):
                 if self.task.assignments:
@@ -229,4 +286,9 @@ class TaskFrame(NoteableFrame):
                 ui.label(self.task.description or '')
 
         with ui.column().classes('items-center mx-auto p-4'):
-            self.render_notes(self.task.notes)
+            cm = CollabManager()
+            try:
+                notes = cm.view_task_note(self.user, self.task.id) or []
+            except Exception:
+                notes = []
+            self.render_notes(notes)

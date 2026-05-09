@@ -15,6 +15,7 @@ from __future__ import annotations
 from pathlib import Path
 import datetime
 import logging
+import bcrypt
 
 from database.connection import DatabaseConnection
 from database.models import Assignment, Project, Task, User
@@ -39,12 +40,40 @@ def seed_data(db: DatabaseConnection) -> None:
     with db.get_session() as session:
 
         # --- Users ---
+        def hash_pw(raw_password: str) -> str:
+            return bcrypt.hashpw(raw_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+# --- Users ---
         log.info("Creating sample users")
         users = [
-            User(username="alice", name="Alice Nguyen",  email="alice@example.com",  password="pw_alice",  is_admin=True),
-            User(username="bob",   name="Bob Okafor",    email="bob@example.com",    password="pw_bob"),
-            User(username="carol", name="Carol Petrov",  email="carol@example.com",  password="pw_carol"),
-            User(username="dan",   name="Dan Kwesi",     email="dan@example.com",    password="pw_dan"),
+            User(
+                username="admin",
+                name="Admin User",
+                email="admin@example.com",
+                password=hash_pw("admin"),
+                is_admin=True,
+            ),
+            User(
+                username="bob",
+                name="Bob Okafor",
+                email="bob@example.com",
+                password=hash_pw("bob"),
+                is_admin=False,
+            ),
+            User(
+                username="carol",
+                name="Carol Petrov",
+                email="carol@example.com",
+                password=hash_pw("carol"),
+                is_admin=False,
+            ),
+            User(
+                username="dan",
+                name="Dan Kwesi",
+                email="dan@example.com",
+                password=hash_pw("dan"),
+                is_admin=False,
+            ),
         ]
         session.add_all(users)
         session.flush()

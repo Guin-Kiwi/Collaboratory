@@ -136,12 +136,16 @@ class CollabManager:
         if not target_note:
             return False
 
-        if not (target_note.created_by == user.id
-            or user.is_admin
-            or project.owner_id == user.id
-        ):
-            return False
+        # Allow authors to delete their own notes without requiring the broader
+        # DELETE_PROJECT_NOTE permission check. For others, fall back to the
+        # permissions manager (admins / owners / collaborators will be allowed
+        # there).
+        if target_note.created_by == user.id:
+            self.session.delete(target_note)
+            self.session.commit()
+            return True
 
+        # Non-authors must pass the permissions manager
         require_permission(user, PermissionAction.DELETE_PROJECT_NOTE, self.session, project = project)
         self.session.delete(target_note)
         self.session.commit()
@@ -199,11 +203,13 @@ class CollabManager:
         if not target_note:
             return False
 
-        if not (target_note.created_by == user.id
-            or user.is_admin
-        ):
-            return False
+        # Allow the note author to delete their own task note directly.
+        if target_note.created_by == user.id:
+            self.session.delete(target_note)
+            self.session.commit()
+            return True
 
+        # Otherwise require the permission (admins / owners / assignees handled there)
         require_permission(user, PermissionAction.DELETE_TASK_NOTE, self.session, task = task)
         self.session.delete(target_note)
         self.session.commit()
