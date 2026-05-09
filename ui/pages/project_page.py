@@ -1,63 +1,58 @@
 # --- FOR UI DEVELOPERS ---
-# To view this page locally:
+# To run the app locally:
 #   1. Run: python main.py
-#   2. Open: http://localhost:8080
-# Then open your browser at: http://localhost:8080/project/<id>
+#   2. Log in at http://localhost:8080, then navigate to a project.
 #
-# This page will need data from CollabManager (logic/collab_manager.py).
-# Create an instance with: manager = CollabManager()
+# This page inherits ProjectFrame from ui/layout.py.
+# Override these action methods:
 #
-# Useful calls for the project page:
+#   def on_create_task(self) -> None:
+#       called when "Create Task" is clicked in the left drawer
+#
+#   def on_add_collaborator(self) -> None:
+#       called when "Add Collaborator" is clicked in the right drawer
+#       owner only — CollabManager will raise PermissionDenied if not allowed
+#
+#   def on_create_note(self) -> None:
+#       called when "Create Note" is clicked in the body
+#
+# Data available in your methods:
+#   self.user     — the logged-in User object
+#   self.project  — the current Project object
+#
+# Useful manager calls (CollabManager from logic/collab_manager.py):
 #   manager.view_collaborators(user, project_id)
-#       -> list of users who are collaborators on a given project
 #   manager.add_collaborator(user, project_id, user_id)
-#       -> adds a collaborator (owner only — will raise PermissionDenied if not allowed)
 #   manager.remove_collaborator(user, project_id, user_id)
-#       -> removes a collaborator (owner only)
-#   manager.view_project_note(user, project_id)
-#       -> list of notes on a project (owners and collaborators only)
 #   manager.create_project_note(user, project_id, content)
-#       -> add a note to a project (owners and collaborators only)
 #   manager.edit_project_note(user, project_id, pnote_id, content)
-#       -> only the original author of the note can edit it
 #   manager.delete_project_note(user, project_id, pnote_id)
-#       -> the note author, project owner, or admin can delete it
-#
-# The logged-in user is always available via: app_state.get_current_user()
-#
-# FRAME:
-#   This page uses project_frame(page, user, project) from ui/layout.py.
-#   Call it at the top of render() — it builds the header, left drawer (project tasks),
-#   and right drawer (owned projects).
-#   Add any extra ui elements after the call and they will appear in the main body area.
-#   Example:
-#       project_frame(page="Project", user=app_state.get_current_user(), project=proj)
-#       ui.label("This appears in the main content area")
-# -------------------------
+
 
 from nicegui import ui
+from database import db_conn                # route function: fetch project
+from database.models import Project         # route function: query type
+from logic.app_state import app_state       # route function: get_current_user()
+from logic.collab_manager import CollabManager   # on_create_note(), on_add_collaborator()
+from logic.task_manager import TaskManager       # on_create_task()
+from logic.user_manager import UserManager       # on_add_collaborator(): find user by username
+from ui.layout import ProjectFrame
 
-from ui.view import BaseView
-from ui.layout import project_frame
-from logic.app_state import app_state
-from database import db_conn
-from database.models import User, Project
-
-
-class ProjectPage(BaseView):
-    def render(self, proj: Project) -> None:
-        project_frame(page="Project", user=app_state.get_current_user(), project=proj)
+class ProjectPage(ProjectFrame):
+    def on_create_task(self) -> None: ...
+    def on_add_collaborator(self) -> None: ...
+    def on_create_note(self) -> None: ...
+    def on_create_task(self) -> None: ...    # "Create Task" button function, left drawer
+    def on_add_collaborator(self) -> None: ...# "Add Collaborator" button function, right drawer
+    def on_create_note(self) -> None: ...     # "Create Note" button function, body (via render_notes)
 
 
 @ui.page('/project/{project_id}')
+
 def project(project_id: int) -> None:
+
     session = db_conn.get_session()
+
     proj = session.query(Project).filter_by(id=project_id).first()
 
-    # TODO: remove once login is wired up
-    # DEV BYPASS: auto-logs in as alice (admin user) so you can view this page directly.
-    # To test as a different user, comment out this block and go to http://localhost:8080 first.
-    if not app_state.is_authenticated():
-        alice = session.query(User).filter_by(username="alice").first()
-        app_state.login(alice)
-    ProjectPage().render(proj) #keep this though
+    ProjectPage(app_state.get_current_user(), proj).render()

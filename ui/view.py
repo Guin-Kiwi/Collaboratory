@@ -33,4 +33,4 @@ class BaseView:
         self._service = service
 
     def render(self) -> None:
-           public_frame()
+        raise NotImplementedError("Subclasses must implement the render() method.")
