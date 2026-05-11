@@ -44,6 +44,16 @@ class TaskManager:
         require_permission(user, PermissionAction.VIEW_TASK, self.session, project = project, task = task) 
         return task
 
+    def get_task_project(self, task_id: int) -> Project | None:
+        """Get the project of a task"""
+
+        task = self.session.query(Task).filter_by(id=task_id).first()
+
+        if not task:
+            return None
+
+        return task.project
+
     def get_tasks_by_user(self, user: User, project: Project, user_id: int) -> list[Task]:
         """Get all tasks of a user"""
         require_permission(user, PermissionAction.VIEW_TASK, self.session, project = project) 
