@@ -212,8 +212,13 @@ def task(task_id: int):
         ui.label("Task not found")
         return
 
+    # FIX:
+    # fetch project before calling get_task_by_id
     project = raw_task.project
 
+    # FIX:
+    # use route parameter task_id instead of task.id
+    # and pass required project argument
     loaded_task = task_manager.get_task_by_id(
         user=user,
         project=project,
