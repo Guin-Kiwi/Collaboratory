@@ -56,9 +56,10 @@ class TaskManager:
 
     def get_tasks_by_user(self, user: User, project: Project, user_id: int) -> list[Task]:
         """Get all tasks of a user"""
-        require_permission(user, PermissionAction.VIEW_TASK, self.session, project = project) 
+        require_permission(user, PermissionAction.VIEW_PROJECT, self.session, project=project)
+
         return self.session.query(Task).join(Assignment).filter(
-            Assignment.user_id == user_id
+        Assignment.user_id == user_id
         ).all()
 
     def update_task(self, user: User, project: Project, task_id: int, title: str, description: str,) -> bool:

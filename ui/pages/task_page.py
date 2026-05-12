@@ -13,7 +13,7 @@ from logic.app_state import app_state
 from logic.task_manager import TaskManager
 from logic.collab_manager import CollabManager
 from database import db_conn
-from database.models import User, Project, Task
+from database.models import Task
 
 
 class TaskPage(BaseView):
@@ -212,13 +212,8 @@ def task(task_id: int):
         ui.label("Task not found")
         return
 
-    # FIX:
-    # fetch project before calling get_task_by_id
     project = raw_task.project
 
-    # FIX:
-    # use route parameter task_id instead of task.id
-    # and pass required project argument
     loaded_task = task_manager.get_task_by_id(
         user=user,
         project=project,
