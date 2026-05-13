@@ -20,32 +20,44 @@
 # See dashboard_page.py for what becomes available once the user is authenticated.
 #
 # FRAME:
-#   This page uses public_frame() from ui/layout.py.
-#   Call it at the top of render() — it builds the header and login card shell.
-#   Add any extra ui elements after the call and they will appear in the main body.
+#   This page uses UnauthenticatedFrame from ui/layout.py.
+#   Implement on_login(), on_signup_open(), and render_content().
 # -------------------------
 
 # ui/login_page.py
 
 from nicegui import ui
 
-from ui.view import BaseView
-from ui.layout import public_frame
+from ui.layout import UnauthenticatedFrame
 from logic.app_state import app_state
 from logic.user_manager import UserManager
 
 
-class LoginPage(BaseView):
+class LoginPage(UnauthenticatedFrame):
 
     def __init__(self):
-        super().__init__(service=UserManager())
+        self._service = UserManager()
+        self._signup_dialog = None
 
-    def render(self) -> None:
-        if app_state.is_authenticated():
-            ui.navigate.to("/dashboard")
+    def on_login(self, username: str, password: str, error_label) -> None:
+        if not username or not password:
+            error_label.set_text("Please fill in both fields.")
             return
 
-        # --- signup dialog ---
+        user = self._service.validate_login(username.strip(), password.strip())
+
+        if user:
+            app_state.login(user)
+            ui.navigate.to("/dashboard")
+        else:
+            error_label.set_text("Invalid username or password.")
+
+    def on_signup_open(self) -> None:
+        if self._signup_dialog:
+            self._signup_dialog.open()
+
+    def render_content(self) -> None:
+
         with ui.dialog() as signup_dialog, ui.card().style('background-color: #d7e3f4').classes("items-center"):
             ui.label("Create an Account").classes("font-bold text-2xl text-center")
 
@@ -115,21 +127,7 @@ class LoginPage(BaseView):
                 ui.button("Create Account", on_click=handle_signup)
                 ui.button("Cancel", on_click=signup_dialog.close).props('flat')
 
-        # --- login handler ---
-        def handle_login(username, password, error_label):
-            if not username or not password:
-                error_label.set_text("Please fill in both fields.")
-                return
-
-            user = self._service.validate_login(username.strip(), password.strip())
-
-            if user:
-                app_state.login(user)
-                ui.navigate.to("/dashboard")
-            else:
-                error_label.set_text("Invalid username or password.")
-
-        public_frame(on_login=handle_login, on_signup_open=signup_dialog.open)
+        self._signup_dialog = signup_dialog
 
 
 @ui.page('/')
