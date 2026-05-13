@@ -24,16 +24,58 @@
 #   manager.delete_project_note(user, project_id, pnote_id)
 
 from nicegui import ui
-from logic.app_state import app_state       # route function: get_current_user()
-from logic.project_manager import ProjectManager  # on_create_project()
+
+from logic.app_state import app_state
+from logic.project_manager import ProjectManager
 from ui.layout import DashboardFrame
 
 
 class DashboardPage(DashboardFrame):
+
     def on_create_project(self) -> None:
-        # open a dialog and call ProjectManager, remove pass when you implement this
-        pass
+        manager = ProjectManager()
+
+        with ui.dialog() as dialog, ui.card():
+            ui.label("Create Project").classes("text-2xl font-bold")
+
+            name_input = ui.input("Project name").props("bordered").classes("w-full")
+            description_input = ui.textarea("Description").props("bordered").classes("w-full")
+
+            error_label = ui.label("").classes("text-red text-sm")
+
+            def save_project() -> None:
+                if not name_input.value:
+                    error_label.text = "Project name is required."
+                    return
+
+                try:
+                    manager.create_project(
+                        user=self.user,
+                        name=name_input.value,
+                        description=description_input.value or "",
+                        owner_id=self.user.id,
+                    )
+
+                    dialog.close()
+                    ui.notify("Project created successfully.")
+                    ui.navigate.to("/dashboard")
+
+                except Exception as error:
+                    error_label.text = str(error)
+
+            with ui.row():
+                ui.button("Cancel", on_click=dialog.close)
+                ui.button("Create", on_click=save_project)
+
+        dialog.open()
+
 
 @ui.page('/dashboard')
 def dashboard() -> None:
-    DashboardPage(app_state.get_current_user()).render()
+    user = app_state.get_current_user()
+
+    if user is None:
+        ui.navigate.to("/")
+        return
+
+    DashboardPage(user).render()
