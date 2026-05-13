@@ -18,19 +18,45 @@ from ui.layout import TaskFrame
 
 class TaskPage(TaskFrame):
     def render_content(self) -> None:
-        ui.label(self.task.title).classes("text-h5")
+        with ui.column().classes("w-full h-full p-6 gap-6"):
+            with ui.card().classes("w-full p-6 shadow-md"):
+                with ui.row().classes("w-full items-center justify-between"):
+                    ui.label(self.task.title).classes("text-3xl font-bold")
+                    ui.button("Manage Assignees", on_click=self.on_manage_assignees)
 
-        ui.label(self.task.description or "No description").classes(
-            "text-body1 text-grey-8"
-        )
+                ui.label(self.task.description or "No description").classes(
+                    "text-lg text-grey-8 mt-2"
+                )
 
-        with ui.row().classes("gap-4"):
-            ui.label(f"Status: {getattr(self.task, 'status', 'N/A')}")
-            ui.label(f"Priority: {getattr(self.task, 'priority', 'N/A')}")
+                ui.separator()
 
-        due_date = getattr(self.task, "due_date", None)
-        if due_date:
-            ui.label(f"Due date: {due_date}")
+                with ui.row().classes("gap-4 mt-2"):
+                    ui.badge(
+                        f"Status: {getattr(self.task, 'status', 'N/A')}",
+                        color="blue",
+                    )
+                    ui.badge(
+                        f"Priority: {getattr(self.task, 'priority', 'N/A')}",
+                        color="orange",
+                    )
+
+                due_date = getattr(self.task, "due_date", None)
+                if due_date:
+                    ui.label(f"Due date: {due_date}").classes(
+                        "text-sm text-grey-7 mt-2"
+                    )
+
+            with ui.card().classes("w-full p-6 shadow-md"):
+                with ui.row().classes("w-full items-center justify-between"):
+                    ui.label("Task Notes").classes("text-2xl font-bold")
+
+                    with ui.row().classes("gap-2"):
+                        ui.button("Manage Notes", on_click=self.on_manage_notes)
+                        ui.button("Create Note", on_click=self.on_create_note)
+
+                ui.label("Create, edit, or delete notes related to this task.").classes(
+                    "text-grey-7"
+                )
 
     def on_manage_assignees(self, e=None) -> None:
         ui.notify("Manage assignees is not implemented yet", color="warning")
@@ -52,7 +78,6 @@ class TaskPage(TaskFrame):
 
         with ui.dialog().props("persistent") as dlg, ui.card().classes("w-[640px]"):
             ui.label("Manage Task Notes").classes("text-h6")
-
             ui.label("Delete notes")
             checks = []
 
@@ -73,7 +98,6 @@ class TaskPage(TaskFrame):
 
             def delete_selected(_=None):
                 removed = 0
-
                 for cb, note_id in checks:
                     if cb.value:
                         try:
@@ -82,10 +106,8 @@ class TaskPage(TaskFrame):
                                 task_id=self.task.id,
                                 tnote_id=note_id,
                             )
-
                             if ok:
                                 removed += 1
-
                         except PermissionDenied:
                             ui.notify(
                                 "You do not have permission to delete one or more selected notes",
@@ -108,13 +130,11 @@ class TaskPage(TaskFrame):
                     ui.button("Delete Selected", on_click=delete_selected)
 
             ui.separator()
-
             ui.label("Add a new note")
             content = ui.textarea("Note").props("autogrow").classes("w-full")
 
             def add_note(_=None):
                 text = (content.value or "").strip()
-
                 if not text:
                     ui.notify("Note cannot be empty", color="negative")
                     return
@@ -125,14 +145,12 @@ class TaskPage(TaskFrame):
                         task_id=self.task.id,
                         content=text,
                     )
-
                     if ok:
                         ui.notify("Note created", color="positive")
                         dlg.close()
                         ui.navigate.reload()
                     else:
                         ui.notify("Could not create note", color="negative")
-
                 except PermissionDenied:
                     ui.notify(
                         "You do not have permission to create notes",
@@ -152,7 +170,6 @@ class TaskPage(TaskFrame):
 
         with ui.dialog().props("persistent") as dlg, ui.card().classes("w-[640px]"):
             ui.label("Edit Task Note").classes("text-h6")
-
             edit_content = ui.textarea(
                 "Note",
                 value=note.content,
@@ -160,7 +177,6 @@ class TaskPage(TaskFrame):
 
             def save_note(_=None):
                 text = (edit_content.value or "").strip()
-
                 if not text:
                     ui.notify("Note cannot be empty", color="negative")
                     return
@@ -172,14 +188,12 @@ class TaskPage(TaskFrame):
                         tnote_id=note.id,
                         content=text,
                     )
-
                     if ok:
                         ui.notify("Note updated", color="positive")
                         dlg.close()
                         ui.navigate.reload()
                     else:
                         ui.notify("Could not update note", color="negative")
-
                 except PermissionDenied:
                     ui.notify(
                         "You do not have permission to edit this note",
@@ -203,7 +217,6 @@ def task(task_id: int) -> None:
 
     user = app_state.get_current_user()
     task_manager = TaskManager()
-
     session = db_conn.get_session()
     raw_task = session.query(Task).filter_by(id=task_id).first()
 
@@ -217,11 +230,9 @@ def task(task_id: int) -> None:
             project=raw_task.project,
             task_id=task_id,
         )
-
     except PermissionDenied:
         ui.notify("Access denied", color="negative")
         return
-
     except Exception as exc:
         ui.notify(f"Error loading task: {exc}", color="negative")
         return
