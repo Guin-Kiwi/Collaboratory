@@ -1,7 +1,7 @@
 from database.models import User, Project, Task, Assignment
 from database.collab_models import ProjectNote as PNote, TaskNote as TNote, ProjectMember as PMember
 from database.connection import DatabaseConnection
-from logic.permissions_manager import require_permission, PermissionAction
+from logic.permissions_manager import require_permission, PermissionAction, check_permission
 
 
 class CollabManager:
@@ -24,6 +24,21 @@ class CollabManager:
             .filter(PMember.user_id == user_id)
             .all()
         )
+
+#------- permission checks
+
+    def can_add_collaborator(self, user: User, project: Project) -> bool:
+        try:
+            return check_permission(user, PermissionAction.ADD_COLLABORATOR, self.session, project=project)
+        except Exception:
+            return False
+
+    def can_delete_project_note(self, user: User, project: Project) -> bool:
+        try:
+            return check_permission(user, PermissionAction.DELETE_PROJECT_NOTE, self.session, project=project)
+        except Exception:
+            return False
+    
 
 #------- collaborator CRUD
 
@@ -214,3 +229,4 @@ class CollabManager:
         self.session.delete(target_note)
         self.session.commit()
         return True
+

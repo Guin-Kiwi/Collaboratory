@@ -36,7 +36,7 @@ from logic.collab_manager import CollabManager   # on_create_note(), on_add_coll
 from logic.task_manager import TaskManager       # on_create_task()
 from logic.project_manager import ProjectManager
 from logic.user_manager import UserManager       # on_add_collaborator(): find user by username
-from logic.permissions_manager import PermissionDenied, PermissionAction, check_permission
+from logic.permissions_manager import PermissionDenied
 from ui.layout import ProjectFrame
 
 class ProjectPage(ProjectFrame):
@@ -121,7 +121,7 @@ class ProjectPage(ProjectFrame):
                     )
                     ui.notify('Task created', color='positive')
                     dlg.close()
-                    ui.navigate(f'/task/{new_task.id}')
+                    ui.navigate.to(f'/task/{new_task.id}')
                 except PermissionDenied:
                     ui.notify('No permission to create task', color='negative')
                 except Exception as exc:
@@ -324,11 +324,7 @@ class ProjectPage(ProjectFrame):
         # Determine which notes the current user may delete.
         # Users may delete their own notes; users with the DELETE_PROJECT_NOTE
         # permission (admins / owners / collaborators) may delete any.
-        can_delete_any = False
-        try:
-            can_delete_any = check_permission(self.user, PermissionAction.DELETE_PROJECT_NOTE, cm.session, project=self.project)
-        except Exception:
-            can_delete_any = False
+        can_delete_any = cm.can_delete_project_note(self.user, self.project)
 
         deletable_notes = notes if can_delete_any else [n for n in notes if n.created_by == self.user.id]
 

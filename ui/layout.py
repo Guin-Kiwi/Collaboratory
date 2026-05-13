@@ -2,8 +2,6 @@ from nicegui import ui
 from database.models import User, Project, Task
 from logic.app_state import app_state
 from ui.view import BaseView
-from database.connection import DatabaseConnection
-from logic.permissions_manager import check_permission, PermissionAction, PermissionDenied
 from logic.project_manager import ProjectManager
 from logic.collab_manager import CollabManager
 
@@ -215,13 +213,8 @@ class ProjectFrame(NoteableFrame):
     def render_content(self) -> None:
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
             # Only show Manage Collaborators to users who may add collaborators
-            db = DatabaseConnection()
-            db.init()
-            session = db.get_session()
-            try:
-                can_manage_collabs = check_permission(self.user, PermissionAction.ADD_COLLABORATOR, session, project=self.project)
-            except Exception:
-                can_manage_collabs = False
+            cm = CollabManager()
+            can_manage_collabs = cm.can_add_collaborator(self.user, self.project)
             if can_manage_collabs:
                 ui.button('Manage Collaborators', on_click=self.on_manage_collaborators)
             ui.label('Collaborators')

@@ -19,7 +19,13 @@ class ProjectManager:
         """Get project by ID"""
         return self.session.query(Project).filter_by(id = project_id).first()
     
-    def get_projects_by_user(self, user_id: int) -> list[Project]:
+    def get_projects_by_owner(self, user_id: int) -> list[Project]:
+        """Get all projects of a user"""
+        return self.session.query(Project).join(ProjectMember).filter(
+            ProjectMember.user_id == owner_id
+        ).all()
+    
+    def get_projects_by_collaborator(self, user_id: int) -> list[Project]:
         """Get all projects of a user"""
         return self.session.query(Project).join(ProjectMember).filter(
             ProjectMember.user_id == user_id
@@ -41,6 +47,7 @@ class ProjectManager:
                 name = name,
                 description = description,
                 owner_id = owner_id,
+                project_members = [ProjectMember(user_id = user.id)],
             )
             self.session.add(project)
             self.session.commit()
