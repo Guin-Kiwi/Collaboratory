@@ -49,7 +49,7 @@ class AppState:
     def is_admin(self) -> bool:
         if self.current_user is None:
             return False
-        return self.current_user.is_admin() == "admin"
+        return self.current_user.is_admin
     
     def get_name(self) -> str | None:
         if self.current_user is None:
