@@ -20,16 +20,12 @@ class ProjectManager:
         return self.session.query(Project).filter_by(id = project_id).first()
     
     def get_projects_by_owner(self, user_id: int) -> list[Project]:
-        """Get all projects of a user"""
-        return self.session.query(Project).join(ProjectMember).filter(
-            ProjectMember.user_id == owner_id
-        ).all()
+        """Get all projects owned by a user."""
+        return self.session.query(Project).filter_by(owner_id=user_id).all()
     
     def get_projects_by_collaborator(self, user_id: int) -> list[Project]:
-        """Get all projects of a user"""
-        return self.session.query(Project).join(ProjectMember).filter(
-            ProjectMember.user_id == user_id
-        ).all()
+        """Get all projects a user is collaborating on."""
+        return self.session.query(Project).join(ProjectMember).filter(ProjectMember.user_id == user_id).all()
 
 
 ###----------- core functions of the project manager (e.g. CRUD ) -----------
