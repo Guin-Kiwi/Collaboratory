@@ -22,16 +22,6 @@ def public_frame(on_login, on_signup_open) -> None:
                 ui.button("Sign Up", on_click=on_signup_open)
 
 
-## TO be removed
-def task_frame(page, user, task) -> None:
-    with ui.column().classes('w-full p-4 gap-2'):
-        ui.label(page).classes('text-2xl font-bold')
-        if user is not None:
-            ui.label(f'Logged in as {user.username}').classes('text-sm text-grey')
-        if task is not None and getattr(task, 'project', None) is not None:
-            ui.label(f'Project: {task.project.name}').classes('text-sm text-grey')
-
-
 class UnauthenticatedFrame(ABC):
 
     def render(self) -> None:
