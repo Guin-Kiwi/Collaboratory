@@ -43,7 +43,7 @@ class ProjectManager:
                 name = name,
                 description = description,
                 owner_id = owner_id,
-                project_members = [ProjectMember(user_id = user.id)],
+                collaborator_memberships=[ProjectMember(user_id=user.id)],
             )
             self.session.add(project)
             self.session.commit()
