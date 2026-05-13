@@ -7,21 +7,6 @@ from ui.view import BaseView
 from logic.project_manager import ProjectManager
 from logic.collab_manager import CollabManager
 
-
-def public_frame(on_login, on_signup_open) -> None:
-    """Helper to render the login form. Colleagues don't need to edit this."""
-    with ui.column().classes("w-full items-center mx-auto"):
-        with ui.card().style('background-color: #d7e3f4').classes("items-center"):
-            ui.label("Login or Sign Up").classes("font-bold text-2xl text-center")
-            username_input = ui.input("Username").props('bordered').classes('border border-solid border-gray-400 rounded justify-center').style("background-color: #FFFFFF")
-            password_input = ui.input("Password", password=True).props('bordered').classes('border border-solid border-gray-400 rounded justify-center').style("background-color: #FFFFFF")
-            error_label = ui.label("").classes("text-red text-sm")
-            
-            with ui.row():
-                ui.button("Login", on_click=lambda: on_login(username_input.value, password_input.value, error_label))
-                ui.button("Sign Up", on_click=on_signup_open)
-
-
 class UnauthenticatedFrame(ABC):
 
     def render(self) -> None:
