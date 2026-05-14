@@ -230,6 +230,7 @@ class ProjectPage(ProjectFrame):
             user.username: f'{user.username} - {user.name or ""}'
             for user in all_users
             if user.id != self.user.id and user.id not in current_collaborator_ids
+            and not user.is_admin
         }
 
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):

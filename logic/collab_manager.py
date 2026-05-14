@@ -1,14 +1,12 @@
 from database.models import User, Project, Task, Assignment
 from database.collab_models import ProjectNote as PNote, TaskNote as TNote, ProjectMember as PMember
-from database.connection import DatabaseConnection
+from database import db_conn
 from logic.permissions_manager import require_permission, PermissionAction, check_permission
 
 
 class CollabManager:
     def __init__(self):
-        self.db = DatabaseConnection()
-        self.db.init()
-        self.session = self.db.get_session()
+        self.session = db_conn.get_session()
 
 #------- helpers
 
