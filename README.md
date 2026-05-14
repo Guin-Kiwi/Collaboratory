@@ -201,7 +201,7 @@ Core entities:
 
 #### Entity Relationship Diagram
 
-<img width="4440" height="1941" alt="erdplus (1)" src="https://github.com/user-attachments/assets/3c824994-f82c-4f1c-aa92-bbefdf25160c" />
+<img width="1213" height="1209" alt="ERCollab_Notes (2)" src="https://github.com/user-attachments/assets/199f9147-afc6-4767-9e04-17df8013b0eb" />
 
 ### Architecture
 
