@@ -183,6 +183,22 @@ Core entities:
 	project_id  (FK → Projects.id)
 	user_id     (FK → Users.id)
 
+#### ProjectNote
+
+	id          (PK)
+	content
+	project_id  (FK → Projects.id)
+	created_by  (FK → Users.id)
+	created_at
+
+#### TaskNote
+
+	id          (PK)
+	content
+	task_id     (FK → Tasks.id)
+	created_by  (FK → Users.id)
+	created_at
+
 #### Entity Relationship Diagram
 
 <img width="4440" height="1941" alt="erdplus (1)" src="https://github.com/user-attachments/assets/3c824994-f82c-4f1c-aa92-bbefdf25160c" />
