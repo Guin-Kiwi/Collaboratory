@@ -15,8 +15,12 @@ This project is intended to:
 
 ### Problem
 
+Development teams lack a lightweight, role-aware tool for managing tasks within a project. Without structured access control, any team member can modify or delete any task, making it difficult to maintain clear ownership and accountability across a shared project.
+
 
 ### Scenario
+
+A small team uses Collaboratory to manage a development project. The project owner creates the project and invites collaborators. Collaborators create tasks and assign them to team members. Assignees update task status (To Do → In Progress → Completed) and leave task notes to communicate progress. The owner monitors all tasks, manages collaborators, and can delete tasks when needed.
 
 
 ## User Stories
@@ -183,9 +187,25 @@ Core entities:
 	project_id  (FK → Projects.id)
 	user_id     (FK → Users.id)
 
+#### ProjectNote
+
+	id          (PK)
+	content
+	project_id  (FK → Projects.id)
+	created_by  (FK → Users.id)
+	created_at
+
+#### TaskNote
+
+	id          (PK)
+	content
+	task_id     (FK → Tasks.id)
+	created_by  (FK → Users.id)
+	created_at
+
 #### Entity Relationship Diagram
 
-<img width="4440" height="1941" alt="erdplus (1)" src="https://github.com/user-attachments/assets/3c824994-f82c-4f1c-aa92-bbefdf25160c" />
+<img width="1213" height="1209" alt="ERCollab_Notes (2)" src="https://github.com/user-attachments/assets/199f9147-afc6-4767-9e04-17df8013b0eb" />
 
 ### Architecture
 
@@ -208,6 +228,20 @@ This application follows a 3-tier architecture:
 - SQLAlchemy models define the database schema in Python classes
 - Stores all persistent data: users, projects, tasks, and assignments
 - The backend interacts with the database exclusively through SQLAlchemy sessions
+
+### Design Patterns
+
+**Service Layer (Manager Pattern)** — `logic/user_manager.py`, `project_manager.py`, `task_manager.py`, `collab_manager.py`
+Four manager classes each own all business logic for one domain. The UI calls manager methods; managers query the database via their SQLAlchemy session. No UI code appears in any manager. Status: **implemented**.
+
+**Mixin Pattern** — `database/mixins.py` (`TimestampMixin`)
+Adds `created_at` and `updated_at` columns to `User`, `Project`, `Task`, `ProjectNote`, and `TaskNote` via multiple inheritance, avoiding repeated column definitions across models. Status: **implemented**.
+
+**Façade Pattern** — `database/connection.py` (`DatabaseConnection`) and `logic/permissions_manager.py` (`require_permission`)
+`DatabaseConnection` hides SQLAlchemy engine and session setup; callers use `init()` and `get_session()` only. `require_permission` hides a 17-case permission dispatch behind a single guard call. Status: **partial** — managers on `ui-layer` still construct their own `DatabaseConnection` instances rather than sharing the one initialised in `database/__init__.py`. See Known Limitations.
+
+**Singleton (intended, not enforced)** — `database/__init__.py`
+A single shared `DatabaseConnection` instance (`db_conn`) is initialised at import time. Singleton enforcement is not implemented — managers can still create additional instances. See Known Limitations.
 
 ### ?Gui information:
 
@@ -244,7 +278,7 @@ The application writes and reads data using a ** file with a ** structure :
 ### Technology
 - Python 3.x
 - Environment: GitHub Codespaces
-- External libraries: `nicegui` (web-based UI), `sqlalchemy` (ORM/database)
+- External libraries: `nicegui` (web-based UI), `sqlalchemy` (ORM/database), `bcrypt` (password hashing)
 
 ### 📂 Repository Structure
 ```
@@ -261,23 +295,32 @@ collaboratory/
 
 ### How to Run
 
-1. Open the repository in **GitHub Codespaces**
+1. Open the repository in **GitHub Codespaces** (or clone locally)
 2. Open the **Terminal**
-3. Run:
-	```bash
-	python3 main.py
-	```
+3. Install dependencies:
+	pip install -r requirements.txt
+4. Start the application:
+    python main.py
+5. Open your browser at the URL shown in the terminal (default: `http://localhost:8080`)
 
 ### Libraries Used
 
-- `json`: used for working with JSON data.
-- `random`: for generating random numbers and making random selections.
-- `string`: provides useful string constants and helpers, generating random strings, passwords, or validating characters.
-- `nicegui`: for building web-based user interface.
-- `sqlalchemy`: for working with the database.
+- `nicegui`: builds the web-based user interface; UI components are Python objects served by NiceGUI's built-in web server.
+- `sqlalchemy`: ORM for defining models, managing sessions, and querying the SQLite database without writing raw SQL.
+- `bcrypt`: hashes passwords at signup and verifies them at login, used in `UserManager`.
 
-The first three libraries (`json`, `random`, `string`) are part of the Python standard library and require no installation. `nicegui` and `sqlalchemy` are external dependencies and must be installed before running the application (e.g., via `pip install -r requirements.txt`).
+All three are external dependencies. Install before running:
+pip install -r requirements.txt
 
+## Features
+
+- **User authentication** — sign up with name and email; login with bcrypt-hashed password; server-side session state via `AppState`
+- **Project management** — create, view, edit, and delete projects; role-based permissions enforced per action
+- **Collaborator management** — project owners can add collaborators; collaborators can assign tasks and write notes
+- **Task management** — full create/read/update/delete for tasks within a project; status: To Do → In Progress → Completed
+- **Task notes** — assignees, owners, and collaborators can write and view notes on individual tasks
+- **Project notes** — owners and collaborators can write and view project-level notes
+- **Permission system** — 17 permission actions across three roles (owner, collaborator, assignee) enforced by `PermissionsManager`
 
 ## 👥 Team & Contributions
 
@@ -287,6 +330,7 @@ The first three libraries (`json`, `random`, `string`) are part of the Python st
 | Polina Yemelianenkova | libraries, the 3-tier architecture plan, and the database schema within the read.me |
 | Ayla Allen            | GitHub repository setup                                                              |
 | Sümeyya Güçlü-Babür   | user stories and user cases                                                          |
+
 ## 🤝 Contributing
 
 - Use this repository as a starting point by importing it into your own GitHub account or VScode on Desktop.  

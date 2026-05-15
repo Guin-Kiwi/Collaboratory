@@ -1,20 +1,34 @@
 from database.models import User, Project, Task, Assignment
 from database.collab_models import ProjectNote as PNote, TaskNote as TNote, ProjectMember as PMember
-from database.connection import DatabaseConnection
+from database.collab_models import ProjectMember
+from database import db_conn
 from logic.permissions_manager import require_permission, PermissionAction, check_permission
+from sqlalchemy.orm import joinedload
 
 
 class CollabManager:
+<<<<<<< HEAD
     def __init__(self, session=None):
         self.db = DatabaseConnection()
         self.db.init()
         self.session = session or self.db.get_session()
+=======
+    def __init__(self):
+        self.session = db_conn.get_session()
+>>>>>>> 142904d65bec0f5335b404db8672f675a6a55b6f
 
 #------- helpers
 
     def get_project_by_id(self, project_id: int) -> Project:
         return (
-            self.session.query(Project).filter_by(id=project_id).first()
+            self.session.query(Project)
+            .options(
+                joinedload(Project.collaborator_memberships).joinedload(ProjectMember.user),
+                joinedload(Project.tasks),
+                joinedload(Project.notes),
+            )
+            .filter_by(id=project_id)
+            .first()
         )
 
     def get_project_list_as_collaborator(self, user_id: int) -> list[Project]:

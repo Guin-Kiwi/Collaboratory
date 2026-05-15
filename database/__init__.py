@@ -8,3 +8,5 @@ db_conn = DatabaseConnection()
 db_conn.init()
 
 __all__ = ["db", "DatabaseConnection", "BaseModel"]
+
+

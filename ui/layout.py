@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from nicegui import ui
 from database.models import User, Project, Task
 from logic.app_state import app_state
-from ui.view import BaseView
 from logic.project_manager import ProjectManager
 from logic.collab_manager import CollabManager
 
@@ -118,12 +117,44 @@ class DashboardFrame(AuthenticatedFrame):
         pass
 
     def render_content(self) -> None:
+        pm = ProjectManager()
+
+        owned_projects = []
+        collab_projects = []
+        task_rows = []
+
+        if self.user:
+            owned_projects = pm.get_projects_by_owner(self.user.id)
+            collab_projects = pm.get_projects_by_collaborator(self.user.id)
+            
+            all_projects = owned_projects + collab_projects
+
+            for project in all_projects:
+                tasks = pm.view_project_tasks(self.user, project.id)
+                
+                for task in tasks:
+                    assigned_users = ", ".join(
+                            assignment.user.username for assignment in task.assignments
+                        )
+                    task_rows.append({
+                            "id": task.id,
+                            "title": task.title,
+                            "project": project.name,
+                            "status": task.status,
+                            "priority": task.priority,
+                            "assigned_to": assigned_users if assigned_users else "-",
+                        })
+
+
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
             with ui.column().props('bordered separator'):
-                ui.label('Tasks')
-                if self.user and self.user.assignments:
-                    for assignment in self.user.assignments:
-                        ui.link(assignment.task.title, f'/task/{assignment.task.id}')
+                ui.label('Tasks').classes('font-bold')
+
+                if task_rows:
+                    for task in task_rows:
+                        ui.link(task["title"], f'/task/{task["id"]}')
+                else:
+                    ui.label('No tasks found.').classes('text-sm text-grey')
 
         with ui.header(elevated=True).style('background-color: #3874c8').classes('justify-between'):
             with ui.row():
@@ -135,34 +166,66 @@ class DashboardFrame(AuthenticatedFrame):
         with ui.left_drawer().style('background-color: #d7e3f4'):
             with ui.column().props('dense separator'):
                 ui.button('Create Project', on_click=self.on_create_project)
-                pm = ProjectManager()
-                owned_projects = []
-                collab_projects = []
-                try:
-                    if self.user:
-                        owned_projects = pm.session.query(Project).filter_by(owner_id=self.user.id).all()
-                        collab_projects = pm.get_projects_by_user(self.user.id)
-                except Exception:
-                    owned_projects = []
-                    collab_projects = []
 
-                ui.label('Owned Projects')
+                ui.separator()
+
+                ui.label('Owned Projects').classes('font-bold')
                 if owned_projects:
-                    for proj in owned_projects:
-                        ui.link(proj.name, f'/project/{proj.id}')
+                    for project in owned_projects:
+                        ui.link(project.name, f'/project/{project.id}')
                 else:
                     ui.label('—').classes('text-sm text-grey')
 
-                ui.label('Collaborations')
+                ui.separator()
+
+                ui.label('Collaborations').classes('font-bold')
                 if collab_projects:
-                    for proj in collab_projects:
-                        ui.link(proj.name, f'/project/{proj.id}')
+                    for project in collab_projects:
+                        ui.link(project.name, f'/project/{project.id}')
                 else:
                     ui.label('—').classes('text-sm text-grey')
 
         with ui.column().classes('items-center mx-auto p-4'):
-            ui.label('Welcome to your dashboard!')
+            ui.label('Welcome to your dashboard!').classes('text-5xl font-bold')
 
+            with ui.row().classes('w-full gap-4'):
+                with ui.card().classes('p-4 shadow rounded'):
+                    ui.label('Owned Projects').classes('text-xl font-bold mb-2')
+                    if owned_projects:
+                        for project in owned_projects:
+                            ui.link(project.name, f'/project/{project.id}').classes('text-lg')
+                    else:
+                        ui.label('You do not own any projects yet.').classes('text-sm text-grey')
+
+                with ui.card().classes('p-4 shadow rounded'):
+                    ui.label('Collaborations').classes('text-xl font-bold mb-2')
+                    if collab_projects:
+                        for project in collab_projects:
+                            ui.link(project.name, f'/project/{project.id}').classes('text-lg')
+                    else:
+                        ui.label('You are not collaborating on any projects yet.').classes('text-sm text-grey')
+                
+                with ui.card().classes('p-4 shadow rounded'):
+                    ui.label('Tasks').classes('text-xl font-bold mb-2')
+                    if task_rows:
+                        for task in task_rows:
+                            ui.link(task["title"], f'/task/{task["id"]}').classes('text-lg')
+                    else:
+                        ui.label('You have no tasks assigned yet.').classes('text-sm text-grey')
+
+            ui.label('Task Overview').classes('text-2xl font-bold mt-8')
+
+            columns = [
+                {"name": "title", "label": "Task", "field": "title", "align": "left"},
+                {"name": "project", "label": "Project", "field": "project", "align": "left"},
+                {"name": "status", "label": "Status", "field": "status", "align": "left"},
+                {"name": "priority", "label": "Priority", "field": "priority", "align": "left"},
+                {"name": "assigned_to", "label": "Assigned To", "field": "assigned_to", "align": "left"},
+            ]        
+
+            ui.table(columns=columns, rows=task_rows).classes('w-full')
+
+            
 class ProjectFrame(NoteableFrame):
 
     def __init__(self, user: User, project: Project) -> None:
