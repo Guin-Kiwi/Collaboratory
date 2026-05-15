@@ -5,10 +5,10 @@ from logic.permissions_manager import require_permission, PermissionAction, chec
 
 
 class CollabManager:
-    def __init__(self):
+    def __init__(self, session=None):
         self.db = DatabaseConnection()
         self.db.init()
-        self.session = self.db.get_session()
+        self.session = session or self.db.get_session()
 
 #------- helpers
 
