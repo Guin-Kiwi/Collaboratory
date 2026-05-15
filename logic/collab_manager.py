@@ -7,15 +7,9 @@ from sqlalchemy.orm import joinedload
 
 
 class CollabManager:
-<<<<<<< HEAD
+    
     def __init__(self, session=None):
-        self.db = DatabaseConnection()
-        self.db.init()
-        self.session = session or self.db.get_session()
-=======
-    def __init__(self):
-        self.session = db_conn.get_session()
->>>>>>> 142904d65bec0f5335b404db8672f675a6a55b6f
+        self.session = session or db_conn.get_session()
 
 #------- helpers
 
