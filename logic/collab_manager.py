@@ -1,5 +1,6 @@
 from database.models import User, Project, Task, Assignment
 from database.collab_models import ProjectNote as PNote, TaskNote as TNote, ProjectMember as PMember
+from database.collab_models import ProjectMember
 from database import db_conn
 from logic.permissions_manager import require_permission, PermissionAction, check_permission
 from sqlalchemy.orm import joinedload
@@ -15,7 +16,7 @@ class CollabManager:
         return (
             self.session.query(Project)
             .options(
-                joinedload(Project.collaborator_memberships),
+                joinedload(Project.collaborator_memberships).joinedload(ProjectMember.user),
                 joinedload(Project.tasks),
                 joinedload(Project.notes),
             )
