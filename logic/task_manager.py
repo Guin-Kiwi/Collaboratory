@@ -94,13 +94,67 @@ class TaskManager:
         self.session.add(assignment)
         self.session.commit()
         return True
+    
+    def get_assignees(self, user: User, task_id: int) -> list[User]:
+        """Get all assignees of a task"""
 
+        task = self.session.query(Task).filter_by(id=task_id).first()
+
+        if not task:
+            return []
+
+        require_permission(
+            user,
+            PermissionAction.VIEW_TASK,
+            self.session,
+            project=task.project,
+            task=task,
+        )
+
+        return [assignment.user for assignment in task.assignments]
+
+    def remove_assignee(self, user: User, task_id: int, assigned_user_id: int) -> bool:
+        """Remove an assignee from a task"""
+
+        task = self.session.query(Task).filter_by(id=task_id).first()
+
+        if not task:
+            return False
+
+        require_permission(
+            user,
+            PermissionAction.ASSIGN_TASK,
+            self.session,
+            project=task.project,
+            task=task,
+        )
+
+        assignment = self.session.query(Assignment).filter_by(
+            task_id=task_id,
+            user_id=assigned_user_id,
+        ).first()
+
+        if not assignment:
+            return False
+
+        self.session.delete(assignment)
+        self.session.commit()
+
+        return True
+    
     def change_task_status(self, user: User, project: Project, task_id: int, status: str) -> bool:
         """Change the status of a task"""
         task = self.session.query(Task).filter_by(id=task_id).first()
         if not task:
             return False
-        require_permission(user, PermissionAction.CHANGE_TASK_STATUS, self.session, project = project, task = task)
+
+        require_permission(
+            user,
+            PermissionAction.CHANGE_TASK_STATUS,
+            self.session,
+            project=project,
+            task=task,
+        )
 
         task.status = status
         self.session.commit()

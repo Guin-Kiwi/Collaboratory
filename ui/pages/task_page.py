@@ -12,7 +12,7 @@ from logic.task_manager import TaskManager
 from logic.collab_manager import CollabManager
 from logic.permissions_manager import PermissionDenied
 from database import db_conn
-from database.models import Task
+from database.models import Task, User
 from ui.layout import TaskFrame
 
 
@@ -38,20 +38,12 @@ class TaskPage(TaskFrame):
                 ui.separator()
 
                 with ui.row().classes("gap-4 mt-2"):
-                    ui.badge(
-                        f"Status: {getattr(self.task, 'status', 'N/A')}",
-                        color="blue",
-                    )
-                    ui.badge(
-                        f"Priority: {getattr(self.task, 'priority', 'N/A')}",
-                        color="orange",
-                    )
+                    ui.badge(f"Status: {getattr(self.task, 'status', 'N/A')}", color="blue")
+                    ui.badge(f"Priority: {getattr(self.task, 'priority', 'N/A')}", color="orange")
 
                 due_date = getattr(self.task, "due_date", None)
                 if due_date:
-                    ui.label(f"Due date: {due_date}").classes(
-                        "text-sm text-grey-7 mt-2"
-                    )
+                    ui.label(f"Due date: {due_date}").classes("text-sm text-grey-7 mt-2")
 
             with ui.card().classes("w-full p-6 shadow-md"):
                 with ui.row().classes("w-full items-center justify-between"):
@@ -66,7 +58,95 @@ class TaskPage(TaskFrame):
                 )
 
     def on_manage_assignees(self, e=None) -> None:
-        ui.notify("Manage assignees is not implemented yet", color="warning")
+        tm = TaskManager(session=self.session)
+
+        try:
+            assignees = tm.get_assignees(self.user, self.task.id)
+        except PermissionDenied:
+            ui.notify("You do not have permission to view assignees", color="negative")
+            return
+        except Exception as exc:
+            ui.notify(f"Could not load assignees: {exc}", color="negative")
+            return
+
+        assigned_user_ids = {user.id for user in assignees}
+
+        available_users = (
+            self.session.query(User)
+            .filter(~User.id.in_(assigned_user_ids))
+            .all()
+        )
+
+        with ui.dialog() as dlg, ui.card().classes("w-[640px]"):
+            ui.label("Manage Assignees").classes("text-h6")
+
+            if assignees:
+                for assignee in assignees:
+                    with ui.row().classes("w-full items-center justify-between"):
+                        ui.label(f"{assignee.username} ({assignee.email})")
+
+                        def remove_user(user_id=assignee.id):
+                            try:
+                                ok = tm.remove_assignee(
+                                    self.user,
+                                    self.task.id,
+                                    user_id,
+                                )
+                                if ok:
+                                    ui.notify("Assignee removed", color="positive")
+                                    dlg.close()
+                                    ui.navigate.reload()
+                                else:
+                                    ui.notify("Could not remove assignee", color="negative")
+                            except PermissionDenied:
+                                ui.notify("You do not have permission to remove assignees", color="negative")
+                            except Exception as exc:
+                                ui.notify(f"Error removing assignee: {exc}", color="negative")
+
+                        ui.button("Remove", on_click=remove_user, color="negative")
+            else:
+                ui.label("No assignees yet").classes("text-grey")
+
+            ui.separator()
+
+            options = {
+                user.id: f"{user.username} ({user.email})"
+                for user in available_users
+            }
+
+            selected_user = ui.select(
+                options=options,
+                label="Select user",
+            ).classes("w-full")
+
+            def assign_user():
+                if not selected_user.value:
+                    ui.notify("Please select a user", color="negative")
+                    return
+
+                try:
+                    ok = tm.assign_task(
+                        self.user,
+                        self.task.project,
+                        self.task.id,
+                        selected_user.value,
+                    )
+                    if ok:
+                        ui.notify("User assigned to task", color="positive")
+                        dlg.close()
+                        ui.navigate.reload()
+                    else:
+                        ui.notify("Could not assign user", color="negative")
+                except PermissionDenied:
+                    ui.notify("You do not have permission to assign users", color="negative")
+                except Exception as exc:
+                    ui.notify(f"Error assigning user: {exc}", color="negative")
+
+            with ui.row():
+                ui.button("Assign", on_click=assign_user)
+                ui.button("Close", on_click=lambda: dlg.close())
+
+        dlg.open()
 
     def on_assign_user(self) -> None:
         self.on_manage_assignees()
@@ -159,10 +239,7 @@ class TaskPage(TaskFrame):
                     else:
                         ui.notify("Could not create note", color="negative")
                 except PermissionDenied:
-                    ui.notify(
-                        "You do not have permission to create notes",
-                        color="negative",
-                    )
+                    ui.notify("You do not have permission to create notes", color="negative")
                 except Exception as exc:
                     ui.notify(f"Error creating note: {exc}", color="negative")
 
@@ -202,10 +279,7 @@ class TaskPage(TaskFrame):
                     else:
                         ui.notify("Could not update note", color="negative")
                 except PermissionDenied:
-                    ui.notify(
-                        "You do not have permission to edit this note",
-                        color="negative",
-                    )
+                    ui.notify("You do not have permission to edit this note", color="negative")
                 except Exception as exc:
                     ui.notify(f"Error editing note: {exc}", color="negative")
 
