@@ -17,6 +17,13 @@ from ui.layout import TaskFrame
 
 
 class TaskPage(TaskFrame):
+    def __init__(self, user, task, session):
+        super().__init__(user, task)
+
+        self.user = user
+        self.task = task
+        self.session = session
+
     def render_content(self) -> None:
         with ui.column().classes("w-full h-full p-6 gap-6"):
             with ui.card().classes("w-full p-6 shadow-md"):
@@ -68,7 +75,7 @@ class TaskPage(TaskFrame):
         self.on_manage_notes()
 
     def on_manage_notes(self, e=None) -> None:
-        cm = CollabManager()
+        cm = CollabManager(session=self.session)
 
         try:
             notes = cm.view_task_note(self.user, self.task.id) or []
@@ -166,7 +173,7 @@ class TaskPage(TaskFrame):
         dlg.open()
 
     def on_edit_note(self, note) -> None:
-        cm = CollabManager()
+        cm = CollabManager(session=self.session)
 
         with ui.dialog().props("persistent") as dlg, ui.card().classes("w-[640px]"):
             ui.label("Edit Task Note").classes("text-h6")
@@ -216,8 +223,8 @@ def task(task_id: int) -> None:
         return
 
     user = app_state.get_current_user()
-    task_manager = TaskManager()
     session = db_conn.get_session()
+    task_manager = TaskManager(session=session)
     raw_task = session.query(Task).filter_by(id=task_id).first()
 
     if raw_task is None:
@@ -241,4 +248,4 @@ def task(task_id: int) -> None:
         ui.notify("Task not found", color="negative")
         return
 
-    TaskPage(user, loaded_task).render()
+    TaskPage(user, loaded_task, session=session).render()

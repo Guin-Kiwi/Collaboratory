@@ -15,8 +15,8 @@ from logic.permissions_manager import require_permission, PermissionAction
 
 class TaskManager:
 
-    def __init__(self):
-        self.session = db_conn.get_session()
+    def __init__(self, session=None):
+        self.session = session or self.db.get_session()
 
     def create_task(self, user: User, project: Project, title: str, description: str, due_date: datetime | None, priority: str, status: str,) -> Task:
         """Create a new task"""
@@ -28,7 +28,7 @@ class TaskManager:
             due_date = due_date,
             priority = priority,
             status = status)
-        require_permission(user, PermissionAction.CREATE_TASK, self.session, project = project, task = task)
+        require_permission(user, PermissionAction.CREATE_TASK, self.session, project = project)
        
         self.session.add(task)
         self.session.commit()
