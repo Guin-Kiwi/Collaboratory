@@ -30,7 +30,7 @@ class TaskManager:
             due_date = due_date,
             priority = priority,
             status = status)
-        require_permission(user, PermissionAction.CREATE_TASK, self.session, project = project, task = task)
+        require_permission(user, PermissionAction.CREATE_TASK, self.session, project = project)
        
         self.session.add(task)
         self.session.commit()

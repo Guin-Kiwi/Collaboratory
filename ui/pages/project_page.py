@@ -40,6 +40,16 @@ from logic.permissions_manager import PermissionDenied
 from ui.layout import ProjectFrame
 
 class ProjectPage(ProjectFrame):
+
+    def on_create_task(self, e=None) -> None:
+        self.on_manage_tasks()
+    
+    def on_add_collaborator(self, e=None) -> None:
+        self.on_manage_collaborators()
+
+    def on_create_note(self, e=None) -> None:
+        self.on_manage_notes()
+
     def on_manage_tasks(self, e=None) -> None:
         tm = TaskManager()
         pm = ProjectManager()
@@ -398,12 +408,21 @@ class ProjectPage(ProjectFrame):
 
 @ui.page('/project/{project_id}')
 def project(project_id: int) -> None:
+    if not app_state.is_authenticated():
+        ui.notify('Please log in to view projects', color='negative')
+        ui.navigate.to('/login')
+        return
+
+    user = app_state.get_current_user()
+
     try:
-        project = ProjectManager().view_project(app_state.get_current_user(), project_id)
+        project = ProjectManager().view_project(user, project_id)
     except PermissionDenied:
         ui.notify('Access denied', color='negative')
         return
+
     if not project:
         ui.notify('Project not found', color='negative')
         return
-    ProjectPage(app_state.get_current_user(), project).render()
+
+    ProjectPage(user, project).render()
