@@ -40,6 +40,16 @@ from logic.permissions_manager import PermissionDenied
 from ui.layout import ProjectFrame
 
 class ProjectPage(ProjectFrame):
+
+    def on_create_task(self) -> None:
+        self.on_manage_tasks()
+
+    def on_add_collaborator(self) -> None:
+        self.on_manage_collaborators()
+
+    def on_create_note(self) -> None:
+        self.on_manage_notes()
+        
     def on_manage_tasks(self, e=None) -> None:
         tm = TaskManager()
         pm = ProjectManager()
