@@ -40,16 +40,6 @@ from logic.permissions_manager import PermissionDenied
 from ui.layout import ProjectFrame
 
 class ProjectPage(ProjectFrame):
-
-    def on_create_task(self, e=None) -> None:
-        self.on_manage_tasks()
-    
-    def on_add_collaborator(self, e=None) -> None:
-        self.on_manage_collaborators()
-
-    def on_create_note(self, e=None) -> None:
-        self.on_manage_notes()
-
     def on_manage_tasks(self, e=None) -> None:
         tm = TaskManager()
         pm = ProjectManager()
@@ -230,6 +220,7 @@ class ProjectPage(ProjectFrame):
             user.username: f'{user.username} - {user.name or ""}'
             for user in all_users
             if user.id != self.user.id and user.id not in current_collaborator_ids
+            and not user.is_admin
         }
 
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):

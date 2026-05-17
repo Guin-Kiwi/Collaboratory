@@ -4,20 +4,27 @@ from datetime import datetime
 
 from database.models import Assignment, Task, User, Project
 from database.collab_models import ProjectMember, ProjectNote
-from database.connection import DatabaseConnection
+from database import db_conn
 from logic.permissions_manager import require_permission, PermissionAction
+from sqlalchemy.orm import joinedload
 
 class ProjectManager:
     def __init__(self):
-        self.db = DatabaseConnection()
-        self.db.init()
-        self.session = self.db.get_session()
+        self.session = db_conn.get_session()
 
 ###----------- helper functions for the project manager (e.g. get project by id, get projects by user, etc.) -----------
     
     def get_project_by_id(self, project_id: int) -> Project | None:
-        """Get project by ID"""
-        return self.session.query(Project).filter_by(id = project_id).first()
+        return (
+            self.session.query(Project)
+            .options(
+                joinedload(Project.collaborator_memberships).joinedload(ProjectMember.user),
+                joinedload(Project.tasks),
+                joinedload(Project.notes),
+            )
+            .filter_by(id=project_id)
+            .first()
+        )
     
     def get_projects_by_owner(self, user_id: int) -> list[Project]:
         """Get all projects owned by a user."""
@@ -43,7 +50,6 @@ class ProjectManager:
                 name = name,
                 description = description,
                 owner_id = owner_id,
-                collaborator_memberships=[ProjectMember(user_id=user.id)],
             )
             self.session.add(project)
             self.session.commit()

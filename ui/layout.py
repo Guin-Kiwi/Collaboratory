@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from nicegui import ui
 from database.models import User, Project, Task
 from logic.app_state import app_state
-from ui.view import BaseView
 from logic.project_manager import ProjectManager
 from logic.collab_manager import CollabManager
 
