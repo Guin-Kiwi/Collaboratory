@@ -86,8 +86,6 @@ class LoginPage(UnauthenticatedFrame):
                 .classes('border border-solid border-gray-400 rounded') \
                 .style("background-color: #FFFFFF")
 
-            signup_is_admin = ui.checkbox("Register as Admin")
-
             signup_error = ui.label("").classes("text-red text-sm")
 
             def handle_signup():
@@ -97,7 +95,6 @@ class LoginPage(UnauthenticatedFrame):
                     username = signup_username.value.strip()
                     password = signup_password.value.strip()
                     confirm = signup_confirm.value.strip()
-                    is_admin = signup_is_admin.value
 
                     if not name or not email or not username or not password or not confirm:
                         signup_error.set_text("Please fill in all fields.")
@@ -115,7 +112,7 @@ class LoginPage(UnauthenticatedFrame):
                         signup_error.set_text("Username already taken.")
                         return
 
-                    user = self._service.create_user(username, password, name, email, is_admin)
+                    user = self._service.create_user(username, password, name, email, is_admin=False)
                     app_state.login(user)
                     signup_dialog.close()
                     ui.navigate.to("/dashboard")
