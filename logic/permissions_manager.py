@@ -159,8 +159,6 @@ def check_permission(
         case PermissionAction.ASSIGN_TASK:
             if project is None:
                 return False
-            if project is None:
-                return False
             return (
                 user.is_admin 
                 or is_owner(user, project) 
