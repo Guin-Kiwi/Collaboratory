@@ -1,75 +1,92 @@
-# Semester Two Project - Collaboratory
+# Collaboratory
 
-This project is intended to:
+Collaboratory is a web-based team task management application built in Python. It supports role-based project collaboration for creating, managing, and tracking tasks and notes across projects.
 
-- Practice the complete process from **problem analysis to implementation**
-- Apply basic **Python** programming concepts learned in the Programming Foundations module
-- Demonstrate the use of **console interaction, data validation, and file processing**
-- Produce clean, well-structured, and documented code
-- Prepare students for **teamwork and documentation** in later modules
-- Use this repository as a starting point by importing it into your own GitHub account.  
-- Work only within your own copy — do not push to the original template.  
-- Commit regularly to track your progress.
+The application follows a 3-tier architecture using NiceGUI for the presentation layer, Python for the application logic, and SQLite with SQLAlchemy for data persistence.
 
 ## 📝 Analysis
 
 ### Problem
 
+Development teams lack a lightweight, role-aware tool for managing tasks within a project. Without structured access control, any team member can modify or delete any task, making it difficult to maintain clear ownership and accountability across a shared project.
+
 
 ### Scenario
 
-
-### User stories: stakeholder (for whom?), functionality (what do they want?), benefit (why is it useful?)
-
-## Standard User
-
-1. As a standard user, I want to create a new task.
-2. As a standard user, I want to edit my own tasks so that I can update the description if requirements change.
-3. As a standard user, I want to see the status of my tasks so that I know whether they are still open, in progress or completed.
-4. As a standard user, I want to assign a task to a specific user so that responsibility for the task is clear.
-5. As a standard user, I want to upload additional files or information to a task so that I can provide more details.
-
-## Assignee User
-
-6. As an assignee, I want to change the status of a task from "To Do" to "In Progress" and "Completed". So the team and the standard user knows the progress of the task.
-7. As an assignee, I want to view tasks assigned to me so that I know which tasks I am responsible for.
-8. As an assignee, I want to add comments or updates to a task so that I can communicate progress or issues with the team.
-9. As an assignee, I want to receive updates when a task assigned to me is edited so that I stay informed about changes.
-
-## Administrator User
-
-10. As an administrator, I want to delete any task so I can remove spam, duplicates or invalid tasks.
-11. As an administrator, I want to reassign tasks between users so that workload can be balanced across the team.
+A small team uses Collaboratory to manage a development project. The project owner creates the project and invites collaborators. Collaborators create tasks and assign them to team members. Assignees update task status (To Do → In Progress → Completed) and leave task notes to communicate progress. The owner monitors all tasks, manages collaborators, and can delete tasks when needed.
 
 
-### Use cases: 
+## User Stories
 
-> 🚧 Name actors and briefly describe each use case. Ideally, a UML use case diagram specifies use cases and relationships.
+### Owner
 
-![UML Use Case Diagram](docs/architecture-diagrams/uml_use_case_diagram.png)
+1. As an Owner, I want to create a new project so that I can organise tasks for my team in one place.
+2. As an Owner, I want to manage collaborators so that I can control who has access to the project.
+3. As an Owner, I want to create and assign tasks so that work is clearly distributed.
+4. As an Owner, I want to edit and delete tasks so that the project stays organised and up to date.
+5. As an Owner, I want to add and view project notes so that important information is documented and accessible.
 
-**Use cases**
+### Assignee
 
-## Use Case 1 - Standard user
-- Create Task
-- Edit own task
-- Upload additional informations or files
-- View task status
+1. As an Assignee, I want to view projects and tasks so that I understand my responsibilities clearly.
+2. As an Assignee, I want to update the status of my tasks so that I can show my progress.
+3. As an Assignee, I want to add and view task notes so that I can share updates and understand task context.
 
-## Use Case 2 - Assignee
-- View assigned tasks
-- Change task status "To Do" - "In Progress" - "Completed"
-- Add comments or updates
-- Receive Updates when task is edited
+### Collaborator
 
-## Use Case 3 - Administrator
-- Delete Task
-- Reassign tasks between users
+1. As a Collaborator, I want to view projects and tasks so that I can support the Owner.
+2. As a Collaborator, I want to create and edit tasks so that I can help organise the project work.
+3. As a Collaborator, I want to assign tasks to users so that work is distributed effectively.
+4. As a Collaborator, I want to add and view project notes so that important information is shared within the team.
 
-**Actors**
-- Standard user (creates a task)
-- Assignee (works on assigned tasks and updates progress)
-- Administrator (manages tasks and balances workload)
+## Use Case Diagram – Collaboratory
+
+![Use Case Diagram](usecase_collaboratory.png)
+
+### Main Use Cases
+
+- **View Projects & Tasks**: Users can view projects and tasks they have access to.
+- **Manage Tasks**: Tasks can be created, edited, and assigned within a project.
+- **Delete Task**: The Owner can remove tasks.
+- **Manage Collaborators**: The Owner adds or removes collaborators.
+- **Change Task Status**: Assignees update the progress of tasks.
+- **Add & View Project Notes**: Owners and Collaborators document project information.
+- **Add & View Task Notes**: Assignees add updates or comments to tasks.
+
+### Actors
+
+- **Owner**: Creates and manages projects, tasks, collaborators, and project notes.
+- **Collaborator**: Supports the Owner by managing tasks and project notes.
+- **Assignee**: Works on assigned tasks and updates their status.
+
+## Roles & Permissions
+
+A user's role is specific to each project — it depends on their relationship
+to that project, not a global setting. Users can be Owners or Collaborators, and can additionally be Assignees or Admins.
+A user can simultaneously be a Collaboratory Admin, Owner or Collaborator of a project, and Assignee of tasks within that project.
+
+| Role | How you get it |
+|---|---|
+| **Owner** | You created the project |
+| **Assignee** | You have been assigned to at least one task in the project |
+| **\* Collaborator** | The Owner added you to the project |
+
+> Users with `is_admin = true` have Owner-level access across all projects.
+> This is a simple override for recovery/admin purposes, not a normal role.
+
+| Action                        | Owner | Assignee | * Collaborator |
+|-------------------------------|-------|----------|---------------|
+| View project & tasks          | ✅    | ✅       | ✅            |
+| Create task                   | ✅    | —        | ✅             |
+| Assign task to user           | ✅    | —        | ✅             |
+| Edit task details             | ✅    | —        | ✅             |
+| Change task status            | —     | ✅       | —              |
+| Delete task                   | ✅    | —        | —              |
+| Add/remove collaborators      | ✅    | —        | —              |
+| Add Project Note              | ✅    | —        | ✅             |
+| View Project Notes            | ✅    | ✅       | ✅             |
+| Add Task Note                 | —     | ✅       | —              |
+| View Task Notes               | ✅    | ✅       | ✅            |
 
 ---
 
@@ -93,18 +110,54 @@ directly.
 ---
 
 ### 1. Interactive App (GUI)
- 
----
-The application interacts with the user via a web browser. Users can perform the following steps:
 
-1. User Login
-2. Task Status
-3. Task Assignment
-4. Manage Workflows/Tasks
----
+The application interacts with users through a web browser using NiceGUI. 
 
+Users can perform the following actions:
+
+- Register and log into the application securely
+- Create and manage projects
+- Create, assign, edit, and delete tasks
+- Update task statuses (To Do → In Progress → Completed)
+- Add and view project and task notes
+- Manage collaborators within projects
+- Navigate through dashboards and task views
+
+The graphical user interface is implemented entirely with NiceGUI components running on the server side. The browser acts as a thin client while the application logic and UI state are managed by the Python backend.
+
+---
 
 ### 2. Data Validation
+
+The application validates all user input to ensure data consistency, application stability, and secure workflows.
+
+Validation is performed before data is processed or stored in the database.
+
+Examples of validated input include:
+
+- usernames and email addresses
+- login credentials
+- project names and descriptions
+- task titles and task status values
+- collaborator assignments
+- required form fields
+
+Invalid or incomplete input is rejected with clear feedback messages in the user interface. This prevents inconsistent or malformed data from being stored in the SQLite database.
+
+The application also validates permission-based actions to ensure that users can only perform actions allowed by their project role (Owner, Collaborator, or Assignee).
+
+### 3. Database Management
+
+The application uses SQLite as its persistent database and SQLAlchemy as an Object-Relational Mapper (ORM).
+
+The ORM is used to:
+
+- define database tables as Python classes
+- manage relationships between users, projects, tasks, assignments, project notes, and task notes
+- create, read, update, and delete persistent data
+- avoid writing raw SQL statements directly in the application logic
+
+Database access is separated from the user interface. The manager classes interact with the database through SQLAlchemy sessions, which helps keep the architecture clean and maintainable.
 
 ### Input validation and error handling
 
@@ -164,6 +217,26 @@ Core entities:
 	project_id  (FK → Projects.id)
 	user_id     (FK → Users.id)
 
+#### ProjectNote
+
+	id          (PK)
+	content
+	project_id  (FK → Projects.id)
+	created_by  (FK → Users.id)
+	created_at
+
+#### TaskNote
+
+	id          (PK)
+	content
+	task_id     (FK → Tasks.id)
+	created_by  (FK → Users.id)
+	created_at
+
+#### Entity Relationship Diagram
+
+<img width="1213" height="1209" alt="ERCollab_Notes (2)" src="https://github.com/user-attachments/assets/199f9147-afc6-4767-9e04-17df8013b0eb" />
+
 ### Architecture
 
 This application follows a 3-tier architecture:
@@ -186,42 +259,26 @@ This application follows a 3-tier architecture:
 - Stores all persistent data: users, projects, tasks, and assignments
 - The backend interacts with the database exclusively through SQLAlchemy sessions
 
-### ?Gui information:
+### Design Patterns
 
+**Service Layer (Manager Pattern)** — `logic/user_manager.py`, `project_manager.py`, `task_manager.py`, `collab_manager.py`
+Four manager classes each own all business logic for one domain. The UI calls manager methods; managers query the database via their SQLAlchemy session. No SQL or UI code appears in manager classes. Status: **implemented**.
 
+**Mixin Pattern** — `database/mixins.py` (`TimestampMixin`)
+Adds `created_at` and `updated_at` columns to `User`, `Project`, `Task`, `ProjectNote`, and `TaskNote` via multiple inheritance, avoiding repeated column definitions across models. Status: **implemented**.
 
-	`code`
+**Façade Pattern** — `database/connection.py` (`DatabaseConnection`) and `logic/permissions_manager.py` (`require_permission`)
+`DatabaseConnection` hides SQLAlchemy engine and session setup; callers use `init()` and `get_session()` only. `require_permission` hides an 18-action permission dispatch behind a single guard call. All four managers use the shared `db_conn` instance from `database/__init__.py`. Status: **implemented**.
 
-
-### ?Logic information: 
-
-
-  
-  Requirements:
-1. 
-2.
-3. 
-4. 
-
-**Criteria**
-
-
-
-
-### 3. File Processing
-
-The application writes and reads data using a ** file with a ** structure :
-
-- **Input and Output file:** `.json` — Contains the **
-
-		`code goes here`
+**Singleton (by convention)** — `database/__init__.py`
+A single shared `DatabaseConnection` instance (`db_conn`) is initialised at import time and used across all managers. Python does not enforce that additional instances cannot be created, but none are created in practice. Status: **partial** — convention enforced, not language-enforced.
   
 ## ⚙️ Implementation
 
 ### Technology
 - Python 3.x
 - Environment: GitHub Codespaces
-- External libraries: `nicegui` (web-based UI), `sqlalchemy` (ORM/database)
+- External libraries: `nicegui` (web-based UI), `sqlalchemy` (ORM/database), `bcrypt` (password hashing)
 
 ### 📂 Repository Structure
 ```
@@ -238,37 +295,58 @@ collaboratory/
 
 ### How to Run
 
-1. Open the repository in **GitHub Codespaces**
+1. Open the repository in **GitHub Codespaces** (or clone locally)
 2. Open the **Terminal**
-3. Run:
-	```bash
-	python3 main.py
-	```
+3. Install dependencies:
+	pip install -r requirements.txt
+4. Start the application:
+    python main.py
+5. Open your browser at the URL shown in the terminal (default: `http://localhost:8080`)
 
 ### Libraries Used
 
-- `json`: used for working with JSON data.
-- `random`: for generating random numbers and making random selections.
-- `string`: provides useful string constants and helpers, generating random strings, passwords, or validating characters.
-- `nicegui`: for building web-based user interface.
-- `sqlalchemy`: for working with the database.
+- `nicegui`: builds the web-based user interface; UI components are Python objects served by NiceGUI's built-in web server.
+- `sqlalchemy`: ORM for defining models, managing sessions, and querying the SQLite database without writing raw SQL.
+- `bcrypt`: hashes passwords at signup and verifies them at login, used in `UserManager`.
 
-The first three libraries (`json`, `random`, `string`) are part of the Python standard library and require no installation. `nicegui` and `sqlalchemy` are external dependencies and must be installed before running the application (e.g., via `pip install -r requirements.txt`).
+All three are external dependencies. Install before running:
+pip install -r requirements.txt
 
+## Features
+
+- **User authentication** — sign up with name and email; login with bcrypt-hashed password; server-side session state via `AppState`
+- **Project management** — create, view, edit, and delete projects; role-based permissions enforced per action
+- **Collaborator management** — project owners can add collaborators; collaborators can assign tasks and write notes
+- **Task management** — full create/read/update/delete for tasks within a project; status: To Do → In Progress → Completed
+- **Task notes** — assignees, owners, and collaborators can write and view notes on individual tasks
+- **Project notes** — owners and collaborators can write and view project-level notes
+- **Permission system** — 18 permission actions across three roles (owner, collaborator, assignee) enforced by `PermissionsManager`
 
 ## 👥 Team & Contributions
 
-| Name                  | Final Contribution                                                                   |
-| --------------------- | ------------------------------------------------------------------------------------ |
-| Marta Greschuk        | document the work distribution                                                       |
-| Polina Yemelianenkova | libraries, the 3-tier architecture plan, and the database schema within the read.me |
-| Ayla Allen            | GitHub repository setup                                                              |
-| Sümeyya Güçlü-Babür   | user stories and user cases                                                          |
+| Name                  | Contribution |
+| --------------------- | ------------ |
+| Marta Greschuk        | Task ORM models, application state management, dashboard UI, README work distribution |
+| Polina Yemelianenkova | Database architecture, ORM configuration, UserManager logic, authentication UI, README architecture and schema |
+| Ayla Allen            | GitHub repository setup, database seeding, permission system, layout and routing UI |
+| Sümeyya Güçlü-Babür   | User stories and use cases, TaskManager logic, task input UI, task and assignee management |
+
 ## 🤝 Contributing
 
-- Use this repository as a starting point by importing it into your own GitHub account or VScode on Desktop.  
-- Work only within your own copy — do not push to the original template.  
-- Commit regularly to track your progress.
+This is a closed academic project submitted for assessment. External contributions are not accepted.
+
+## Known Limitations & Deferred Decisions
+
+### Known Limitations
+
+- The application currently uses SQLite, which is suitable for development and small team collaboration but not intended for large-scale production environments.
+- Some UI components and workflows could still be further improved regarding responsiveness and usability.
+- Singleton behaviour for the shared database connection is implemented by convention and not strictly enforced by Python itself.
+
+### Deferred Decisions
+
+- Advanced notification features and real-time collaboration updates were intentionally scoped out due to project time constraints.
+- Role expansion beyond Owner, Collaborator, Assignee, and Admin was not implemented to keep the permission system manageable.
 
 ## 📝 License
 

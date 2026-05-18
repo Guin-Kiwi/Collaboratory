@@ -166,12 +166,12 @@ def check_permission(
             )
 
         case PermissionAction.CREATE_TASK:
-            if task is None:
+            if project is None:
                 return False
             return (
                 user.is_admin 
-                or is_owner(user, task.project) 
-                or is_collaborator(user, task.project, session)
+                or is_owner(user, project) 
+                or is_collaborator(user, project, session)
             )
 
         case PermissionAction.VIEW_TASK:

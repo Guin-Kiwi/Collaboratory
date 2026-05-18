@@ -1,20 +1,28 @@
 from database.models import User, Project, Task, Assignment
 from database.collab_models import ProjectNote as PNote, TaskNote as TNote, ProjectMember as PMember
-from database.connection import DatabaseConnection
-from logic.permissions_manager import require_permission, PermissionAction
+from database.collab_models import ProjectMember
+from database import db_conn
+from logic.permissions_manager import require_permission, PermissionAction, check_permission
+from sqlalchemy.orm import joinedload
 
 
 class CollabManager:
-    def __init__(self):
-        self.db = DatabaseConnection()
-        self.db.init()
-        self.session = self.db.get_session()
+    
+    def __init__(self, session=None):
+        self.session = session or db_conn.get_session()
 
 #------- helpers
 
     def get_project_by_id(self, project_id: int) -> Project:
         return (
-            self.session.query(Project).filter_by(id=project_id).first()
+            self.session.query(Project)
+            .options(
+                joinedload(Project.collaborator_memberships).joinedload(ProjectMember.user),
+                joinedload(Project.tasks),
+                joinedload(Project.notes),
+            )
+            .filter_by(id=project_id)
+            .first()
         )
 
     def get_project_list_as_collaborator(self, user_id: int) -> list[Project]:
@@ -24,6 +32,21 @@ class CollabManager:
             .filter(PMember.user_id == user_id)
             .all()
         )
+
+#------- permission checks
+
+    def can_add_collaborator(self, user: User, project: Project) -> bool:
+        try:
+            return check_permission(user, PermissionAction.ADD_COLLABORATOR, self.session, project=project)
+        except Exception:
+            return False
+
+    def can_delete_project_note(self, user: User, project: Project) -> bool:
+        try:
+            return check_permission(user, PermissionAction.DELETE_PROJECT_NOTE, self.session, project=project)
+        except Exception:
+            return False
+    
 
 #------- collaborator CRUD
 
@@ -136,12 +159,16 @@ class CollabManager:
         if not target_note:
             return False
 
-        if not (target_note.created_by == user.id
-            or user.is_admin
-            or project.owner_id == user.id
-        ):
-            return False
+        # Allow authors to delete their own notes without requiring the broader
+        # DELETE_PROJECT_NOTE permission check. For others, fall back to the
+        # permissions manager (admins / owners / collaborators will be allowed
+        # there).
+        if target_note.created_by == user.id:
+            self.session.delete(target_note)
+            self.session.commit()
+            return True
 
+        # Non-authors must pass the permissions manager
         require_permission(user, PermissionAction.DELETE_PROJECT_NOTE, self.session, project = project)
         self.session.delete(target_note)
         self.session.commit()
@@ -199,12 +226,15 @@ class CollabManager:
         if not target_note:
             return False
 
-        if not (target_note.created_by == user.id
-            or user.is_admin
-        ):
-            return False
+        # Allow the note author to delete their own task note directly.
+        if target_note.created_by == user.id:
+            self.session.delete(target_note)
+            self.session.commit()
+            return True
 
+        # Otherwise require the permission (admins / owners / assignees handled there)
         require_permission(user, PermissionAction.DELETE_TASK_NOTE, self.session, task = task)
         self.session.delete(target_note)
         self.session.commit()
         return True
+
