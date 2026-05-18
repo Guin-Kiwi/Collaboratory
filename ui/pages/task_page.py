@@ -39,22 +39,13 @@ class TaskPage(TaskFrame):
         with ui.card().classes("w-full p-6 shadow-md"):
             with ui.row().classes("w-full items-center justify-between"):
                 ui.button("Manage Assignees", on_click=self.on_manage_assignees)
+                ui.button("Edit Status", on_click=self.on_edit_status)
 
-<<<<<<< HEAD
-            with ui.card().classes("w-full p-6 shadow-md"):
-                with ui.row().classes("w-full items-center justify-between"):
-                    ui.button("Manage Assignees", on_click=self.on_manage_assignees)
-                    ui.button("Edit Status", on_click=self.on_edit_status)
-                with ui.column().classes("mt-2 gap-1"):
-                    ui.label("Description").classes("text-sm text-grey-6 uppercase")
-                    ui.label(self.task.description or "No description").classes("text-lg text-grey-8")
-=======
             with ui.column().classes("mt-2 gap-1"):
                 ui.label("Description").classes("text-sm text-grey-6 uppercase")
                 ui.label(self.task.description or "No description").classes("text-lg text-grey-8")
 
             ui.separator()
->>>>>>> d007f1f (Fix detached task project access)
 
             with ui.row().classes("gap-4 mt-2"):
                 ui.badge(
@@ -121,17 +112,20 @@ class TaskPage(TaskFrame):
             def remove_user(user_id: int):
                 try:
                     ok = tm.remove_assignee(self.user, self.task.id, user_id)
+
                     if ok:
                         ui.notify("Assignee removed", color="positive")
                         dlg.close()
                         ui.navigate.reload()
                     else:
                         ui.notify("Could not remove assignee", color="negative")
+
                 except PermissionDenied:
                     ui.notify(
                         "You do not have permission to remove this assignee",
                         color="negative",
                     )
+
                 except Exception as exc:
                     ui.notify(f"Error removing assignee: {exc}", color="negative")
 
@@ -144,6 +138,7 @@ class TaskPage(TaskFrame):
                             "Remove",
                             on_click=lambda _, user_id=assignee.id: remove_user(user_id),
                         )
+
             else:
                 ui.label("No assignees yet")
 
@@ -182,6 +177,7 @@ class TaskPage(TaskFrame):
                         ui.notify("User assigned to task", color="positive")
                         dlg.close()
                         ui.navigate.reload()
+
                     else:
                         ui.notify("Could not assign user to task", color="negative")
 
@@ -398,11 +394,15 @@ class TaskPage(TaskFrame):
                         ui.notify("Task status updated", color="positive")
                         dlg.close()
                         ui.navigate.reload()
+
                     else:
                         ui.notify("Could not update task status", color="negative")
 
                 except PermissionDenied:
-                    ui.notify("You do not have permission to change this status", color="negative")
+                    ui.notify(
+                        "You do not have permission to change this status",
+                        color="negative",
+                    )
 
                 except Exception as exc:
                     ui.notify(f"Error changing status: {exc}", color="negative")
@@ -412,6 +412,7 @@ class TaskPage(TaskFrame):
                 ui.button("Cancel", on_click=dlg.close)
 
         dlg.open()
+
 
 @ui.page("/task/{task_id}")
 def task(task_id: int) -> None:
