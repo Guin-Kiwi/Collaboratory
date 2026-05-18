@@ -16,7 +16,7 @@ class CollabManager:
         return (
             self.session.query(Project)
             .options(
-                joinedload(Project.collaborator_memberships).joinedload(ProjectMember.user),
+                joinedload(Project.collaborator_memberships).joinedload(PMember.user),
                 joinedload(Project.tasks),
                 joinedload(Project.notes),
             )
