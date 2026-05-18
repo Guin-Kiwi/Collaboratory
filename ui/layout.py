@@ -292,6 +292,31 @@ class ProjectFrame(NoteableFrame):
 
             with ui.card().classes("w-full p-6 shadow-md"):
                 with ui.row().classes("w-full items-center justify-between"):
+                    ui.label("Project Tasks").classes("text-2xl font-bold")
+                    ui.button("Add or Remove Tasks", on_click=self.on_manage_tasks)
+
+                if self.project.tasks:
+                    with ui.column().classes("w-full gap-2 mt-3"):
+                        for task in self.project.tasks:
+                            with ui.row().classes(
+                                "w-full items-center justify-between p-3 rounded bg-blue-50"
+                            ):
+                                with ui.column().classes("gap-0"):
+                                    ui.link(task.title, f"/task/{task.id}").classes(
+                                        "font-bold text-base"
+                                    )
+                                    ui.label(task.description or "No description").classes(
+                                        "text-sm text-grey-7"
+                                    )
+
+                                with ui.row().classes("gap-2"):
+                                    ui.badge(task.status or "no status", color="blue")
+                                    ui.badge(task.priority or "no priority", color="orange")
+                else:
+                    ui.label("No tasks yet.").classes("text-sm text-grey-6 italic mt-2")
+
+            with ui.card().classes("w-full p-6 shadow-md"):
+                with ui.row().classes("w-full items-center justify-between"):
                     ui.label("Project Notes").classes("text-2xl font-bold")
 
                 with ui.row().classes("gap-2"):
@@ -299,6 +324,28 @@ class ProjectFrame(NoteableFrame):
                     ui.button("Create Note", on_click=self.on_create_note)
 
                 ui.label("Create, edit, or delete notes related to this project.").classes("text-grey-7")
+
+                cm = CollabManager()
+
+                try:
+                    notes = cm.view_project_note(self.user, self.project.id) or []
+                except Exception:
+                    notes = []
+
+                ui.separator()
+
+                if notes:
+                    with ui.column().classes("w-full gap-2 mt-2"):
+                        for note in notes:
+                            with ui.card().classes("w-full p-3 bg-blue-50 shadow-sm"):
+                                ui.label(note.content).classes("text-sm")
+
+                                if hasattr(note, "author") and note.author:
+                                    ui.label(
+                                        f"{note.author.username} • {note.created_at}"
+                                    ).classes("text-xs text-grey-6")
+                else:
+                    ui.label("No notes yet.").classes("text-sm text-grey-6 italic")
 
 class TaskFrame(NoteableFrame):
 

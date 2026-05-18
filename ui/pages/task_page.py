@@ -79,6 +79,31 @@ class TaskPage(TaskFrame):
                     "Create, edit, or delete notes related to this task."
                 ).classes("text-grey-7")
 
+                cm = CollabManager(session=self.session)
+
+                try:
+                    notes = cm.view_task_note(self.user, self.task.id) or []
+                except Exception:
+                    notes = []
+
+                ui.separator()
+
+                if notes:
+                    with ui.column().classes("w-full gap-2 mt-2"):
+                        for note in notes:
+                            with ui.card().classes("w-full p-3 bg-blue-50 shadow-sm"):
+                                ui.label(note.content).classes("text-sm")
+
+                                if hasattr(note, "author") and note.author:
+                                    ui.label(
+                                        f"{note.author.username} • {note.created_at}"
+                                    ).classes("text-xs text-grey-6")
+                else:
+                    ui.label("No notes yet.").classes("text-sm text-grey-6 italic")
+
+
+
+
     def on_manage_assignees(self, e=None) -> None:
         tm = TaskManager(session=self.session)
         assignees = tm.get_assignees(self.user, self.task.id)
