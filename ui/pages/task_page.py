@@ -9,6 +9,7 @@ from nicegui import ui
 
 from logic.app_state import app_state
 from logic.task_manager import TaskManager
+from logic.user_manager import UserManager
 from logic.collab_manager import CollabManager
 from logic.permissions_manager import PermissionDenied
 from database import db_conn
@@ -74,6 +75,21 @@ class TaskPage(TaskFrame):
         with ui.dialog() as dlg, ui.card().classes("w-[450px]"):
             ui.label("Manage Assignees").classes("text-h6")
 
+            def remove_user(user_id: int):
+                try:
+                    ok = tm.remove_assignee(self.user, self.task.id, user_id)
+                    if ok:
+                        ui.notify("Assignee removed", color="positive")
+                        dlg.close()
+                        ui.navigate.reload()
+                    else:
+                        ui.notify("Could not remove assignee", color="negative")
+                except PermissionDenied:
+                    ui.notify("You do not have permission to remove this assignee", color="negative")
+
+                except Exception as exc:
+                    ui.notify(f"Error removing assignee: {exc}", color="negative")
+
             if assignees:
                 for assignee in assignees:
                     with ui.row().classes("items-center gap-4"):
@@ -83,39 +99,48 @@ class TaskPage(TaskFrame):
                             "Remove",
                             on_click=lambda _, user_id=assignee.id: remove_user(user_id),
                         )
-
             else:
                 ui.label("No assignees yet")
 
             ui.separator()
 
+
+            assigned_user_ids = [assignee.id for assignee in assignees]
             users = self.session.query(User).all()
-            options = {user.id: user.username for user in users}
+
+            options = {user.id: user.username for user in users
+                       if user.id not in assigned_user_ids}
 
             selected_user = ui.select(
                 options=options,
                 label="Select user",
             ).classes("w-full")
 
-            def remove_user(user_id: int):
-                tm.remove_assignee(self.user, self.task.id, user_id)
-                dlg.close()
-                ui.navigate.reload()
-
             def assign_user():
                 if selected_user.value is None:
                     ui.notify("Please select a user", color="negative")
                     return
 
-                tm.assign_task(
-                    self.user,
-                    self.task.project,
-                    self.task.id,
-                    selected_user.value,
-                )
+                try:
+                    ok = tm.assign_task(
+                        self.user,
+                        self.task.project,
+                        self.task.id,
+                        selected_user.value,
+                    )               
 
-                dlg.close()
-                ui.navigate.reload()
+                    if ok:
+                        ui.notify("User assigned to task", color="positive")
+                        dlg.close()
+                        ui.navigate.reload()
+                    else:
+                        ui.notify("Could not assign user to task", color="negative")
+
+                except PermissionDenied:
+                    ui.notify("You do not have permission to assign this task", color="negative")
+                
+                except Exception as exc:
+                    ui.notify(f"Error assigning task: {exc}", color="negative")
 
             with ui.row():
                 ui.button("Assign", on_click=assign_user)
