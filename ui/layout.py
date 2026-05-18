@@ -409,26 +409,56 @@ class TaskFrame(NoteableFrame):
     def on_create_note(self) -> None:
         pass
 
+    @abstractmethod
+    def on_manage_assignees(self, e=None) -> None:
+        pass
+
+    @abstractmethod
+    def on_edit_status(self, e=None) -> None:
+        pass
+
     def render_content(self) -> None:
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
-            ui.button('Manage Assignees', on_click=self.on_manage_assignees)
-            ui.label('Users Assigned to Tasks')
-            with ui.column().props('bordered separator'):
+            ui.label('Management').classes('font-bold text-lg mb-4')
+
+            with ui.column().classes('w-full gap-4'):
+                ui.label('Assignees').classes('font-bold')
+
                 if self.task.assignments:
                     for assignment in self.task.assignments:
-                        ui.label(assignment.user.username)
+                        ui.label(f"• {assignment.user.username}")
+                else:
+                    ui.label('No assignees yet').classes('text-sm text-grey')
+
+                ui.button('Manage Assignees', on_click=self.on_manage_assignees)
+                ui.separator()
+                ui.button('Edit Status', on_click=self.on_edit_status)
 
         self.render_header(self.task.title, right_drawer)
 
-        with ui.left_drawer().style('background-color: #d7e3f4'):
-            with ui.column().props('dense separator'):
-                ui.label('Task details')
-                ui.label(self.task.description or '')
+        with ui.column().classes('w-full max-w-4xl mx-auto p-6 gap-6'):
+            with ui.card().classes('w-full p-6 shadow-md border-t-4 border-blue-500'):
+                with ui.row().classes('w-full justify-between items-start'):
+                    ui.label(self.task.title).classes('text-3xl font-bold text-blue-900')
+                    ui.badge(self.task.status or 'No status', color='primary')
 
-        with ui.column().classes('items-center mx-auto p-4'):
+                ui.separator().classes('my-4')
+
+                ui.label(self.task.description or 'No description').classes(
+                    'text-lg text-grey-8'
+                )
+
+                with ui.row().classes('gap-4 mt-4'):
+                    ui.badge(f"Priority: {self.task.priority or 'N/A'}", color='orange')
+
+                    if self.task.due_date:
+                        ui.badge(f"Due: {self.task.due_date}", color='blue')
+
             cm = CollabManager()
+
             try:
                 notes = cm.view_task_note(self.user, self.task.id) or []
             except Exception:
                 notes = []
+
             self.render_notes(notes)
