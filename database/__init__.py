@@ -7,4 +7,6 @@ from .models import BaseModel
 db_conn = DatabaseConnection()
 db_conn.init()
 
-__all__ = ["db", "DatabaseConnection", "BaseModel"]
+__all__ = ["db_conn", "DatabaseConnection", "BaseModel"]
+
+

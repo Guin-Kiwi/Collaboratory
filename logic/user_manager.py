@@ -8,20 +8,23 @@ if __package__ in {None, ""}:
     sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from database.models import User
-from database.connection import DatabaseConnection
-
+from database import db_conn
 
 class UserManager:
 
     def __init__(self):
-        self.db = DatabaseConnection()
-        self.db.init()
-        self.session = self.db.get_session()
+        self.session = db_conn.get_session()
 
-    def create_user(self, username: str, password: str, is_admin: bool = False) -> User:
-        """Creates a new user with a hashed password."""
+    def create_user(self, username: str, password: str, name: str, email: str, is_admin: bool = False) -> User:
+        """Creates a new user with a hashed password and inserts into the database."""
         hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
-        user = User(username=username, password=hashed.decode("utf-8"), is_admin=is_admin)
+        user = User(
+            username=username,
+            password=hashed.decode("utf-8"),
+            name=name,
+            email=email,
+            is_admin=is_admin
+        )
         self.session.add(user)
         self.session.commit()
         return user

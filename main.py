@@ -15,12 +15,9 @@ Run
 from __future__ import annotations
 
 from database.connection import DatabaseConnection
-from ui.view import BaseView
 from logic import app_state
-
-import nicegui.ui as ui
-
-
+from nicegui import ui
+import ui.pages as pages
 
 def main() -> None:
     """Initialise each layer and register NiceGUI routes."""
@@ -29,27 +26,8 @@ def main() -> None:
     db = DatabaseConnection()
     db.init()
 
-    # ── Logic tier ─────────────────────────────────────────────────────────
-    # Services are instantiated per-request (inside route handlers) so that
-    # each handler receives its own SQLAlchemy session.  Place shared,
-    # stateless service configuration here if required.
-
-
-    # ── Presentation tier ──────────────────────────────────────────────────
-    @ui.page("/")
-    def index() -> None:
-        """Root page: renders the default placeholder view.
-
-        When adding a feature, pass ``db.get_session()`` to the relevant
-        service before constructing the view::
-            session = db.get_session()
-        """
-        session = db.get_session()
-        view = BaseView()
-        view.render()
-
     # ── Start the NiceGUI server ────────────────────────────────────────────
-    ui.run(title="Project Template")
+    ui.run(title="Collaboratory", host="0.0.0.0")
 
 
 if __name__ in {"__main__", "__mp_main__"}:
