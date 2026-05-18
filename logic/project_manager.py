@@ -10,6 +10,7 @@ from logic.permissions_manager import require_permission, PermissionAction
 class ProjectManager:
     def __init__(self):
         self.db = DatabaseConnection()
+        self.db.init()
         self.session = self.db.get_session()
 
 ###----------- helper functions for the project manager (e.g. get project by id, get projects by user, etc.) -----------
@@ -55,14 +56,14 @@ class ProjectManager:
         return project
 
 
-    def edit_project_details(self, user: User, project_id: int, title: str, description: str) -> bool:
+    def edit_project_details(self, user: User, project_id: int, name: str, description: str) -> bool:
         """Edit a project"""
         project = self.get_project_by_id(project_id)
         if not project:
             return False
 
         require_permission(user, PermissionAction.EDIT_PROJECT_DETAILS, self.session, project = project) 
-        project.title = title
+        project.name = name
         project.description = description
         self.session.commit()
         return True

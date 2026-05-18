@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import sessionmaker, Session
 
 from .models import BaseModel
+from database import collab_models  # noqa: F401 — registers collab tables with BaseModel metadata
 
 
 class DatabaseConnection:
