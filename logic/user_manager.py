@@ -72,3 +72,15 @@ class UserManager:
     def user_exists(self, username: str) -> bool:
         """Checks whether a username is already taken."""
         return self.session.query(User).filter_by(username=username).first() is not None
+
+    def promote_user_to_admin(self, user_id: int) -> bool:
+        """Promotes a user to admin status. Returns True if successful."""
+        user = self.get_user_by_id(user_id)
+        
+        if not user:
+            return False
+
+        user.is_admin = True
+        self.session.commit()
+        return True
+        

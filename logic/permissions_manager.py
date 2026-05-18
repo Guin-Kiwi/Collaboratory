@@ -78,10 +78,10 @@ def check_permission(
     task: Task = None,
     project: Project = None
 ) -> bool:
+    if user is None:
+        return False
     match action:
         case PermissionAction.CREATE_PROJECT:
-            if user is None:
-                return False
             return True
 
         case PermissionAction.VIEW_PROJECT:
@@ -159,10 +159,12 @@ def check_permission(
         case PermissionAction.ASSIGN_TASK:
             if task is None:
                 return False
+            if project is None:
+                return False
             return (
                 user.is_admin 
-                or is_owner(user, task.project) 
-                or is_collaborator(user, task.project, session)
+                or is_owner(user, project) 
+                or is_collaborator(user, project, session)
             )
 
         case PermissionAction.CREATE_TASK:
@@ -177,11 +179,13 @@ def check_permission(
         case PermissionAction.VIEW_TASK:
             if task is None:
                 return False
+            if project is None:
+                return False
             return (
                 user.is_admin 
-                or is_owner(user, task.project) 
+                or is_owner(user, project) 
                 or is_assignee_on_task(user, task) 
-                or is_collaborator(user, task.project, session)
+                or is_collaborator(user, project, session)
             )
         
         case PermissionAction.CHANGE_TASK_STATUS:
@@ -192,11 +196,13 @@ def check_permission(
         case PermissionAction.VIEW_TASK_NOTE:
             if task is None:
                 return False
+            if project is None:
+                return False
             return (
                 user.is_admin 
                 or is_assignee_on_task(user, task) 
-                or is_owner(user, task.project) 
-                or is_collaborator(user, task.project, session)
+                or is_owner(user, project) 
+                or is_collaborator(user, project, session)
             )
 
         case PermissionAction.WRITE_TASK_NOTE:
@@ -207,26 +213,32 @@ def check_permission(
         case PermissionAction.DELETE_TASK_NOTE:
             if task is None:
                 return False
+            if project is None:
+                return False
             return (user.is_admin 
-                or is_owner(user, task.project) 
+                or is_owner(user, project) 
                 or is_assignee_on_task(user, task))
 
         case PermissionAction.EDIT_TASK_DETAILS:
             if task is None:
                 return False
+            if project is None:
+                return False
             return (
                 user.is_admin 
-                or is_owner(user, task.project) 
-                or is_collaborator(user, task.project, session)
+                or is_owner(user, project) 
+                or is_collaborator(user, project, session)
             )
 
         case PermissionAction.DELETE_TASK:
             if task is None:
                 return False
+            if project is None:
+                return False
             return (
                 user.is_admin 
-                or is_owner(user, task.project) 
-                or is_collaborator(user, task.project, session)
+                or is_owner(user, project) 
+                or is_collaborator(user, project, session)
             )
         
         case _:
