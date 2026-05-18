@@ -5,6 +5,7 @@ from database.models import User, Project, Task
 from logic.app_state import app_state
 from logic.project_manager import ProjectManager
 from logic.collab_manager import CollabManager
+from logic.user_manager import UserManager
 
 class UnauthenticatedFrame(ABC):
 
@@ -116,6 +117,50 @@ class DashboardFrame(AuthenticatedFrame):
     def on_create_project(self) -> None:
         pass
 
+    def on_manage_admins(self) -> None:
+        um = UserManager()
+
+        users = um.get_all_users()
+
+        non_admin_users = {
+            user.id: f"{user.username} - {user.name or ''}"
+            for user in users
+            if not user.is_admin
+        }
+
+        with ui.dialog().props("persistent") as dialog, ui.card().classes("w-[500px]"):
+            ui.label("Promote User to Admin").classes("text-h6")
+
+            if not non_admin_users:
+                ui.label("There are no non-admin users to promote.").classes(
+                    "text-sm text-grey"
+                )
+            else:
+                selected_user = ui.select(
+                    options=non_admin_users,
+                    label="Select user",
+                ).classes("w-full")
+
+                def promote_user() -> None:
+                    if selected_user.value is None:
+                        ui.notify("Please select a user", color="negative")
+                        return
+
+                    ok = um.promote_user_to_admin(selected_user.value)
+
+                    if ok:
+                        ui.notify("User promoted to admin", color="positive")
+                        dialog.close()
+                        ui.navigate.reload()
+                    else:
+                        ui.notify("Could not promote user", color="negative")
+
+                with ui.row():
+                    ui.button("Promote", on_click=promote_user)
+                    ui.button("Cancel", on_click=dialog.close)
+
+        dialog.open()
+
     def render_content(self) -> None:
         pm = ProjectManager()
 
@@ -171,6 +216,9 @@ class DashboardFrame(AuthenticatedFrame):
         with ui.left_drawer().style('background-color: #d7e3f4'):
             with ui.column().props('dense separator'):
                 ui.button('Create Project', on_click=self.on_create_project)
+
+                if self.user and self.user.is_admin:
+                    ui.button('Manage Admins', on_click=self.on_manage_admins)
 
                 ui.separator()
 
