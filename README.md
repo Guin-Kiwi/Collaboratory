@@ -1,15 +1,8 @@
-# Semester Two Project - Collaboratory
+# Collaboratory
 
-This project is intended to:
+Collaboratory is a web-based team task management application built in Python. It supports role-based project collaboration for creating, managing, and tracking tasks and notes across projects.
 
-- Practice the complete process from **problem analysis to implementation**
-- Apply basic **Python** programming concepts learned in the Programming Foundations module
-- Demonstrate the use of **console interaction, data validation, and file processing**
-- Produce clean, well-structured, and documented code
-- Prepare students for **teamwork and documentation** in later modules
-- Use this repository as a starting point by importing it into your own GitHub account.  
-- Work only within your own copy — do not push to the original template.  
-- Commit regularly to track your progress.
+The application follows a 3-tier architecture using NiceGUI for the presentation layer, Python for the application logic, and SQLite with SQLAlchemy for data persistence.
 
 ## 📝 Analysis
 
@@ -69,8 +62,8 @@ A small team uses Collaboratory to manage a development project. The project own
 ## Roles & Permissions
 
 A user's role is specific to each project — it depends on their relationship
-to that project, not a global setting. Users can be Owners or Collaborators, as well as Assignees and Admins.
-Maximum roles Collaboratory Admin and Owner or Collaborator of a Project, and Assigned to a Project's Task.
+to that project, not a global setting. Users can be Owners or Collaborators, and can additionally be Assignees or Admins.
+A user can simultaneously be a Collaboratory Admin, Owner or Collaborator of a project, and Assignee of tasks within that project.
 
 | Role | How you get it |
 |---|---|
@@ -91,7 +84,7 @@ Maximum roles Collaboratory Admin and Owner or Collaborator of a Project, and As
 | Delete task                   | ✅    | —        | —              |
 | Add/remove collaborators      | ✅    | —        | —              |
 | Add Project Note              | ✅    | —        | ✅             |
-| View Project Notes            | ✅    | ✅       |✅             |
+| View Project Notes            | ✅    | ✅       | ✅             |
 | Add Task Note                 | —     | ✅       | —              |
 | View Task Notes               | ✅    | ✅       | ✅            |
 
@@ -117,18 +110,54 @@ directly.
 ---
 
 ### 1. Interactive App (GUI)
- 
----
-The application interacts with the user via a web browser. Users can perform the following steps:
 
-1. User Login
-2. Task Status
-3. Task Assignment
-4. Manage Workflows/Tasks
----
+The application interacts with users through a web browser using NiceGUI. 
 
+Users can perform the following actions:
+
+- Register and log into the application securely
+- Create and manage projects
+- Create, assign, edit, and delete tasks
+- Update task statuses (To Do → In Progress → Completed)
+- Add and view project and task notes
+- Manage collaborators within projects
+- Navigate through dashboards and task views
+
+The graphical user interface is implemented entirely with NiceGUI components running on the server side. The browser acts as a thin client while the application logic and UI state are managed by the Python backend.
+
+---
 
 ### 2. Data Validation
+
+The application validates all user input to ensure data consistency, application stability, and secure workflows.
+
+Validation is performed before data is processed or stored in the database.
+
+Examples of validated input include:
+
+- usernames and email addresses
+- login credentials
+- project names and descriptions
+- task titles and task status values
+- collaborator assignments
+- required form fields
+
+Invalid or incomplete input is rejected with clear feedback messages in the user interface. This prevents inconsistent or malformed data from being stored in the SQLite database.
+
+The application also validates permission-based actions to ensure that users can only perform actions allowed by their project role (Owner, Collaborator, or Assignee).
+
+### 3. Database Management
+
+The application uses SQLite as its persistent database and SQLAlchemy as an Object-Relational Mapper (ORM).
+
+The ORM is used to:
+
+- define database tables as Python classes
+- manage relationships between users, projects, tasks, assignments, project notes, and task notes
+- create, read, update, and delete persistent data
+- avoid writing raw SQL statements directly in the application logic
+
+Database access is separated from the user interface. The manager classes interact with the database through SQLAlchemy sessions, which helps keep the architecture clean and maintainable.
 
 ### Input validation and error handling
 
@@ -232,46 +261,16 @@ This application follows a 3-tier architecture:
 ### Design Patterns
 
 **Service Layer (Manager Pattern)** — `logic/user_manager.py`, `project_manager.py`, `task_manager.py`, `collab_manager.py`
-Four manager classes each own all business logic for one domain. The UI calls manager methods; managers query the database via their SQLAlchemy session. No UI code appears in any manager. Status: **implemented**.
+Four manager classes each own all business logic for one domain. The UI calls manager methods; managers query the database via their SQLAlchemy session. No SQL or UI code appears in manager classes. Status: **implemented**.
 
 **Mixin Pattern** — `database/mixins.py` (`TimestampMixin`)
 Adds `created_at` and `updated_at` columns to `User`, `Project`, `Task`, `ProjectNote`, and `TaskNote` via multiple inheritance, avoiding repeated column definitions across models. Status: **implemented**.
 
 **Façade Pattern** — `database/connection.py` (`DatabaseConnection`) and `logic/permissions_manager.py` (`require_permission`)
-`DatabaseConnection` hides SQLAlchemy engine and session setup; callers use `init()` and `get_session()` only. `require_permission` hides a 17-case permission dispatch behind a single guard call. Status: **partial** — managers on `ui-layer` still construct their own `DatabaseConnection` instances rather than sharing the one initialised in `database/__init__.py`. See Known Limitations.
+`DatabaseConnection` hides SQLAlchemy engine and session setup; callers use `init()` and `get_session()` only. `require_permission` hides an 18-action permission dispatch behind a single guard call. All four managers use the shared `db_conn` instance from `database/__init__.py`. Status: **implemented**.
 
-**Singleton (intended, not enforced)** — `database/__init__.py`
-A single shared `DatabaseConnection` instance (`db_conn`) is initialised at import time. Singleton enforcement is not implemented — managers can still create additional instances. See Known Limitations.
-
-### ?Gui information:
-
-
-
-	`code`
-
-
-### ?Logic information: 
-
-
-  
-  Requirements:
-1. 
-2.
-3. 
-4. 
-
-**Criteria**
-
-
-
-
-### 3. File Processing
-
-The application writes and reads data using a ** file with a ** structure :
-
-- **Input and Output file:** `.json` — Contains the **
-
-		`code goes here`
+**Singleton (by convention)** — `database/__init__.py`
+A single shared `DatabaseConnection` instance (`db_conn`) is initialised at import time and used across all managers. Python does not enforce that additional instances cannot be created, but none are created in practice. Status: **partial** — convention enforced, not language-enforced.
   
 ## ⚙️ Implementation
 
@@ -320,22 +319,33 @@ pip install -r requirements.txt
 - **Task management** — full create/read/update/delete for tasks within a project; status: To Do → In Progress → Completed
 - **Task notes** — assignees, owners, and collaborators can write and view notes on individual tasks
 - **Project notes** — owners and collaborators can write and view project-level notes
-- **Permission system** — 17 permission actions across three roles (owner, collaborator, assignee) enforced by `PermissionsManager`
+- **Permission system** — 18 permission actions across three roles (owner, collaborator, assignee) enforced by `PermissionsManager`
 
 ## 👥 Team & Contributions
 
-| Name                  | Final Contribution                                                                   |
-| --------------------- | ------------------------------------------------------------------------------------ |
-| Marta Greschuk        | document the work distribution                                                       |
-| Polina Yemelianenkova | libraries, the 3-tier architecture plan, and the database schema within the read.me |
-| Ayla Allen            | GitHub repository setup                                                              |
-| Sümeyya Güçlü-Babür   | user stories and user cases                                                          |
+| Name                  | Contribution |
+| --------------------- | ------------ |
+| Marta Greschuk        | Task ORM models, application state management, dashboard UI, README work distribution |
+| Polina Yemelianenkova | Database architecture, ORM configuration, UserManager logic, authentication UI, README architecture and schema |
+| Ayla Allen            | GitHub repository setup, database seeding, permission system, layout and routing UI |
+| Sümeyya Güçlü-Babür   | User stories and use cases, TaskManager logic, task input UI, task and assignee management |
 
 ## 🤝 Contributing
 
-- Use this repository as a starting point by importing it into your own GitHub account or VScode on Desktop.  
-- Work only within your own copy — do not push to the original template.  
-- Commit regularly to track your progress.
+This is a closed academic project submitted for assessment. External contributions are not accepted.
+
+## Known Limitations & Deferred Decisions
+
+### Known Limitations
+
+- The application currently uses SQLite, which is suitable for development and small team collaboration but not intended for large-scale production environments.
+- Some UI components and workflows could still be further improved regarding responsiveness and usability.
+- Singleton behaviour for the shared database connection is implemented by convention and not strictly enforced by Python itself.
+
+### Deferred Decisions
+
+- Advanced notification features and real-time collaboration updates were intentionally scoped out due to project time constraints.
+- Role expansion beyond Owner, Collaborator, Assignee, and Admin was not implemented to keep the permission system manageable.
 
 ## 📝 License
 
