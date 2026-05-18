@@ -26,10 +26,16 @@ class TaskPage(TaskFrame):
         self.session = session
 
     def render_content(self) -> None:
-        with ui.column().classes("w-full h-full p-6 gap-6"):
+        with ui.header(elevated=True).style("background-color: #3874c8").classes("items-center justify-between"):
+            with ui.row():
+                ui.button("Logout", on_click=self.on_logout)
+                ui.button("Dashboard", on_click=self.on_dashboard)
+                ui.button("Back to Project", on_click=lambda: ui.navigate.to(f"/project/{self.task.project.id}")).classes("text-white")
+            ui.label(self.task.title).classes("text-white text-3xl font-bold")
+
+
             with ui.card().classes("w-full p-6 shadow-md"):
                 with ui.row().classes("w-full items-center justify-between"):
-                    ui.label(self.task.title).classes("text-3xl font-bold")
                     ui.button("Manage Assignees", on_click=self.on_manage_assignees)
 
                 ui.label(self.task.description or "No description").classes(
