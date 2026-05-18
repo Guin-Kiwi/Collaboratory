@@ -271,15 +271,29 @@ class ProjectFrame(NoteableFrame):
                     for task in self.project.tasks:
                         ui.link(task.title, f'/task/{task.id}')
 
-        with ui.column().classes('items-center mx-auto p-4'):
-            ui.label(self.project.name)
-            ui.label(self.project.description or '')
-            cm = CollabManager()
-            try:
-                notes = cm.view_project_note(self.user, self.project.id) or []
-            except Exception:
-                notes = []
-            self.render_notes(notes)
+        with ui.column().classes("w-full h-full p-6 gap-6"):
+            with ui.card().classes("w-full p-6 shadow-md"):
+                ui.label(self.project.name).classes("text-3xl font-bold")
+
+                ui.label(self.project.description or "No description").classes("text-lg text-grey-8 mt-2")
+
+                ui.separator()
+
+                task_count = len(self.project.tasks or [])
+
+                with ui.row().classes("gap-4 mt-2"):
+                    ui.badge(f"Project ID: {self.project.id}", color="blue")
+                    ui.badge(f"Tasks: {task_count}", color="orange")
+
+            with ui.card().classes("w-full p-6 shadow-md"):
+                with ui.row().classes("w-full items-center justify-between"):
+                    ui.label("Project Notes").classes("text-2xl font-bold")
+
+                with ui.row().classes("gap-2"):
+                    ui.button("Manage Notes", on_click=self.on_manage_notes)
+                    ui.button("Create Note", on_click=self.on_create_note)
+
+                ui.label("Create, edit, or delete notes related to this project.").classes("text-grey-7")
 
 class TaskFrame(NoteableFrame):
 
