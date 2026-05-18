@@ -126,7 +126,12 @@ class DashboardFrame(AuthenticatedFrame):
         if self.user:
             owned_projects = pm.get_projects_by_owner(self.user.id)
             collab_projects = pm.get_projects_by_collaborator(self.user.id)
-            
+            owned_project_ids = {project.id for project in owned_projects}
+            collab_projects = [
+                project for project in collab_projects
+                if project.id not in owned_project_ids
+            ]
+
             all_projects = owned_projects + collab_projects
 
             for project in all_projects:
