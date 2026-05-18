@@ -38,13 +38,18 @@ class TaskPage(TaskFrame):
                 with ui.row().classes("w-full items-center justify-between"):
                     ui.button("Manage Assignees", on_click=self.on_manage_assignees)
 
-                ui.label(self.task.description or "No description").classes(
-                    "text-lg text-grey-8 mt-2"
-                )
+                with ui.column().classes("mt-2 gap-1"):
+                    ui.label("Description").classes("text-sm text-grey-6 uppercase")
+                    ui.label(self.task.description or "No description").classes("text-lg text-grey-8")
 
                 ui.separator()
 
                 with ui.row().classes("gap-4 mt-2"):
+
+                    ui.badge(
+                        f"Project: {self.task.project.name}",
+                        color="primary",
+                    )
                     ui.badge(
                         f"Status: {getattr(self.task, 'status', 'N/A')}",
                         color="blue",

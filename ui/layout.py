@@ -191,7 +191,7 @@ class DashboardFrame(AuthenticatedFrame):
                     ui.label('—').classes('text-sm text-grey')
 
         with ui.column().classes('items-center mx-auto p-4'):
-            ui.label('Welcome to your dashboard!').classes('text-5xl font-bold')
+            ui.label('Welcome to Collaboratory!').classes('text-5xl font-bold')
 
             with ui.row().classes('w-full gap-4'):
                 with ui.card().classes('p-4 shadow rounded'):
