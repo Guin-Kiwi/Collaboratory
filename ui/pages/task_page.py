@@ -37,7 +37,7 @@ class TaskPage(TaskFrame):
             with ui.card().classes("w-full p-6 shadow-md"):
                 with ui.row().classes("w-full items-center justify-between"):
                     ui.button("Manage Assignees", on_click=self.on_manage_assignees)
-
+                    ui.button("Edit Status", on_click=self.on_edit_status)
                 with ui.column().classes("mt-2 gap-1"):
                     ui.label("Description").classes("text-sm text-grey-6 uppercase")
                     ui.label(self.task.description or "No description").classes("text-lg text-grey-8")
@@ -357,6 +357,45 @@ class TaskPage(TaskFrame):
 
         dlg.open()
 
+    def on_edit_status(self, e=None) -> None:
+        tm = TaskManager(session=self.session)
+
+        with ui.dialog().props("persistent") as dlg, ui.card().classes("w-[450px]"):
+            ui.label("Change Task Status").classes("text-h6")
+
+            status_select = ui.select(
+                ["todo", "in_progress", "completed"],
+                value=self.task.status,
+                label="Status",
+            ).classes("w-full")
+
+            def save_status():
+                try:
+                    ok = tm.change_task_status(
+                        user=self.user,
+                        project=self.task.project,
+                        task_id=self.task.id,
+                        status=status_select.value,
+                    )
+
+                    if ok:
+                        ui.notify("Task status updated", color="positive")
+                        dlg.close()
+                        ui.navigate.reload()
+                    else:
+                        ui.notify("Could not update task status", color="negative")
+
+                except PermissionDenied:
+                    ui.notify("You do not have permission to change this status", color="negative")
+
+                except Exception as exc:
+                    ui.notify(f"Error changing status: {exc}", color="negative")
+
+            with ui.row():
+                ui.button("Save", on_click=save_status)
+                ui.button("Cancel", on_click=dlg.close)
+
+        dlg.open()
 
 @ui.page("/task/{task_id}")
 def task(task_id: int) -> None:
