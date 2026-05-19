@@ -27,6 +27,7 @@ from nicegui import ui
 
 from logic.app_state import app_state
 from logic.project_manager import ProjectManager
+from logic.user_manager import UserManager
 from ui.layout import DashboardFrame
 
 
@@ -66,6 +67,42 @@ class DashboardPage(DashboardFrame):
             with ui.row():
                 ui.button("Cancel", on_click=dialog.close)
                 ui.button("Create", on_click=save_project)
+
+        dialog.open()
+
+    def on_delete_account(self) -> None:
+        um = UserManager(session=self.session)
+
+        with ui.dialog().props('persistent') as dialog, ui.card().classes('w-[400px]'):
+            ui.label("Delete Account").classes("text-h6 text-red")
+            ui.label("This action is permanent and cannot be undone.").classes("text-sm text-grey")
+
+            password_input = ui.input("Confirm your password", password=True) \
+                .props('bordered') \
+                .classes('w-full')
+
+            error_label = ui.label("").classes("text-red text-sm")
+
+            def confirm_delete():
+                password = password_input.value.strip()
+                if not password:
+                    error_label.set_text("Please enter your password.")
+                    return
+
+                try:
+                    ok = um.delete_account(self.user.id, password)
+                    if ok:
+                        app_state.logout()
+                        dialog.close()
+                        ui.navigate.to("/")
+                    else:
+                        error_label.set_text("Incorrect password.")
+                except Exception as e:
+                    error_label.set_text(f"Error: {str(e)}")
+
+            with ui.row():
+                ui.button("Delete My Account", on_click=confirm_delete).props('color=negative')
+                ui.button("Cancel", on_click=dialog.close).props('flat')
 
         dialog.open()
 
