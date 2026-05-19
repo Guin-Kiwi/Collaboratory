@@ -29,14 +29,16 @@ class UserManager:
         self.session.commit()
         return user
 
-    def delete_user(self, user_id: int) -> bool:
-        """Deletes a user by ID. Returns True if successful."""
+    def delete_account(self, user_id: int, password: str) -> bool:
+        """Deletes the user's own account after verifying password."""
         user = self.get_user_by_id(user_id)
-        if user:
-            self.session.delete(user)
-            self.session.commit()
-            return True
-        return False
+        if not user:
+            return False
+        if not bcrypt.checkpw(password.encode("utf-8"), user.password.encode("utf-8")):
+            return False
+        self.session.delete(user)
+        self.session.commit()
+        return True
 
     def update_user(self, user_id: int, username: str = None, password: str = None) -> User | None:
         """Updates username and/or password for a given user."""

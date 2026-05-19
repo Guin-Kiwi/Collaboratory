@@ -125,6 +125,10 @@ class DashboardFrame(AuthenticatedFrame):
     def on_create_project(self) -> None:
         pass
 
+    @abstractmethod
+    def on_delete_account(self) -> None:
+        pass
+
     def on_manage_admins(self) -> None:
         um = UserManager(session=self.session)
 
@@ -215,6 +219,7 @@ class DashboardFrame(AuthenticatedFrame):
         with ui.header(elevated=True).style('background-color: #3874c8').classes('justify-between'):
             with ui.row():
                 ui.button('Logout', on_click=self.on_logout)
+                ui.button('Delete Account', on_click=self.on_delete_account).props('color=negative flat')
             with ui.row():
                 ui.label(f'Hello, {self.user.name}!').classes('text-3xl')
                 ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
