@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from nicegui import ui
+from database import db_conn
 from database.models import User, Project, Task
 from logic.app_state import app_state
 from logic.project_manager import ProjectManager
@@ -110,15 +111,16 @@ class NoteableFrame(AuthenticatedFrame):
 
 class DashboardFrame(AuthenticatedFrame):
 
-    def __init__(self, user: User) -> None:
-        super().__init__(user)
+    def __init__(self, user: User, session=None) -> None: 
+        super().__init__(user) 
+        self.session = session or db_conn.get_session() 
 
     @abstractmethod
     def on_create_project(self) -> None:
         pass
 
     def on_manage_admins(self) -> None:
-        um = UserManager()
+        um = UserManager(session=self.session)
 
         users = um.get_all_users()
 
@@ -162,7 +164,7 @@ class DashboardFrame(AuthenticatedFrame):
         dialog.open()
 
     def render_content(self) -> None:
-        pm = ProjectManager()
+        pm = ProjectManager(session=self.session) 
 
         owned_projects = []
         collab_projects = []
@@ -281,9 +283,11 @@ class DashboardFrame(AuthenticatedFrame):
             
 class ProjectFrame(NoteableFrame):
 
-    def __init__(self, user: User, project: Project) -> None:
-        super().__init__(user)
-        self.project = project
+    def __init__(self, user: User, project: Project, session=None) -> None: 
+
+        super().__init__(user) 
+        self.project = project 
+        self.session = session or db_conn.get_session() 
 
     @abstractmethod
     def on_create_task(self) -> None:
@@ -299,7 +303,7 @@ class ProjectFrame(NoteableFrame):
 
     def render_content(self) -> None:
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
-            cm = CollabManager()
+            cm = CollabManager(session=self.session)
             can_manage_collabs = cm.can_add_collaborator(self.user, self.project)
             if can_manage_collabs:
                 ui.button('Manage Collaborators', on_click=self.on_manage_collaborators)
@@ -372,8 +376,6 @@ class ProjectFrame(NoteableFrame):
                     ui.button("Create Note", on_click=self.on_create_note)
 
                 ui.label("Create, edit, or delete notes related to this project.").classes("text-grey-7")
-
-                cm = CollabManager()
 
                 try:
                     notes = cm.view_project_note(self.user, self.project.id) or []
