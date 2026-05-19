@@ -9,8 +9,8 @@ from logic.permissions_manager import require_permission, PermissionAction
 from sqlalchemy.orm import joinedload
 
 class ProjectManager:
-    def __init__(self):
-        self.session = db_conn.get_session()
+    def __init__(self, session=None): 
+        self.session = session or db_conn.get_session() 
 
 ###----------- helper functions for the project manager (e.g. get project by id, get projects by user, etc.) -----------
     

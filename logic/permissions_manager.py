@@ -157,8 +157,6 @@ def check_permission(
             )
         
         case PermissionAction.ASSIGN_TASK:
-            if task is None:
-                return False
             if project is None:
                 return False
             return (
