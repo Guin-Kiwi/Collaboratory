@@ -12,8 +12,8 @@ from database import db_conn
 
 class UserManager:
 
-    def __init__(self):
-        self.session = db_conn.get_session()
+    def __init__(self, session=None):
+        self.session = session or db_conn.get_session()
 
     def create_user(self, username: str, password: str, name: str, email: str, is_admin: bool = False) -> User:
         """Creates a new user with a hashed password and inserts into the database."""
