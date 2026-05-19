@@ -210,7 +210,7 @@ class DashboardFrame(AuthenticatedFrame):
                 ui.button("Create New Project", on_click=self.on_create_project).classes("w-full")
                 if self.user and self.user.is_admin:
                     ui.button("Manage Admins", on_click=self.on_manage_admins).classes("w-full")
-                    
+
 
         with ui.header(elevated=True).style('background-color: #3874c8').classes('justify-between'):
             with ui.row():
@@ -239,14 +239,6 @@ class DashboardFrame(AuthenticatedFrame):
                     else:
                         ui.label('You are not collaborating on any projects yet.').classes('text-sm text-grey')
                 
-                with ui.card().classes('p-4 shadow rounded'):
-                    ui.label('Tasks').classes('text-xl font-bold mb-2')
-                    if task_rows:
-                        for task in task_rows:
-                            ui.link(task["title"], f'/task/{task["id"]}').classes('text-lg')
-                    else:
-                        ui.label('You have no tasks assigned yet.').classes('text-sm text-grey')
-
             ui.label('Task Overview').classes('text-2xl font-bold mt-8')
 
             columns = [
