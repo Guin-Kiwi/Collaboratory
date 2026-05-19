@@ -33,7 +33,7 @@ from ui.layout import DashboardFrame
 class DashboardPage(DashboardFrame):
 
     def on_create_project(self) -> None:
-        manager = ProjectManager()
+        manager = ProjectManager(session=self.session)
 
         with ui.dialog() as dialog, ui.card():
             ui.label("Create Project").classes("text-2xl font-bold")
