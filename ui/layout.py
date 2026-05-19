@@ -205,14 +205,12 @@ class DashboardFrame(AuthenticatedFrame):
 
 
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
-            with ui.column().props('bordered separator'):
-                ui.label('Tasks').classes('font-bold')
-
-                if task_rows:
-                    for task in task_rows:
-                        ui.link(task["title"], f'/task/{task["id"]}')
-                else:
-                    ui.label('No tasks found.').classes('text-sm text-grey')
+            with ui.column().classes("w-full gap-3 p-3"):
+                ui.label("Actions").classes("text-xl font-bold")
+                ui.button("Create New Project", on_click=self.on_create_project).classes("w-full")
+                if self.user and self.user.is_admin:
+                    ui.button("Manage Admins", on_click=self.on_manage_admins).classes("w-full")
+                    
 
         with ui.header(elevated=True).style('background-color: #3874c8').classes('justify-between'):
             with ui.row():
@@ -220,31 +218,6 @@ class DashboardFrame(AuthenticatedFrame):
             with ui.row():
                 ui.label(f'Hello, {self.user.name}!').classes('text-3xl')
                 ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
-
-        with ui.left_drawer().style('background-color: #d7e3f4'):
-            with ui.column().props('dense separator'):
-                ui.button('Create Project', on_click=self.on_create_project)
-
-                if self.user and self.user.is_admin:
-                    ui.button('Manage Admins', on_click=self.on_manage_admins)
-
-                ui.separator()
-
-                ui.label('Owned Projects').classes('font-bold')
-                if owned_projects:
-                    for project in owned_projects:
-                        ui.link(project.name, f'/project/{project.id}')
-                else:
-                    ui.label('—').classes('text-sm text-grey')
-
-                ui.separator()
-
-                ui.label('Collaborations').classes('font-bold')
-                if collab_projects:
-                    for project in collab_projects:
-                        ui.link(project.name, f'/project/{project.id}')
-                else:
-                    ui.label('—').classes('text-sm text-grey')
 
         with ui.column().classes('items-center mx-auto p-4'):
             ui.label('Welcome to Collaboratory!').classes('text-5xl font-bold')
