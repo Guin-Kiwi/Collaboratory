@@ -83,4 +83,15 @@ class UserManager:
         user.is_admin = True
         self.session.commit()
         return True
+    
+    def reset_password(self, username: str) -> str | None:
+        """Resets password to a temporary one and returns it. Returns None if user not found."""
+        import secrets
+        user = self.session.query(User).filter_by(username=username).first()
+        if not user:
+            return None
+        temp_password = secrets.token_urlsafe(8)  # e.g. "aB3xK9mP"
+        user.password = bcrypt.hashpw(temp_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        self.session.commit()
+        return temp_password
         

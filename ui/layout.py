@@ -29,6 +29,7 @@ class UnauthenticatedFrame(ABC):
                 with ui.row():
                     ui.button("Login", on_click=lambda: self.on_login(username_input.value, password_input.value, error_label))
                     ui.button("Sign Up", on_click=lambda: self.on_signup_open())
+                ui.link("Forgot your password?", '#').on('click', lambda: self.on_forgot_open())
 
         self.render_content()
 
@@ -44,6 +45,11 @@ class UnauthenticatedFrame(ABC):
 
     def render_content(self) -> None:
         """Optional: override to render extra content like dialogs."""
+        pass
+
+    @abstractmethod
+    def on_forgot_open(self) -> None:
+        """Open forgot password dialog. Must be implemented by subclass."""
         pass
 
 
