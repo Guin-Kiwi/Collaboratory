@@ -33,7 +33,7 @@ from ui.layout import DashboardFrame
 class DashboardPage(DashboardFrame):
 
     def on_create_project(self) -> None:
-        manager = ProjectManager()
+        manager = ProjectManager(session=self.session)
 
         with ui.dialog() as dialog, ui.card():
             ui.label("Create Project").classes("text-2xl font-bold")
@@ -78,4 +78,11 @@ def dashboard() -> None:
         ui.navigate.to("/")
         return
 
-    DashboardPage(user).render()
+    #replace after Polina creates db_session.py
+    #from logic.db_session import get_session 
+    #session = get_session()
+
+    from database import db_conn
+    session = db_conn.get_session()
+
+    DashboardPage(user, session=session).render()
