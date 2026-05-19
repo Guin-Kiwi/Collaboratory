@@ -115,11 +115,7 @@ def dashboard() -> None:
         ui.navigate.to("/")
         return
 
-    #replace after Polina creates db_session.py
-    #from logic.db_session import get_session 
-    #session = get_session()
-
-    from database import db_conn
-    session = db_conn.get_session()
+    from logic.db_session import get_session 
+    session = get_session()
 
     DashboardPage(user, session=session).render()
