@@ -55,7 +55,7 @@ class TaskManager:
     def get_task_by_id(
         self,
         user: User,
-        project: Project,
+        project: Project | None,
         task_id: int,
     ) -> Task | None:
         """Get task by ID"""
@@ -64,6 +64,9 @@ class TaskManager:
 
         if not task:
             return None
+
+        if project is None:
+            project = self.session.query(Project).filter_by(id=task.project_id).first()
 
         require_permission(
             user,
@@ -195,15 +198,22 @@ class TaskManager:
 
         return True
 
-    def get_assignees(self, user: User, task_id: int) -> list[User]:
+    def get_assignees(self, user: User, task_id: int, project: Project | None = None) -> list[User]:
         """Get all assignees of a task"""
 
-        task = self.session.query(Task).filter_by(id=task_id).first()
+        task = (
+            self.session.query(Task)
+            .options()
+            .filter_by(id=task_id)
+            .first()
+        )
 
         if not task:
             return []
 
-        project = self.session.query(Project).filter_by(id=task.project_id).first()
+        if project is None:
+            project = self.session.query(Project).filter_by(id=task.project_id).first()
+
         require_permission(
             user,
             PermissionAction.VIEW_TASK,
@@ -219,6 +229,7 @@ class TaskManager:
         user: User,
         task_id: int,
         assigned_user_id: int,
+        project: Project | None = None,
     ) -> bool:
         """Remove an assignee from a task"""
 
@@ -227,7 +238,9 @@ class TaskManager:
         if not task:
             return False
 
-        project = self.session.query(Project).filter_by(id=task.project_id).first()
+        if project is None:
+            project = self.session.query(Project).filter_by(id=task.project_id).first()
+
         require_permission(
             user,
             PermissionAction.ASSIGN_TASK,

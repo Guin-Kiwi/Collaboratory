@@ -38,6 +38,7 @@ from logic.project_manager import ProjectManager
 from logic.user_manager import UserManager       # on_add_collaborator(): find user by username
 from logic.permissions_manager import PermissionDenied
 from ui.layout import ProjectFrame
+from database import db_conn
 
 class ProjectPage(ProjectFrame):
 
@@ -48,11 +49,40 @@ class ProjectPage(ProjectFrame):
         self.on_manage_collaborators()
 
     def on_create_note(self) -> None:
-        self.on_manage_notes()
+        cm = CollabManager(session=self.session)
+
+        with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
+            ui.label('Create Project Note').classes('text-h6')
+
+            new_content = ui.textarea('Note').props('autogrow').classes('w-full')
+
+            def add_note(_=None):
+                text = (new_content.value or '').strip()
+                if not text:
+                    ui.notify('Note cannot be empty', color='negative')
+                    return
+                try:
+                    ok = cm.create_project_note(user=self.user, project_id=self.project.id, content=text)
+                    if ok:
+                        ui.notify('Note created', color='positive')
+                        dlg.close()
+                        ui.navigate.reload()
+                    else:
+                        ui.notify('Could not create note', color='negative')
+                except PermissionDenied:
+                    ui.notify('You do not have permission to create notes', color='negative')
+                except Exception as exc:
+                    ui.notify(f'Error creating note: {exc}', color='negative')
+
+            with ui.row():
+                ui.button('Create', on_click=add_note)
+                ui.button('Cancel', on_click=lambda _=None: dlg.close())
+
+        dlg.open()
         
     def on_manage_tasks(self, e=None) -> None:
-        tm = TaskManager()
-        pm = ProjectManager()
+        tm = TaskManager(session=self.session)
+        pm = ProjectManager(session=self.session)
         try:
             project = pm.view_project(self.user, self.project.id)
         except PermissionDenied:
@@ -190,7 +220,7 @@ class ProjectPage(ProjectFrame):
         dlg.open()
 
     def on_edit_note(self, note) -> None:
-        cm = CollabManager()
+        cm = CollabManager(session=self.session)
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
             ui.label('Edit Project Note').classes('text-h6')
             edit_content = ui.textarea('Note', value=note.content).props('autogrow')
@@ -220,8 +250,8 @@ class ProjectPage(ProjectFrame):
         dlg.open()
 
     def on_manage_collaborators(self, e=None) -> None:
-        cm = CollabManager()
-        um = UserManager()
+        cm = CollabManager(session=self.session)
+        um = UserManager(session=self.session)
         members = self.project.collaborator_memberships or []
         current_collaborator_ids = {membership.user.id for membership in members}
 
@@ -325,7 +355,7 @@ class ProjectPage(ProjectFrame):
         dlg.open()
 
     def on_manage_notes(self, e=None) -> None:
-        cm = CollabManager()
+        cm = CollabManager(session=self.session)
         try:
             notes = cm.view_project_note(self.user, self.project.id) or []
         except Exception as exc:
@@ -342,7 +372,7 @@ class ProjectPage(ProjectFrame):
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
             ui.label('Manage Project Notes').classes('text-h6')
 
-            ui.label('Delete notes')
+            ui.label('Delete notes').classes('text-h7')
             checks: list[tuple] = []
             if deletable_notes:
                 with ui.column().classes('w-full gap-2'):
@@ -351,8 +381,10 @@ class ProjectPage(ProjectFrame):
                             with ui.column().classes('flex-1'):
                                 ui.label(n.content).classes('text-sm')
                                 ui.label(f'{n.author.username} • {n.created_at}').classes('text-xs text-grey')
-                            cb = ui.checkbox()
-                            checks.append((cb, n.id))
+                            with ui.row().classes('gap-2'):
+                                ui.button('Edit', on_click=lambda _, note=n: self.on_edit_note(note)).props('size=sm')
+                                cb = ui.checkbox()
+                                checks.append((cb, n.id))
                     with ui.row().classes('w-full justify-end'):
                         ui.button('Delete Selected', on_click=lambda _=None: delete_selected())
             else:
@@ -378,33 +410,53 @@ class ProjectPage(ProjectFrame):
                     ui.navigate.reload()
                 else:
                     ui.notify('No notes selected', color='negative')
-                    
-            ui.separator()
-            ui.label('Add a new note')
-            new_content = ui.textarea('Note').props('autogrow')
 
-            def add_note(_=None):
-                text = (new_content.value or '').strip()
-                if not text:
-                    ui.notify('Note cannot be empty', color='negative')
+            with ui.row():
+                ui.button('Cancel', on_click=lambda _=None: dlg.close())
+
+        dlg.open()
+
+    def on_edit_project_details(self, e=None) -> None:
+        pm = ProjectManager(session=self.session)
+        
+        with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
+            ui.label('Edit Project Details').classes('text-h6')
+            ui.separator()
+            
+            # Input fields
+            name_input = ui.input(label='Project Name', value=self.project.name or '').classes('w-full')
+            description_input = ui.textarea(label='Description', value=self.project.description or '').props('autogrow').classes('w-full')
+            
+            def save(_=None):
+                name = (name_input.value or '').strip()
+                description = (description_input.value or '').strip()
+                
+                if not name:
+                    ui.notify('Project name cannot be empty', color='negative')
                     return
+                
                 try:
-                    ok = cm.create_project_note(user=self.user, project_id=self.project.id, content=text)
+                    ok = pm.edit_project(
+                        user=self.user,
+                        project=self.project,
+                        name=name,
+                        description=description
+                    )
                     if ok:
-                        ui.notify('Note created', color='positive')
+                        ui.notify('Project details updated', color='positive')
                         dlg.close()
                         ui.navigate.reload()
                     else:
-                        ui.notify('Could not create note', color='negative')
+                        ui.notify('Could not update project details', color='negative')
                 except PermissionDenied:
-                    ui.notify('You do not have permission to create notes', color='negative')
+                    ui.notify('You do not have permission to edit this project', color='negative')
                 except Exception as exc:
-                    ui.notify(f'Error creating note: {exc}', color='negative')
-
+                    ui.notify(f'Error updating project: {exc}', color='negative')
+            
             with ui.row():
-                ui.button('Create', on_click=add_note)
+                ui.button('Save', on_click=save)
                 ui.button('Cancel', on_click=lambda _=None: dlg.close())
-
+        
         dlg.open()
 
 @ui.page('/project/{project_id}')
@@ -415,9 +467,10 @@ def project(project_id: int) -> None:
         return
 
     user = app_state.get_current_user()
+    session = db_conn.get_session()
 
     try:
-        project = ProjectManager().view_project(user, project_id)
+        project = ProjectManager(session=session).view_project(user, project_id)
     except PermissionDenied:
         ui.notify('Access denied', color='negative')
         return
@@ -426,4 +479,4 @@ def project(project_id: int) -> None:
         ui.notify('Project not found', color='negative')
         return
 
-    ProjectPage(user, project).render()
+    ProjectPage(user, project, session=session).render()
