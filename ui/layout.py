@@ -345,7 +345,7 @@ class ProjectFrame(NoteableFrame):
                     with ui.row().classes("w-full items-center justify-between"):
                         ui.label("Project Notes").classes("text-2xl font-bold")
 
-                    with ui.row().classes("gap-2"):
+                    #with ui.row().classes("gap-2"):
                         ui.button("Manage Notes", on_click=self.on_manage_notes)
 
                     ui.label("Create, edit, or delete notes related to this project.").classes("text-grey-7")
