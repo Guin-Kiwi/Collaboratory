@@ -218,8 +218,13 @@ class DashboardFrame(AuthenticatedFrame):
 
         with ui.header(elevated=True).style('background-color: #3874c8').classes('justify-between'):
             with ui.row():
+                with ui.button(icon='more_vert').props('flat color=white'):
+                    with ui.menu():
+                        ui.menu_item(
+                            'Delete Account',
+                            self.on_delete_account,
+                        ).classes('text-red')
                 ui.button('Logout', on_click=self.on_logout)
-                ui.button('Delete Account', on_click=self.on_delete_account).props('color=negative flat')
             with ui.row():
                 ui.label(f'Hello, {self.user.name}!').classes('text-3xl')
                 ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
