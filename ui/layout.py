@@ -603,7 +603,7 @@ class ProjectFrame(NoteableFrame):
         self.render_header(self.project.name, right_drawer)
 
         with ui.column().classes("w-full h-full p-6 gap-6"):
-            with ui.card().classes("w-full p-6 shadow-md"):
+            with ui.card().classes("w-full p-6 shadow-md relative"):
                 ui.label(self.project.name).classes("text-3xl font-bold")
                 ui.label(self.project.description or "No description").classes("text-lg text-grey-8 mt-2")
                 ui.separator()
@@ -621,13 +621,13 @@ class ProjectFrame(NoteableFrame):
                         project=self.project,
                     )
                     if can_edit_project:
-                        ui.button('Edit Project Details', on_click=self.on_edit_project_details).props('size=sm')
+                        ui.button('Edit Project Details', on_click=self.on_edit_project_details).classes('absolute top-4 right-4')
 
             with ui.grid(columns='1fr 1fr').classes('w-full gap-4'):
-                with ui.card().classes('w-full p-6 shadow-md'):
+                with ui.card().classes('w-full p-6 shadow-md relative'):
                     with ui.row().classes('w-full gap-4 items-start'):
                         ui.label('Project Tasks').classes('text-2xl font-bold')
-                        ui.button('Add or Remove Tasks', on_click=self.on_manage_tasks)
+                        ui.button('Add or Remove Tasks', on_click=self.on_manage_tasks).classes('absolute top-4 right-4')
 
                     if self.project.tasks:
                         with ui.column().classes('w-full gap-2 mt-3'):
