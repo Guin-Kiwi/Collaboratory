@@ -296,14 +296,6 @@ class ProjectFrame(NoteableFrame):
 
         self.render_header(self.project.name, right_drawer)
 
-        with ui.left_drawer().style('background-color: #d7e3f4'):
-            with ui.column().props('dense separator'):
-                ui.button('Add or Remove Tasks', on_click=self.on_manage_tasks)
-                ui.label('Tasks')
-                if self.project.tasks:
-                    for task in self.project.tasks:
-                        ui.link(task.title, f'/task/{task.id}')
-
         with ui.column().classes("w-full h-full p-6 gap-6"):
             with ui.card().classes("w-full p-6 shadow-md"):
                 ui.label(self.project.name).classes("text-3xl font-bold")
