@@ -85,6 +85,17 @@ class UserManager:
         user.is_admin = True
         self.session.commit()
         return True
+
+    def revoke_admin_status(self, user_id: int) -> bool:
+        """Revoke admin status from a user."""
+        user = self.get_user_by_id(user_id)
+
+        if not user:
+            return False
+
+        user.is_admin = False
+        self.session.commit()
+        return True
     
     def reset_password(self, username: str) -> str | None:
         """Resets password to a temporary one and returns it. Returns None if user not found."""

@@ -140,6 +140,12 @@ class DashboardFrame(AuthenticatedFrame):
             if not user.is_admin
         }
 
+        admin_users = {
+            user.id: f"{user.username} - {user.name or ''}"
+            for user in users
+            if user.is_admin and user.id != self.user.id
+        }
+
         with ui.dialog().props("persistent") as dialog, ui.card().classes("w-[500px]"):
             ui.label("Promote User to Admin").classes("text-h6")
 
@@ -167,11 +173,42 @@ class DashboardFrame(AuthenticatedFrame):
                     else:
                         ui.notify("Could not promote user", color="negative")
 
-                with ui.row():
-                    ui.button("Promote", on_click=promote_user)
+                ui.button("Promote", on_click=promote_user)
+
+                ui.separator()
+
+                ui.label("Revoke Admin Status").classes("text-h6")
+
+                if not admin_users:
+                    ui.label("There are no other admins to revoke.").classes("text-sm text-grey")
+                else:
+                    selected_admin = ui.select(
+                        options=admin_users,
+                        label="Select admin",
+                    ).classes("w-full")
+
+                    def revoke_admin() -> None:
+                        if selected_admin.value is None:
+                            ui.notify("Please select an admin", color="negative")
+                            return
+
+                        ok = um.revoke_admin_status(selected_admin.value)
+
+                        if ok:
+                            ui.notify("Admin status revoked", color="positive")
+                            dialog.close()
+                            ui.navigate.reload()
+                        else:
+                            ui.notify("Could not revoke admin status", color="negative")
+
+                    with ui.row():
+                        ui.button("Revoke", on_click=revoke_admin, color="red")
+                ui.separator()
+
+                with ui.row().classes("w-full justify-end"):
                     ui.button("Cancel", on_click=dialog.close)
 
-        dialog.open()
+            dialog.open()
 
     def on_manage_projects(self) -> None:
         pm = ProjectManager()
