@@ -16,7 +16,7 @@ from logic.task_manager import TaskManager
 
 @pytest.fixture(scope="function")
 def db():
-    # ← use in-memory database so real app.db is never touched
+    # ← use in-memory database so real tracker_app.db is never touched
     test_conn = DatabaseConnection(db_path=":memory:")
     test_conn.init()
 
