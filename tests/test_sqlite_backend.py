@@ -203,11 +203,11 @@ def read_back_data(db: DatabaseConnection) -> None:
 
 
 def main() -> None:
-    db_path = Path(__file__).resolve().parent / "database" / "tracker_app.db"
+    db_path = Path(__file__).resolve().parent / "database" / "test_tracker_app.db"
     log.info("Seeding main app database")
     log.info("Target DB path: %s", db_path)
 
-    reset_database_file(db_path)
+    # reset_database_file(db_path)
 
     db = DatabaseConnection(db_path=str(db_path))
     db.init()
