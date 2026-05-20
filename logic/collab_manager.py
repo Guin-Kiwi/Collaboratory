@@ -195,8 +195,8 @@ class CollabManager:
         task = self.session.query(Task).filter_by(id = task_id).first()
         if not task:
             return []
-
-        require_permission(user, PermissionAction.VIEW_TASK_NOTE, self.session, task = task)
+        project = self.session.query(Project).filter_by(id=task.project_id).first()
+        require_permission(user, PermissionAction.VIEW_TASK_NOTE, self.session, task = task, project=project)
         return task.notes
 
     def edit_task_note(self, user: User, task_id: int, tnote_id: int, content: str) -> bool:
@@ -232,7 +232,8 @@ class CollabManager:
             return True
 
         # Otherwise require the permission (admins / owners / assignees handled there)
-        require_permission(user, PermissionAction.DELETE_TASK_NOTE, self.session, task = task)
+        project = self.session.query(Project).filter_by(id=task.project_id).first()
+        require_permission(user, PermissionAction.DELETE_TASK_NOTE, self.session, task = task, project=project)
         self.session.delete(target_note)
         self.session.commit()
         return True
