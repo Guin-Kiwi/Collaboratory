@@ -63,6 +63,10 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# Collaboratory database
+database/tracker_app.db
+database/tracker_app.db-journal
+
 # Flask stuff:
 instance/
 .webassets-cache
