@@ -118,7 +118,7 @@ class NoteableFrame(AuthenticatedFrame):
     implement on_create_note(), on_edit_note(), and render_content().
     """
 
-    def render_header(self, title: str, right_drawer) -> None:
+    def render_header(self, title: str, right_drawer, extra_buttons=None) -> None:
         """Render the shared page header with navigation buttons and a drawer toggle.
 
         Args:
@@ -129,6 +129,11 @@ class NoteableFrame(AuthenticatedFrame):
             with ui.row():
                 ui.button('Logout', on_click=self.on_logout)
                 ui.button('Dashboard', on_click=self.on_dashboard)
+
+                if extra_buttons:
+                    for label, callback in extra_buttons:
+                        ui.button(label, on_click=callback)
+
             with ui.row():
                 ui.label(title).classes('text-3xl')
                 ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
@@ -796,14 +801,13 @@ class TaskFrame(NoteableFrame):
                 else:
                     ui.label('No assignees yet').classes('text-sm text-grey')
 
-        self.render_header(self.task.title, right_drawer)
+        self.render_header(self.task.title, right_drawer, extra_buttons=[('Return to Project', self.on_return_to_project)])
 
         with ui.grid(columns='1fr 1fr').classes('w-full gap-4'):
             with ui.card().classes('w-full p-6 shadow-md border-t-4 border-blue-500'):
                 with ui.row().classes('w-full justify-between items-start'):
                     with ui.column().classes('gap-0'):
                         ui.label(self.task.title).classes('text-3xl font-bold text-blue-900')
-                    ui.button('Return to Project', on_click=self.on_return_to_project)
 
                 ui.separator().classes('my-4')
 
