@@ -19,7 +19,7 @@ class ProjectManager:
             self.session.query(Project)
             .options(
                 joinedload(Project.collaborator_memberships).joinedload(ProjectMember.user),
-                joinedload(Project.tasks),
+                joinedload(Project.tasks).joinedload(Task.assignments).joinedload(Assignment.user),
                 joinedload(Project.notes),
             )
             .filter_by(id=project_id)
