@@ -562,21 +562,44 @@ class ProjectFrame(NoteableFrame):
         Permission checks control which action buttons are visible.
         """
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
-            cm = CollabManager(session=self.session)
-            can_manage_collabs = cm.can_add_collaborator(self.user, self.project)
-            if can_manage_collabs:
-                ui.button('Manage Collaborators', on_click=self.on_manage_collaborators)
-            ui.label('Collaborators')
-            with ui.column().props('w-full bordered separator'):
-                if self.project.collaborator_memberships:
-                    for membership in self.project.collaborator_memberships:
-                        with ui.card().classes('w-full p-2'):
-                            with ui.row().classes('items-center justify-between'):
-                                with ui.column():
-                                    ui.label(membership.user.username).classes('font-bold')
-                                    ui.label(membership.user.name).classes('text-sm text-grey')
-                                    ui.link(membership.user.email, f'mailto:{membership.user.email}').classes('text-sm text-grey')
 
+            with ui.column().classes('w-full p-4 gap-4'):
+
+                cm = CollabManager(session=self.session)
+                can_manage_collabs = cm.can_add_collaborator(self.user, self.project)
+
+                if can_manage_collabs:
+                    ui.button(
+                        'Manage Collaborators',
+                        on_click=self.on_manage_collaborators
+                    ).classes('w-full')
+
+                with ui.column().classes('gap-2'):
+                    ui.label('Project Owner').classes('font-bold text-lg')
+
+                    with ui.card().classes('w-full p-3 shadow-sm').style('background-color: #fff4e6'):
+                        ui.label(self.project.owner.username).classes('font-bold')
+                        ui.label(self.project.owner.name).classes('text-sm text-grey')
+                        ui.link(
+                            self.project.owner.email,
+                            f'mailto:{self.project.owner.email}'
+                        ).classes('text-sm text-grey')
+
+                with ui.column().classes('gap-2'):
+                    ui.label('Collaborators').classes('font-bold text-lg')
+
+                    if self.project.collaborator_memberships:
+                        for membership in self.project.collaborator_memberships:
+
+                            with ui.card().classes('w-full p-3 shadow-sm'):
+                                ui.label(membership.user.username).classes('font-bold')
+                                ui.label(membership.user.name).classes('text-sm text-grey')
+
+                                ui.link(
+                                    membership.user.email,
+                                    f'mailto:{membership.user.email}'
+                                ).classes('text-sm text-grey')
+        
         self.render_header(self.project.name, right_drawer)
 
         with ui.column().classes("w-full h-full p-6 gap-6"):
