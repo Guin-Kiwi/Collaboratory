@@ -124,6 +124,7 @@ class NoteableFrame(AuthenticatedFrame):
         Args:
             title: The page title displayed in the header.
             right_drawer: The NiceGUI drawer element to toggle on menu click.
+            extra_buttons: Optional list of (label, callback) buttons to add after Dashboard.
         """
         with ui.header(elevated=True).style('background-color: #3874c8').classes('items-center justify-between'):
             with ui.row():
@@ -217,11 +218,7 @@ class DashboardFrame(AuthenticatedFrame):
         pass
 
     def on_manage_admins(self) -> None:
-        """Open a dialog to promote users to admin or revoke admin status.
-
-        Only visible to admin users. Displays two sections:
-        one for promoting standard users, one for revoking other admins.
-        """
+        """Open a dialog to promote users to admin or revoke admin status."""
         um = UserManager(session=self.session)
 
         users = um.get_all_users()
@@ -303,11 +300,7 @@ class DashboardFrame(AuthenticatedFrame):
             dialog.open()
 
     def on_manage_projects(self) -> None:
-        """Open a dialog to delete owned projects.
-
-        Lists all projects owned by the current user with a delete button
-        for each. Collaborator count is shown for context.
-        """
+        """Open a dialog to delete owned projects."""
         pm = ProjectManager()
 
         owned_projects = pm.get_projects_by_owner(self.user.id)
@@ -358,12 +351,7 @@ class DashboardFrame(AuthenticatedFrame):
         dialog.open()
 
     def render_content(self) -> None:
-        """Render the full dashboard layout.
-
-        Fetches owned and collaborated projects, collects all task rows
-        for the overview table, and builds the header, drawers, project
-        cards, and task table.
-        """
+        """Render the full dashboard layout."""
         pm = ProjectManager(session=self.session)
 
         owned_projects = []
@@ -436,7 +424,6 @@ class DashboardFrame(AuthenticatedFrame):
 
             with ui.row().classes("w-full gap-6 items-start no-wrap"):
 
-                # Owned Projects
                 with ui.card().classes("w-1/3 p-6 shadow-md"):
                     ui.label("Owned Projects").classes("text-2xl font-bold mb-6")
 
@@ -448,7 +435,6 @@ class DashboardFrame(AuthenticatedFrame):
                                     f"/project/{project.id}"
                                 ).classes("text-blue-700 underline text-lg")
 
-                # Collaborations
                 with ui.card().classes("w-1/3 p-6 shadow-md"):
                     ui.label("Collaborations").classes("text-2xl font-bold mb-6")
 
@@ -460,7 +446,6 @@ class DashboardFrame(AuthenticatedFrame):
                                     f"/project/{project.id}"
                                 ).classes("text-blue-700 underline text-lg")
 
-                # Tasks
                 with ui.card().classes("w-1/3 p-6 shadow-md"):
                     ui.label("My Tasks").classes("text-2xl font-bold mb-6")
 
@@ -492,84 +477,48 @@ class DashboardFrame(AuthenticatedFrame):
 
 
 class ProjectFrame(NoteableFrame):
-    """Abstract base frame for the project detail page.
-
-    Renders the right drawer with collaborators, the header, project
-    info card, and a two-column grid of tasks and notes. Subclasses
-    must implement all abstract action methods.
-
-    Attributes:
-        project: The current Project object being displayed.
-        session: The active SQLAlchemy database session.
-    """
+    """Abstract base frame for the project detail page."""
 
     def __init__(self, user: User, project: Project, session=None) -> None:
-        """Initialise the project frame with a user, project, and optional session.
-
-        Args:
-            user: The logged-in User object.
-            project: The Project object to display.
-            session: Optional SQLAlchemy session. Falls back to shared db_conn session.
-        """
         super().__init__(user)
         self.project = project
         self.session = session or db_conn.get_session()
 
     @abstractmethod
     def on_create_task(self) -> None:
-        """Open a dialog to create a new task. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_add_collaborator(self) -> None:
-        """Open a dialog to add a collaborator. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_create_note(self) -> None:
-        """Open a dialog to create a new project note. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_edit_project_details(self) -> None:
-        """Open a dialog to edit project name and description. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_manage_tasks(self) -> None:
-        """Open a dialog to add or remove tasks. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_manage_collaborators(self) -> None:
-        """Open a dialog to manage collaborators. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_manage_notes(self) -> None:
-        """Open a dialog to manage project notes. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_edit_note(self, note) -> None:
-        """Open a dialog to edit an existing note. Must be implemented by subclass.
-
-        Args:
-            note: The ProjectNote object to edit.
-        """
         pass
 
     def render_content(self) -> None:
-        """Render the full project page layout.
-
-        Builds the right drawer with collaborators, the header, a project
-        info card with badges, and a two-column grid showing tasks and notes.
-        Permission checks control which action buttons are visible.
-        """
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
-
             with ui.column().classes('w-full p-4 gap-4'):
-
                 cm = CollabManager(session=self.session)
                 can_manage_collabs = cm.can_add_collaborator(self.user, self.project)
 
@@ -595,7 +544,6 @@ class ProjectFrame(NoteableFrame):
 
                     if self.project.collaborator_memberships:
                         for membership in self.project.collaborator_memberships:
-
                             with ui.card().classes('w-full p-3 shadow-sm'):
                                 ui.label(membership.user.username).classes('font-bold')
                                 ui.label(membership.user.name).classes('text-sm text-grey')
@@ -604,7 +552,7 @@ class ProjectFrame(NoteableFrame):
                                     membership.user.email,
                                     f'mailto:{membership.user.email}'
                                 ).classes('text-sm text-grey')
-        
+
         self.render_header(self.project.name, right_drawer)
 
         with ui.column().classes("w-full h-full p-6 gap-6"):
@@ -700,26 +648,9 @@ class ProjectFrame(NoteableFrame):
 
 
 class TaskFrame(NoteableFrame):
-    """Abstract base frame for the task detail page.
-
-    Renders the right drawer with assignees, the header, a task info card,
-    and a notes card. Permission checks control which action buttons are
-    visible. Subclasses must implement all abstract action methods.
-
-    Attributes:
-        task: The current Task object being displayed.
-        session: The active SQLAlchemy database session.
-        project: The Project the task belongs to, eagerly loaded to avoid detachment errors.
-    """
+    """Abstract base frame for the task detail page."""
 
     def __init__(self, user: User, task: Task, session=None) -> None:
-        """Initialise the task frame with a user, task, and optional session.
-
-        Args:
-            user: The logged-in User object.
-            task: The Task object to display.
-            session: Optional SQLAlchemy session. Falls back to shared db_conn session.
-        """
         super().__init__(user)
         self.task = task
         self.session = session or db_conn.get_session()
@@ -727,58 +658,39 @@ class TaskFrame(NoteableFrame):
 
     @abstractmethod
     def on_assign_user(self) -> None:
-        """Open a dialog to assign a user to the task. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_create_note(self) -> None:
-        """Open a dialog to create a new task note. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_manage_notes(self) -> None:
-        """Open a dialog to manage task notes. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_manage_assignees(self, e=None) -> None:
-        """Open a dialog to manage task assignees. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_edit_status(self, e=None) -> None:
-        """Open a dialog to change the task status. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_edit_task_details(self, e=None) -> None:
-        """Open a dialog to edit task title and description. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_return_to_project(self) -> None:
-        """Navigate back to the project page. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_edit_note(self, note) -> None:
-        """Open a dialog to edit an existing task note. Must be implemented by subclass.
-
-        Args:
-            note: The TaskNote object to edit.
-        """
         pass
 
     def render_content(self) -> None:
-        """Render the full task page layout.
-
-        Builds the right drawer with assignees, the header, a task info card
-        with status and priority badges, and a notes card. Permission checks
-        control which action buttons are visible to the current user.
-        """
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
             ui.label('Management').classes('font-bold text-lg mb-4')
-            tm = TaskManager(session=self.session)
             can_manage_assignees = check_permission(
                 self.user,
                 PermissionAction.ASSIGN_TASK,
@@ -797,24 +709,23 @@ class TaskFrame(NoteableFrame):
                                 with ui.column():
                                     ui.label(assignment.user.username).classes('font-bold')
                                     ui.label(assignment.user.name).classes('text-sm text-grey')
-                                    ui.link(assignment.user.email, f'mailto:{assignment.user.email}').classes('text-sm text-grey')
+                                    ui.link(
+                                        assignment.user.email,
+                                        f'mailto:{assignment.user.email}'
+                                    ).classes('text-sm text-grey')
                 else:
                     ui.label('No assignees yet').classes('text-sm text-grey')
 
-        self.render_header(self.task.title, right_drawer, extra_buttons=[('Return to Project', self.on_return_to_project)])
+        self.render_header(
+            self.task.title,
+            right_drawer,
+            extra_buttons=[('Return to Project', self.on_return_to_project)]
+        )
 
         with ui.grid(columns='1fr 1fr').classes('w-full gap-4'):
             with ui.card().classes('w-full p-6 shadow-md border-t-4 border-blue-500'):
-                with ui.row().classes('w-full justify-between items-start'):
-                    with ui.column().classes('gap-0'):
-                        ui.label(self.task.title).classes('text-3xl font-bold text-blue-900')
-
-                ui.separator().classes('my-4')
-
-                ui.label(self.task.description or 'No description').classes('text-lg text-grey-8')
-
-                with ui.row().classes('gap-4 mt-4 flex-wrap'):
-                    ui.badge(self.task.status or 'No status', color='primary')
+                with ui.row().classes('w-full items-center gap-4'):
+                    ui.label(self.task.title).classes('text-3xl font-bold text-blue-900')
 
                     can_change_status = check_permission(
                         self.user,
@@ -836,15 +747,21 @@ class TaskFrame(NoteableFrame):
                     if can_edit_details:
                         ui.button('Edit Task Details', on_click=self.on_edit_task_details).props('size=sm')
 
+                ui.separator().classes('my-4')
+
+                ui.label(self.task.description or 'No description').classes('text-lg text-grey-8')
+
+                with ui.row().classes('gap-4 mt-4 flex-wrap'):
+                    ui.badge(self.task.status or 'No status', color='primary')
                     ui.badge(f"Priority: {self.task.priority or 'N/A'}", color='orange')
 
                     if self.task.due_date:
                         ui.badge(f"Due: {self.task.due_date}", color='blue')
 
             with ui.card().classes('w-full p-6 shadow-md'):
-                ui.label('Task Notes').classes('text-2xl font-bold')
+                with ui.row().classes('w-full items-center gap-4'):
+                    ui.label('Task Notes').classes('text-2xl font-bold')
 
-                with ui.row().classes('gap-2'):
                     can_create_note = check_permission(
                         self.user,
                         PermissionAction.WRITE_TASK_NOTE,
