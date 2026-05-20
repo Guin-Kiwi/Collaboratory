@@ -32,8 +32,20 @@ from ui.layout import DashboardFrame
 
 
 class DashboardPage(DashboardFrame):
+    """Dashboard page for authenticated users.
+
+    Inherits from DashboardFrame which renders the header, drawers,
+    project lists, and task overview table. This class implements
+    the create project and delete account actions.
+    """
 
     def on_create_project(self) -> None:
+        """Open a dialog to create a new project.
+
+        Prompts the user for a project name and description.
+        On confirmation, calls ProjectManager to persist the new
+        project to the database and reloads the dashboard.
+        """
         manager = ProjectManager(session=self.session)
 
         with ui.dialog() as dialog, ui.card():
@@ -45,6 +57,7 @@ class DashboardPage(DashboardFrame):
             error_label = ui.label("").classes("text-red text-sm")
 
             def save_project() -> None:
+                """Validate inputs and save the new project to the database."""
                 if not name_input.value:
                     error_label.text = "Project name is required."
                     return
@@ -71,6 +84,12 @@ class DashboardPage(DashboardFrame):
         dialog.open()
 
     def on_delete_account(self) -> None:
+        """Open a dialog to permanently delete the current user's account.
+
+        Requires the user to confirm their password before deletion.
+        On success, logs the user out and redirects to the login page.
+        The action is irreversible.
+        """
         um = UserManager(session=self.session)
 
         with ui.dialog().props('persistent') as dialog, ui.card().classes('w-[400px]'):
@@ -84,6 +103,7 @@ class DashboardPage(DashboardFrame):
             error_label = ui.label("").classes("text-red text-sm")
 
             def confirm_delete():
+                """Verify the password and delete the account if correct."""
                 password = password_input.value.strip()
                 if not password:
                     error_label.set_text("Please enter your password.")
@@ -109,13 +129,18 @@ class DashboardPage(DashboardFrame):
 
 @ui.page('/dashboard')
 def dashboard() -> None:
+    """Register the dashboard page at /dashboard and render it.
+
+    Redirects to the login page if no user is currently authenticated.
+    Passes the current user and an active database session to DashboardPage.
+    """
     user = app_state.get_current_user()
 
     if user is None:
         ui.navigate.to("/")
         return
 
-    from logic.db_session import get_session 
+    from logic.db_session import get_session
     session = get_session()
 
     DashboardPage(user, session=session).render()

@@ -31,24 +31,39 @@
 
 from nicegui import ui
 
-from logic.app_state import app_state       # route function: get_current_user()
-from logic.collab_manager import CollabManager   # on_create_note(), on_add_collaborator()
-from logic.task_manager import TaskManager       # on_create_task()
+from logic.app_state import app_state
+from logic.collab_manager import CollabManager
+from logic.task_manager import TaskManager
 from logic.project_manager import ProjectManager
-from logic.user_manager import UserManager       # on_add_collaborator(): find user by username
+from logic.user_manager import UserManager
 from logic.permissions_manager import PermissionDenied
 from ui.layout import ProjectFrame
 from database import db_conn
 
+
 class ProjectPage(ProjectFrame):
+    """Project detail page for authenticated users.
+
+    Inherits from ProjectFrame which renders the header, right drawer
+    with collaborators, and the two-column tasks/notes layout.
+    This class implements all action methods for managing tasks,
+    notes, collaborators, and project details.
+    """
 
     def on_create_task(self) -> None:
+        """Delegate task creation to the manage tasks dialog."""
         self.on_manage_tasks()
 
     def on_add_collaborator(self) -> None:
+        """Delegate collaborator addition to the manage collaborators dialog."""
         self.on_manage_collaborators()
 
     def on_create_note(self) -> None:
+        """Open a dialog to create a new project note.
+
+        Prompts the user for note content and calls CollabManager
+        to persist it. Reloads the page on success.
+        """
         cm = CollabManager(session=self.session)
 
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
@@ -57,6 +72,7 @@ class ProjectPage(ProjectFrame):
             new_content = ui.textarea('Note').props('autogrow').classes('w-full')
 
             def add_note(_=None):
+                """Validate and save the new note to the database."""
                 text = (new_content.value or '').strip()
                 if not text:
                     ui.notify('Note cannot be empty', color='negative')
@@ -79,8 +95,14 @@ class ProjectPage(ProjectFrame):
                 ui.button('Cancel', on_click=lambda _=None: dlg.close())
 
         dlg.open()
-        
+
     def on_manage_tasks(self, e=None) -> None:
+        """Open a dialog to create or delete tasks for this project.
+
+        Shows existing tasks with checkboxes for bulk deletion, and
+        a form to create new tasks with title, description, due date,
+        priority, and status fields.
+        """
         tm = TaskManager(session=self.session)
         pm = ProjectManager(session=self.session)
         try:
@@ -95,8 +117,6 @@ class ProjectPage(ProjectFrame):
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[720px]'):
             ui.label('Add or Remove Tasks').classes('text-h6')
 
-            # Existing tasks: show as a selectable list with checkboxes and a
-            # single "Delete Selected" action (no per-task Edit button here).
             checks = []
             with ui.column().classes('w-full gap-2'):
                 for t in project.tasks or []:
@@ -106,6 +126,7 @@ class ProjectPage(ProjectFrame):
                         checks.append((cb, t.id))
                 with ui.row().classes('w-full justify-end'):
                     def delete_selected_tasks(_=None):
+                        """Delete all checked tasks from the project."""
                         removed = 0
                         for cb, task_id in checks:
                             if cb.value:
@@ -139,6 +160,7 @@ class ProjectPage(ProjectFrame):
             status = ui.select(['todo', 'in_progress', 'completed'], value='todo').classes('w-48')
 
             def create_task(_=None):
+                """Validate inputs and create a new task for this project."""
                 t = (title.value or '').strip()
                 if not t:
                     ui.notify('Title required', color='negative'); return
@@ -168,11 +190,13 @@ class ProjectPage(ProjectFrame):
                     ui.notify(f'Error: {exc}', color='negative')
 
             def _open_edit(task):
+                """Open a nested dialog to edit an existing task's title and description."""
                 with ui.dialog().props('persistent') as ed, ui.card():
                     ui.label('Edit Task')
                     etitle = ui.input('Title', value=task.title)
                     edesc = ui.textarea('Description', value=task.description or '')
                     def save(_=None):
+                        """Validate and save the updated task details."""
                         if not etitle.value.strip():
                             ui.notify('Title required', color='negative'); return
                         try:
@@ -200,6 +224,7 @@ class ProjectPage(ProjectFrame):
                 ed.open()
 
             def _delete_task(task):
+                """Delete a single task and reload the page on success."""
                 try:
                     ok = tm.delete_task(user=self.user, project=project, task_id=task.id)
                     if ok:
@@ -220,12 +245,21 @@ class ProjectPage(ProjectFrame):
         dlg.open()
 
     def on_edit_note(self, note) -> None:
+        """Open a dialog to edit an existing project note.
+
+        Pre-fills the textarea with the current note content.
+        Only the note author can edit their own notes.
+
+        Args:
+            note: The ProjectNote object to edit.
+        """
         cm = CollabManager(session=self.session)
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
             ui.label('Edit Project Note').classes('text-h6')
             edit_content = ui.textarea('Note', value=note.content).props('autogrow')
 
             def save(_=None):
+                """Validate and save the updated note content."""
                 text = (edit_content.value or '').strip()
                 if not text:
                     ui.notify('Note cannot be empty', color='negative')
@@ -250,6 +284,12 @@ class ProjectPage(ProjectFrame):
         dlg.open()
 
     def on_manage_collaborators(self, e=None) -> None:
+        """Open a dialog to add or remove project collaborators.
+
+        Shows existing collaborators with checkboxes for removal, and
+        a dropdown to add new collaborators. Admins and the project owner
+        are excluded from the add dropdown.
+        """
         cm = CollabManager(session=self.session)
         um = UserManager(session=self.session)
         members = self.project.collaborator_memberships or []
@@ -277,6 +317,7 @@ class ProjectPage(ProjectFrame):
                         checks.append((cb, membership.user.id))
 
             def remove_selected(_=None):
+                """Remove all checked collaborators from the project."""
                 removed = 0
                 for cb, user_id in checks:
                     if cb.value:
@@ -314,8 +355,8 @@ class ProjectPage(ProjectFrame):
                 clearable=True,
             ).classes('w-full')
 
-            
             def add_collaborator(_=None):
+                """Look up the selected user and add them as a collaborator."""
                 username = username_select.value
                 if not username:
                     ui.notify('Select a username', color='negative')
@@ -355,6 +396,11 @@ class ProjectPage(ProjectFrame):
         dlg.open()
 
     def on_manage_notes(self, e=None) -> None:
+        """Open a dialog to delete existing project notes.
+
+        Users can only delete their own notes unless they have the
+        DELETE_PROJECT_NOTE permission, in which case they can delete any note.
+        """
         cm = CollabManager(session=self.session)
         try:
             notes = cm.view_project_note(self.user, self.project.id) or []
@@ -362,11 +408,7 @@ class ProjectPage(ProjectFrame):
             ui.notify(f'Could not load notes: {exc}', color='negative')
             return
 
-        # Determine which notes the current user may delete.
-        # Users may delete their own notes; users with the DELETE_PROJECT_NOTE
-        # permission (admins / owners / collaborators) may delete any.
         can_delete_any = cm.can_delete_project_note(self.user, self.project)
-
         deletable_notes = notes if can_delete_any else [n for n in notes if n.created_by == self.user.id]
 
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
@@ -391,6 +433,7 @@ class ProjectPage(ProjectFrame):
                 ui.label('No notes available to delete').classes('text-sm text-grey')
 
             def delete_selected(_=None):
+                """Delete all checked notes from the project."""
                 removed = 0
                 for cb, n_id in checks:
                     if cb.value:
@@ -417,24 +460,29 @@ class ProjectPage(ProjectFrame):
         dlg.open()
 
     def on_edit_project_details(self, e=None) -> None:
+        """Open a dialog to edit the project name and description.
+
+        Only the project owner has permission to edit project details.
+        Reloads the page on success.
+        """
         pm = ProjectManager(session=self.session)
-        
+
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
             ui.label('Edit Project Details').classes('text-h6')
             ui.separator()
-            
-            # Input fields
+
             name_input = ui.input(label='Project Name', value=self.project.name or '').classes('w-full')
             description_input = ui.textarea(label='Description', value=self.project.description or '').props('autogrow').classes('w-full')
-            
+
             def save(_=None):
+                """Validate and save the updated project name and description."""
                 name = (name_input.value or '').strip()
                 description = (description_input.value or '').strip()
-                
+
                 if not name:
                     ui.notify('Project name cannot be empty', color='negative')
                     return
-                
+
                 try:
                     ok = pm.edit_project(
                         user=self.user,
@@ -452,15 +500,25 @@ class ProjectPage(ProjectFrame):
                     ui.notify('You do not have permission to edit this project', color='negative')
                 except Exception as exc:
                     ui.notify(f'Error updating project: {exc}', color='negative')
-            
+
             with ui.row():
                 ui.button('Save', on_click=save)
                 ui.button('Cancel', on_click=lambda _=None: dlg.close())
-        
+
         dlg.open()
+
 
 @ui.page('/project/{project_id}')
 def project(project_id: int) -> None:
+    """Register the project page at /project/{project_id} and render it.
+
+    Redirects to login if the user is not authenticated. Loads the project
+    via ProjectManager and passes it along with the current user and session
+    to ProjectPage for rendering.
+
+    Args:
+        project_id: The ID of the project to display, taken from the URL.
+    """
     if not app_state.is_authenticated():
         ui.notify('Please log in to view projects', color='negative')
         ui.navigate.to('/login')
