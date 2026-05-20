@@ -57,9 +57,16 @@ def is_collaborator(user, project, session: Session) -> bool:
         user_id = user.id
         ).first() is not None
 
-def is_assignee_on_task(user: User, task: Task) -> bool:
-    """user is assigned to this specific Task."""
-    return any(a.user_id == user.id for a in task.assignments)
+def is_assignee_on_task(user: User, task: Task, session: Session) -> bool:
+    """user is assigned to this specific Task (DB-backed check)."""
+    if task is None:
+        return False
+    return (
+        session.query(Assignment)
+        .filter(Assignment.user_id == user.id, Assignment.task_id == task.id)
+        .first()
+        is not None
+    )
 
 def is_assignee_in_project(user : User, project : Project, session: Session) -> bool:
     """user is assigned to at least one Task in this project."""
@@ -80,6 +87,11 @@ def check_permission(
 ) -> bool:
     if user is None:
         return False
+    # If caller provided a task but not a project, resolve project by id
+    if project is None and task is not None:
+        proj_id = getattr(task, 'project_id', None)
+        if proj_id is not None:
+            project = session.query(Project).filter_by(id=proj_id).first()
     match action:
         case PermissionAction.CREATE_PROJECT:
             return True
@@ -182,14 +194,14 @@ def check_permission(
             return (
                 user.is_admin 
                 or is_owner(user, project) 
-                or is_assignee_on_task(user, task) 
+                or is_assignee_on_task(user, task, session)
                 or is_collaborator(user, project, session)
             )
         
         case PermissionAction.CHANGE_TASK_STATUS:
             if task is None:
                 return False
-            return (user.is_admin or is_assignee_on_task(user, task))
+            return (user.is_admin or is_assignee_on_task(user, task, session))
 
         case PermissionAction.VIEW_TASK_NOTE:
             if task is None:
@@ -198,7 +210,7 @@ def check_permission(
                 return False
             return (
                 user.is_admin 
-                or is_assignee_on_task(user, task) 
+                or is_assignee_on_task(user, task, session) 
                 or is_owner(user, project) 
                 or is_collaborator(user, project, session)
             )
@@ -206,7 +218,7 @@ def check_permission(
         case PermissionAction.WRITE_TASK_NOTE:
             if task is None:
                 return False
-            return (user.is_admin or is_assignee_on_task(user, task))
+            return (user.is_admin or is_assignee_on_task(user, task, session))
 
         case PermissionAction.DELETE_TASK_NOTE:
             if task is None:
@@ -215,7 +227,7 @@ def check_permission(
                 return False
             return (user.is_admin 
                 or is_owner(user, project) 
-                or is_assignee_on_task(user, task))
+                or is_assignee_on_task(user, task, session))
 
         case PermissionAction.EDIT_TASK_DETAILS:
             if task is None:
