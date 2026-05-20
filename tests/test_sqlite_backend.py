@@ -13,9 +13,13 @@ Run:
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 import datetime
 import logging
 import bcrypt
+
+# Add parent directory to path so we can import database module
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from database.connection import DatabaseConnection
 from database.models import Assignment, Project, Task, User
@@ -203,7 +207,7 @@ def read_back_data(db: DatabaseConnection) -> None:
 
 
 def main() -> None:
-    db_path = Path(__file__).resolve().parent / "database" / "test_tracker_app.db"
+    db_path = Path(__file__).resolve().parent.parent / "database" / "test_tracker_app.db"
     log.info("Seeding main app database")
     log.info("Target DB path: %s", db_path)
 
