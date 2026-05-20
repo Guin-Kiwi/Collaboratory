@@ -1,6 +1,6 @@
 # Collaboratory
 
-Collaboratory is a web-based team task management application built in Python. It supports role-based project collaboration for creating, managing, and tracking tasks and notes across projects.
+Collaboratory is a web-based team task management application built in Python. It supports three user roles — project owner, collaborator, and assignee — each with role-based permissions for creating, managing, and tracking tasks and notes across projects.
 
 The application follows a 3-tier architecture using NiceGUI for the presentation layer, Python for the application logic, and SQLite with SQLAlchemy for data persistence.
 
@@ -10,9 +10,33 @@ The application follows a 3-tier architecture using NiceGUI for the presentation
 
 Development teams lack a lightweight, role-aware tool for managing tasks within a project. Without structured access control, any team member can modify or delete any task, making it difficult to maintain clear ownership and accountability across a shared project.
 
+**Specific pain points:**
+- **Loss of accountability** — No clear record of who created, assigned, or modified tasks
+- **Uncontrolled access** — Team members can accidentally overwrite or delete critical work
+- **No clear delegation** — Task assignments lack visibility and status tracking
+- **Communication breakdown** — No integrated mechanism for task-related discussions
+- **Admin bottleneck** — Owners must manually oversee every change
+
+### Target Users
+
+Collaboratory is designed for:
+- **Small development teams** (3–20 people) needing lightweight task management
+- **Project-based work** with clear ownership and role distinctions
+- **Teams using GitHub Codespaces** or local Python environments
+- **Educational and professional settings** requiring role-based access control
+
 ### Scenario
 
 A small team uses Collaboratory to manage a development project. The project owner creates the project and invites collaborators. Collaborators create tasks and assign them to team members. Assignees update task status (To Do → In Progress → Completed) and leave task notes to communicate progress. The owner monitors all tasks, manages collaborators, and can delete tasks when needed.
+
+### Why Collaboratory?
+
+Collaboratory solves these problems through:
+- **Role-based access control** — Each team member has specific permissions tied to their role (Owner, Collaborator, Assignee, Admin)
+- **Simple permission model** — 18 granular actions prevent unauthorized changes while enabling delegation
+- **Built-in accountability** — Task creation, assignment, and status changes are all tracked
+- **Lightweight and self-hosted** — No external service dependencies; runs in GitHub Codespaces or locally
+- **Python-native** — Easy to understand, modify, and extend for educational purposes
 
 
 ## User Stories
@@ -20,7 +44,7 @@ A small team uses Collaboratory to manage a development project. The project own
 ### Owner
 
 - As an Owner, I want to create a new project so that I can organise tasks for my team in one place.
-- As an Owner, I want to manage collaborators so that I can control who has access to the project.
+- As an Owner, I want to manage collaborators so that I can control who has access to the project management.
 - As an Owner, I want to create and assign tasks so that work is clearly distributed.
 - As an Owner, I want to edit and delete tasks so that the project stays organised and up to date.
 - As an Owner, I want to add and view project notes so that important information is documented and accessible.
@@ -44,19 +68,82 @@ A small team uses Collaboratory to manage a development project. The project own
 
 ### Main Use Cases
 
+## Project Management
 - **View Projects & Tasks** — Users can view projects and tasks they have access to.
-- **Manage Tasks** — Tasks can be created, edited, and assigned within a project.
-- **Delete Task** — The Owner can remove tasks.
-- **Manage Collaborators** — The Owner adds or removes collaborators.
-- **Change Task Status** — Assignees update the progress of tasks.
-- **Add & View Project Notes** — Owners and Collaborators document project information.
-- **Add & View Task Notes** — Assignees add updates or comments to tasks.
+- **Create & Manage Projects** — Owners create new projects and manage project details.
+- **Edit Project Details** — Owners and Collaborators update project information and status.
+- **Delete Projects** — Owners can remove entire projects.
+- **Manage Collaborators** — Owners add or remove collaborators to control project access.
+
+**Task Management**
+- **Create & Edit Tasks** — Owners and Collaborators create and edit tasks within a project.
+- **Assign Tasks** — Owners and Collaborators assign tasks to team members.
+- **Change Task Status** — Assignees update task progress (To Do → In Progress → Completed).
+- **Delete Tasks** — Owners and Collaborators remove tasks from the project.
+
+**Collaboration & Documentation**
+- **Project Notes** — Owners and Collaborators add, view, edit, and manage project-level notes.
+- **Task Notes** — Assignees add and edit updates on tasks; Owners and Assignees can delete task notes.
+
+**Admin & Recovery**
+- ~~**Manage Admin Status**~~ — *Admins can only self-revoke their own admin status; they cannot revoke other admins' status to prevent malicious lockout of the recovery admin.*
+
+> **Note:** Admin status is strictly a recovery/override mechanism, not a normal operational role. Admins can only revoke their own admin status, not other admins' status. This prevents malicious actors from locking the recovery admin out of the system.
 
 ### Actors
 
 - **Owner** — Creates and manages projects, tasks, collaborators, and project notes.
 - **Collaborator** — Supports the Owner by managing tasks and project notes.
 - **Assignee** — Works on assigned tasks and updates their status.
+
+## 📖 Detailed Use Cases (Inputs / Outputs)
+
+### 1. View Projects & Tasks
+**As a user, I want to see projects and tasks I have access to.**
+
+- **Inputs:** user id (`int`) or session
+- **Outputs:** list of projects (`list[Project]`) and tasks (`list[Task]`) visible to the user
+
+---
+
+### 2. Create or Edit Task
+**As a project member, I want to create or update a task.**
+
+- **Inputs:** project id (`int`), title (`str`), description (`str`), priority (`low|medium|high`), due_date (`datetime`)
+- **Outputs:** created/updated `Task` object (with `id`), success flag
+
+---
+
+### 3. Assign Task to User
+**As an Owner or Collaborator, I want to assign a task to a user.**
+
+- **Inputs:** task id (`int`), assignee user id (`int`)
+- **Outputs:** `Assignment` record, updated assignee list for the task
+
+---
+
+### 4. Change Task Status
+**As an Assignee, I want to change my task status to reflect progress.**
+
+- **Inputs:** task id (`int`), status (`todo|in_progress|completed`)
+- **Outputs:** updated `Task` status, timestamped change persisted
+
+---
+
+### 5. Project Notes (Add / View)
+**As an Owner/Collaborator, I want to add and view project notes.**
+
+- **Inputs:** project id (`int`), content (`str`)
+- **Outputs:** `ProjectNote` created, list of project notes
+
+---
+
+## 🧩 Wireframes / Mockups
+
+> 🚧 Add screenshots of the core UI screens (Dashboard, Project view, Task view).
+
+![Wireframes – Dashboard/Project/Task](docs/ui-images/wireframes.png)
+
 
 ## Roles & Permissions
 
@@ -76,50 +163,38 @@ A user can simultaneously be a Collaboratory Admin, Owner or Collaborator of a p
 | **Assignee** | You have been assigned to at least one task in the project |
 | **Collaborator** | The Owner added you to the project |
 
-> Users with `is_admin = true` have Owner-level access across all projects.
+> Users with `is_admin = true` have full access across all projects.
 > This is a simple override for recovery/admin purposes, not a normal role.
 
-| Action | Owner | Assignee | Collaborator |
+| Action | Owner | Collaborator | Assignee |
 |---|---|---|---|
 | View project & tasks | ✅ | ✅ | ✅ |
-| Create task | ✅ | — | ✅ |
-| Assign task to user | ✅ | — | ✅ |
-| Edit task details | ✅ | — | ✅ |
-| Change task status | — | ✅ | — |
-| Delete task | ✅ | — | — |
+| Edit project details | ✅ | ✅ | — |
+| Change project status | ✅ | ✅ | — |
+| Delete project | ✅ | — | — |
 | Add/remove collaborators | ✅ | — | — |
-| Add Project Note | ✅ | — | ✅ |
-| View Project Notes | ✅ | ✅ | ✅ |
-| Add Task Note | — | ✅ | — |
-| View Task Notes | ✅ | ✅ | ✅ |
+| View project notes | ✅ | ✅ | ✅ |
+| Add project note | ✅ | ✅ | — |
+| Edit own project note | ✅ | ✅ | — |
+| Delete project note | ✅ | — | — |
+| Create task | ✅ | ✅ | — |
+| Assign task to user | ✅ | ✅ | — |
+| Edit task details | ✅ | ✅ | — |
+| Change task status | — | — | ✅ |
+| Delete task | ✅ | ✅ | — |
+| Add task note | — | — | ✅ |
+| Edit own task note | — | — | ✅ |
+| View task notes | ✅ | ✅ | ✅ |
+| Delete task note | ✅ | — | ✅ |
+
 
 ---
 
 ## ✅ Project Requirements
 
-The application contains the following elements using NiceGUI as the frontend technology.
+Collaboratory meets the following criteria required by the course:
 
-### 1. Presentation Layer (Client-Side View)
-
-- Browser acts as a thin client
-- UI rendered with Vue.js and Quasar through NiceGUI
-- No business logic stored in the browser
-
-### 2. Application Logic (Server-Side Frontend)
-
-- Business logic implemented in Python
-- NiceGUI components instantiated on the server
-- Object-oriented structure for modular logic
-
-### 3. Persistence Layer (Database)
-
-- SQLite used as persistent storage
-- SQLAlchemy used as ORM
-- No raw SQL required
-
----
-
-### 1. Interactive App (GUI)
+### 1. Browser-based App (NiceGUI)
 
 The application interacts with users through a web browser using NiceGUI.
 
@@ -135,60 +210,41 @@ Users can perform the following actions:
 
 The graphical user interface is implemented entirely with NiceGUI components running on the server side. The browser acts as a thin client while the application logic and UI state are managed by the Python backend.
 
----
+**Architecture note:** The browser is a thin client; UI state and business logic live on the server-side NiceGUI application.
 
 ### 2. Data Validation
 
-The application validates all user input to ensure:
+The application validates all user input to ensure data integrity and a smooth user experience.
 
-- Data consistency
-- Application stability
-- Secure workflows
+**Validated input includes:**
+- Usernames and email addresses (format, uniqueness)
+- Login credentials (bcrypt verification)
+- Project names and descriptions (non-empty)
+- Task titles and task status values (valid status enums)
+- Collaborator assignments (role validation)
+- Required form fields (no empty submissions)
+- Due dates (valid date format)
+- Priority levels (valid priority enums)
 
-Validation is performed before data is processed or stored in the database.
-
-Examples of validated input include:
-
-- Usernames and email addresses
-- Login credentials
-- Project names and descriptions
-- Task titles and task status values
-- Collaborator assignments
-- Required form fields
-
-Invalid or incomplete input is rejected with clear feedback messages in the user interface.
+**Validation behavior:** Invalid or incomplete input is rejected with clear feedback messages in the user interface. Validation is performed before data is processed or stored in the database to prevent crashes and guide users to provide correct input.
 
 ### 3. Database Management
 
 The application uses SQLite as its persistent database and SQLAlchemy as an Object-Relational Mapper (ORM).
 
-The ORM is used to:
-
-- Define database tables as Python classes
-- Manage relationships between users, projects, tasks, assignments, project notes, and task notes
+**ORM usage includes:**
+- Define database tables as Python classes (User, Project, Task, Assignment, ProjectMember, ProjectNote, TaskNote)
+- Manage relationships between entities (foreign keys, cascade rules, back-references)
 - Create, read, update, and delete persistent data
-- Avoid writing raw SQL statements directly
+- Avoid writing raw SQL statements directly (all queries use ORM methods)
 
-Database access is separated from the user interface. Manager classes interact with the database through SQLAlchemy sessions to keep the architecture clean and maintainable.
-
-### Input Validation and Error Handling
-
-The application validates all user input before processing or storing it.
-
-Examples include:
-
-- Usernames
-- Task titles
-- Descriptions
-- Status values
-
-Invalid or incomplete data is rejected with clear error messages to ensure consistent and well-formed data in the database.
+**Architecture:** Database access is separated from the user interface. Manager classes (`UserManager`, `ProjectManager`, `TaskManager`, `CollabManager`) interact with the database through SQLAlchemy sessions to keep the architecture clean and maintainable.
 
 ## Database Information
 
 ### Core Entities
 
-- **User** — people who log in and get assigned tasks
+- **User** — people who log in, create projects, or get assigned to manage projects and/or tasks
 - **Project** — top-level project containers
 - **Task** — work items inside projects
 - **Assignment** — links tasks to users
@@ -208,6 +264,8 @@ is_admin    (bool)
 created_at
 ```
 
+**Notes:** Users include audit timestamps (`created_at`, `updated_at`) via `TimestampMixin`.
+
 #### Project
 
 ```text
@@ -217,6 +275,8 @@ description
 owner_id    (FK → Users.id)
 created_at
 ```
+
+**Notes:** Projects include audit timestamps (`created_at`, `updated_at`) via `TimestampMixin`.
 
 #### Task
 
@@ -232,6 +292,8 @@ created_by  (FK → Users.id)
 created_at
 ```
 
+**Notes:** Tasks include audit timestamps (`created_at`, `updated_at`) via `TimestampMixin`.
+
 #### Assignment
 
 ```text
@@ -241,6 +303,8 @@ user_id     (FK → Users.id)
 assigned_at
 ```
 
+**Notes:** `Assignment.assigned_at` is timestamped at insertion (server_default=now). Assignments do not use the `TimestampMixin`.
+
 #### ProjectMember
 
 ```text
@@ -248,6 +312,8 @@ id          (PK)
 project_id  (FK → Projects.id)
 user_id     (FK → Users.id)
 ```
+
+**Notes:** `ProjectMember` is a join table with a unique constraint on `(project_id, user_id)`; no audit timestamps.
 
 #### ProjectNote
 
@@ -259,6 +325,8 @@ created_by  (FK → Users.id)
 created_at
 ```
 
+**Notes:** Project notes include audit timestamps (`created_at`, `updated_at`) via `TimestampMixin`. The `created_by` field references the `users.id` who authored the note.
+
 #### TaskNote
 
 ```text
@@ -269,31 +337,54 @@ created_by  (FK → Users.id)
 created_at
 ```
 
+**Notes:** Task notes include audit timestamps (`created_at`, `updated_at`) via `TimestampMixin`. The `created_by` field references the `users.id` who authored the note.
+
+### Relationships
+
+- One `User` → many `Project` (owner)
+- One `Project` → many `Task`
+- One `Task` → many `Assignment` (assignees)
+- One `User` → many `Assignment`
+- One `Project` → many `ProjectMember` (collaborators)
+- One `Project` → many `ProjectNote`
+- One `Task` → many `TaskNote`
+
+The ORM uses SQLAlchemy relationships with cascade rules (e.g. projects → tasks cascade on delete) and `UniqueConstraint`s for join tables (`assignments`, `project_members`).
+
 #### Entity Relationship Diagram
 
 <img width="1213" height="1209" alt="ERCollab_Notes (2)" src="https://github.com/user-attachments/assets/199f9147-afc6-4767-9e04-17df8013b0eb" />
 
 ## Architecture
 
-This application follows a 3-tier architecture.
+This application follows a 3-tier layered architecture.
 
 ### 1. Presentation Tier (Frontend)
 
 - **Technology:** NiceGUI
+- UI rendered with Vue.js and Quasar through NiceGUI
 - Renders the user interface directly from Python
 - UI components are served through NiceGUI
 - Runs in the browser
+- No business logic stored in the browser
+- Browser acts as a thin client
 
 ### 2. Application Tier (Backend)
 
 - **Technology:** Python + NiceGUI
-- Handles business logic
+- Business logic implemented in Python
+- NiceGUI components instantiated on the server
+- Object-oriented structure for modular logic
+- Handles business logic and user interactions
 - Manages authentication and sessions
 - Connects UI and database
 
 ### 3. Data Tier (Database)
 
 - **Technology:** SQLAlchemy + SQLite
+- SQLite used as persistent storage
+- SQLAlchemy used as ORM
+- No raw SQL required
 - Stores persistent application data
 - Uses ORM models instead of raw SQL
 - Database accessed through SQLAlchemy sessions
@@ -331,7 +422,7 @@ Adds shared timestamp fields (`created_at`, `updated_at`) to multiple ORM models
 - `database/connection.py`
 - `logic/permissions_manager.py`
 
-Simplifies database session handling and permission checking behind shared interfaces.
+Simplifies database session handling and permission checking behind shared interfaces. All four managers use the shared `db_conn` instance from `database/__init__.py`. Note: `main.py` also constructs its own `DatabaseConnection()` at startup — see Known Limitations.
 
 **Status:** Implemented
 
@@ -342,7 +433,7 @@ Simplifies database session handling and permission checking behind shared inter
 **File:**
 - `database/__init__.py`
 
-Uses a shared `db_conn` database connection instance across the application.
+Uses a shared `db_conn` database connection instance across the application. Python does not enforce that additional instances cannot be created; `main.py` creates an additional instance at startup.
 
 **Status:** Partial
   
@@ -350,58 +441,96 @@ Uses a shared `db_conn` database connection instance across the application.
 
 ### Technology
 
-- Python 3.x
-- GitHub Codespaces
-- NiceGUI
-- SQLAlchemy
-- bcrypt
+- **Python 3.10+** (tested with Python 3.13)
+- GitHub Codespaces (or local development environment)
+- NiceGUI — web application framework
+- SQLAlchemy — Object-Relational Mapper (ORM)
+- bcrypt — password hashing
+- SQLite — embedded database
 
 ### 📂 Repository Structure
 
 ```text
-collaboratory/
-├── database/            # physical data store connection and ORM models
-├── logic/               # server-side business logic and state management
-├── ui/                  # NiceGUI components and pages
+Collaboratory/
+├── database/
+│   ├── __init__.py             # shared db_conn singleton
+│   ├── connection.py           # DatabaseConnection façade
+│   ├── models.py               # core ORM models (User, Project, Task, Assignment)
+│   ├── collab_models.py        # collaboration ORM models (ProjectMember, notes)
+│   └── mixins.py               # shared timestamp mixin
+├── logic/
+│   ├── __init__.py
+│   ├── app_state.py            # global AppState for session management
+│   ├── user_manager.py         # user CRUD and authentication
+│   ├── project_manager.py      # project CRUD and queries
+│   ├── task_manager.py         # task CRUD, assignment, and status
+│   ├── collab_manager.py       # collaborator and note management
+│   ├── permissions_manager.py  # 18-action permission system
+│   └── db_session.py           # session abstraction layer
+├── ui/
+│   ├── __init__.py
+│   ├── layout.py               # reusable page frames and navigation
+│   └── pages/
+│       ├── __init__.py
+│       ├── login_page.py       # authentication (login/signup/password reset)
+│       ├── dashboard_page.py   # user dashboard with projects and tasks
+│       ├── project_page.py     # project detail view with collaborators and notes
+│       └── task_page.py        # task detail view with assignees and notes
+├── tests/                      # 42 pytest tests (database, workflows, permissions)
 ├── .gitignore
 ├── LICENSE
-├── README.md
-├── main.py
-└── requirements.txt
+├── README.md                   # this file
+├── main.py                     # application entry point
+└── requirements.txt            # Python dependencies
 ```
 
 ### How to Run
-### How to Run
 
-1. Open the repository in **GitHub Codespaces** (or clone locally)
+**Requirements:**
+- Python 3.10 or higher
+- pip or other Python package manager
 
-2. Open the **Terminal**
+**Setup:**
+
+1. Clone or open the repository:
+   ```bash
+   git clone https://github.com/Guin-Kiwi/Collaboratory.git
+   cd Collaboratory
+   ```
+
+2. Create and activate a virtual environment (recommended):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate      # macOS/Linux
+   # OR
+   venv\Scripts\activate          # Windows
+   ```
 
 3. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 4. Start the application:
+   ```bash
+   python main.py
+   ```
 
-```bash
-python main.py
-```
+5. Open your browser and navigate to the URL displayed in the terminal (typically `http://localhost:8080`)
 
-5. Open your browser at the URL shown in the terminal:
-
-```text
-http://localhost:8080
-```
+**Troubleshooting:**
+- If port 8080 is in use, NiceGUI will automatically try the next available port
+- Check the terminal output for the actual URL
+- For GitHub Codespaces, the browser may open automatically
 
 ### Libraries Used
 
-- `nicegui` — builds the web-based user interface
-- `sqlalchemy` — ORM for database models and queries
-- `bcrypt` — password hashing and login verification
+- `nicegui` — browser-based UI framework (Vue.js + Quasar via Python)
+- `sqlalchemy` — Object-Relational Mapper for database models and queries
+- `bcrypt` — secure password hashing and verification
+- `pytest` — unit and integration testing framework
 
-Install all dependencies with:
+All dependencies are listed in `requirements.txt` and installed via:
 
 ```bash
 pip install -r requirements.txt
@@ -409,38 +538,280 @@ pip install -r requirements.txt
 
 ## Features
 
-- User authentication and login
-- Project creation and management
-- Task creation, editing, assignment, and deletion
-- Task status tracking
-- Collaborator management
-- Project and task notes
-- Role-based permission system
-- Input validation and error handling
+**Core Functionality:**
+- ✅ User authentication and account management (login, signup, password reset, account deletion)
+- ✅ Project creation and lifecycle management
+- ✅ Task creation, editing, assignment, and deletion
+- ✅ Task status workflow (To Do → In Progress → Completed)
+- ✅ Collaborator management with granular role-based access
+- ✅ Project-level and task-level note documentation
+- ✅ Admin recovery mechanism for system access
 
-## 👥 Team & Contributions
+**Technical Features:**
+- ✅ 18-action permission system with Owner, Collaborator, Assignee, and Admin roles
+- ✅ Input validation for usernames, emails, passwords, project names, task titles, and status values
+- ✅ Error handling with user-friendly feedback messages
+- ✅ Browser-based UI with real-time updates (no page reloads for most actions)
+- ✅ SQLite database with cascade rules and referential integrity
+- ✅ 42 unit, integration, and boundary tests
+- ✅ Session management and security with bcrypt password hashing
 
-| Name | Main Contributions |
+**Architecture:**
+- ✅ 3-tier layered architecture (UI, Logic, Database)
+- ✅ Design patterns: Manager Pattern, Façade, Singleton (by convention), Mixin
+- ✅ Clean separation of concerns: business logic independent of UI
+- ✅ ORM-based data access with no raw SQL
+
+## � Usage Walkthrough
+
+### Scenario: Create a Project and Assign Tasks
+
+**Step 1: Log In**
+1. Open Collaboratory in your browser
+2. Click **Sign Up** to create an account, or log in with existing credentials
+3. You're now on the **Dashboard**, which shows your projects, collaborations, and task summary
+
+**Step 2: Create a New Project**
+1. On the Dashboard, click **Create New Project**
+2. Enter a project name (e.g., "Website Redesign")
+3. Optionally add a description
+4. Click **Create** — you're now the **Owner** of this project
+
+**Step 3: Add Collaborators**
+1. Navigate to your project
+2. In the **Collaborators** section, select a user from the dropdown
+3. Click **Add Collaborator** — they can now view, create, and assign tasks in your project
+
+**Step 4: Create Tasks**
+1. In the project view, click **Create New Task**
+2. Enter task title, description, priority, and due date
+3. Click **Create Task** — the task appears in the project's task list
+
+**Step 5: Assign Tasks**
+1. Click on a task to open its detail view
+2. In the **Assignees** section, select a user and click **Assign**
+3. The user becomes an **Assignee** for that task
+
+**Step 6: Update Task Status**
+1. As an Assignee, open your assigned task
+2. In **Task Status**, select the new status (To Do → In Progress → Completed)
+3. Click **Update** — the status is saved immediately
+
+**Step 7: Add Notes**
+1. **Project Notes** (Owner/Collaborator only): Add team documentation in the project view
+2. **Task Notes** (Assignee only): Add progress updates or blockers in the task detail view
+3. All notes are visible to project members with appropriate access
+
+### Key Workflows by Role
+
+**As a Project Owner:**
+- Create projects and manage all aspects
+- Add/remove collaborators
+- Create and assign tasks to team members
+- Edit and delete tasks
+- Add and delete project notes
+- Monitor all project activity
+
+**As a Collaborator:**
+- View all project details
+- Create and edit tasks
+- Assign tasks to team members
+- Add project notes
+- View task progress
+
+**As an Assignee:**
+- View tasks assigned to you
+- Update task status (track progress)
+- Add task notes (communication with owner/collaborators)
+- View project details for context
+
+## �👥 Team & Contributions
+
+Collaboratory was built by a team of four over approximately eight weeks, with a concentrated final sprint in the last week of May. Contributions are documented below by primary file ownership and sprint activity, derived from commit history.
+
+| Contributor | Primary responsibility |
 |---|---|
-| Marta Greschuk | Application state management, dashboard UI, integration testing |
-| Polina Yemelianenkova | Authentication system, database infrastructure, ORM configuration |
-| Ayla Allen | Architecture, permissions system, collaboration layer, UI framework |
-| Sümeyya Güçlü-Babür | Task management, assignee system, task page UI, README documentation |
+| Ayla Allen | Architecture, permissions, collaboration layer, UI framework |
+| Polina Yemelianenkova | Authentication, ORM queries, database infrastructure |
+| Sümeyya Güçlü-Babür | Task management, assignee system, permission debugging |
+| Marta Greschuk | Application state, logic layer setup, dashboard, testing |
 
 ---
 
-### Collaborative Work
+### Ayla Allen
 
-All team members contributed to:
-- Integration and debugging
-- Final testing
-- README improvements
-- UI and workflow refinements
-- Cross-layer fixes during the final sprint
+**Role:** Repository setup, core architecture, collaboration layer, permissions system, UI framework, and integration.
+
+**Primary file ownership**
+- `database/models.py` — `BaseModel` declarative base and all core ORM models (`User`, `Project`, `Task`, `Assignment`) including relationships, foreign keys, cascade rules, and Enum definitions for task status and priority
+- `database/collab_models.py` — `ProjectMember`, `ProjectNote`, and `TaskNote` ORM models including back-references and `UniqueConstraint` on project membership
+- `logic/permissions_manager.py` — full 18-action permission system: `PermissionAction` enum, `check_permission`, `require_permission`, and all role checker functions (`is_owner`, `is_collaborator`, `is_assignee_on_task`, `is_assignee_in_project`) covering Owner, Collaborator, Assignee, and Admin roles
+- `logic/collab_manager.py` — all collaboration business logic: adding/removing collaborators, project note CRUD, task note CRUD, permission-guarded access throughout, and author-bypass logic for note deletion
+- `ui/layout.py` — all reusable frame classes (`UnauthenticatedFrame`, `DashboardFrame`, `ProjectFrame`, `TaskFrame`) defining the shared navigation, header, and routing structure every page inherits from
+- `ui/pages/project_page.py` — full project view (18,857 bytes, largest file in the project): collaborator display, task listing, project and task note creation and display, all permission-gated action buttons
+- `tests/test_collab_manager_permissions.py` — permission boundary tests for collaborator actions
+
+**Sprint activity**
+- `ui/layout.py` — introduced `UnauthenticatedFrame`; kept `login_frame()` backwards-compatible; refactored page imports across the UI layer
+- `ui/pages/project_page.py` — added task and note CRUD; wired permission-gated buttons across UI and logic layers; fixed note view wiring
+- `logic/permissions_manager.py` — implemented permission checks for adding collaborators and deleting project notes without breaking layer separation
+- `tests/` — moved SQLite backend seeding to test folder for isolation; added collaborator permission boundary tests
+- Cross-branch — resolved merge conflicts maintaining `ui-layer` as source of truth (PRs #15, #17, #19)
+
+---
+
+### Polina Yemelianenkova
+
+**Role:** User authentication, `UserManager`, ORM query layer, database infrastructure, and README documentation.
+
+**Primary file ownership**
+- `logic/user_manager.py` — `create_user` (bcrypt password hashing), `delete_user`, `update_user`, `validate_login`, `get_user_by_id`, `get_all_users`, `user_exists`
+- `ui/pages/login_page.py` — full login and signup interface using `UnauthenticatedFrame`: bcrypt credential verification, signup with name/username/email/password, error handling, redirect for already-authenticated users, password reset flow, account deletion with password confirmation
+- `database/connection.py` — refined `DatabaseConnection` façade: engine setup, session factory, `init()`, `get_session()`, `dispose()`; shared `db_conn` singleton in `database/__init__.py` used across all managers
+
+**Sprint activity**
+- `ui/pages/login_page.py` — added login page; implemented login/signup handlers with `UnauthenticatedFrame`; added error handling; fixed authenticated user redirect; added password reset and account deletion with password confirmation; removed admin registration option
+- `logic/user_manager.py` — added `create_user`, `delete_user`, `update_user`; added name and email parameters; added `user_exists`
+- `logic/project_manager.py` / `logic/collab_manager.py` — refactored to `joinedload` for memberships, tasks, and notes; removed unused `collaborator_memberships` from project creation; added `is_admin` filter; refactored database connection usage across logic modules
+- `ui/pages/project_page.py` — implemented task, collaborator, and note management methods
+- `DashboardFrame` / `ProjectFrame` — added session control; refactored session initialisation; introduced `db_session` module
+- `ui/layout.py` — removed unused `public_frame` and `task_frame` functions; cleaned up `BaseView` and unused imports
+- `README.md` — added ERD section and image; added `ProjectNote`/`TaskNote` schema entries; applied README audit suggestions; renamed entities for consistency
+
+---
+
+### Sümeyya Güçlü-Babür
+
+**Role:** Task page, `TaskManager`, assignee management, permission debugging, and README documentation.
+
+**Primary file ownership**
+- `logic/task_manager.py` — `create_task`, `get_task_by_id`, `get_tasks_by_user`, `update_task`, `delete_task`, `assign_task`, `remove_assignee`, `get_assignees`, `change_task_status`, and `get_task_project` helper — all with `require_permission` guards
+- `ui/pages/task_page.py` — full task detail view (13,923 bytes): `TaskFrame` layout, task metadata display, status controls, assignee management UI, task notes, and all permission-gated buttons
+
+**Sprint activity**
+- `ui/pages/task_page.py` — added initial task page; updated layout; added `TaskFrame` support and missing methods; refactored to use shared `TaskFrame` from `ui/layout.py`; fixed routing (`task_id` parameter, `project` argument passing)
+- `logic/task_manager.py` — added `get_task_project` helper; fixed `get_tasks_by_user` permission check; fixed `CREATE_TASK` permission check; implemented `assign_task`, `remove_assignee`, `get_assignees`; resolved multiple `DetachedInstanceError` crashes on `task.project` access
+- `logic/task_manager.py` — fixed detached task and project access in task permissions; fixed detached project lazy loading
+- `ui/pages/task_page.py` — fixed task page session errors through multiple debugging iterations
+- `README.md` — added user stories, use cases, roles & permissions table, and UML use case diagram; fixed table formatting; finalised architecture overview
+
+---
+
+### Marta Greschuk
+
+**Role:** Application state, logic layer setup, dashboard UI, session abstraction, and integration testing.
+
+**Primary file ownership**
+- `logic/app_state.py` — `AppState` class managing the logged-in user across NiceGUI's page lifecycle (`login`, `logout`, `is_authenticated`, `get_current_user`, `is_admin`); shared global `app_state` instance used across all pages
+- `ui/pages/dashboard_page.py` — full dashboard view: user's projects, collaborations, and task summary; project and collaboration sub-windows with per-project task display
+- `tests/test_sqlite_backend.py` — integration tests covering task manager workflows end-to-end against a real SQLite backend
+
+**Sprint activity**
+- `logic/app_state.py` — set up logic layer structure via `application_state` branch (PR #17); authored `AppState` with full session lifecycle
+- `logic/permissions_manager.py` — added UI-level permission checks; fixed lazy-loaded relationship bug causing unnecessary DB queries on every permission check
+- `logic/` — implemented `AdminManager`; fixed `is_admin()` crash (method called and result compared to string)
+- `db_session.py` — created thin wrapper around `db_conn.get_session()`; added session management to dashboard; added optional session parameter across managers
+- `ui/pages/dashboard_page.py` — built initial dashboard; added project and collaboration sub-windows; added per-project task display with titles; fixed duplicated task display; added db session; added task creation and edit button; aligned project and task page layouts
+- `tests/test_sqlite_backend.py` — wrote task manager workflow tests; resolved merge conflicts in test files
+
+---
+
+> **Note:** During the final sprint (18–24 May), all team members worked collaboratively across the codebase. The commit history reflects active parallel contributions to shared files, session management, and integration fixes across all layers. Attributions above reflect primary authorship based on commit history.
+
+---
+
+### 🤖 AI Assistance
+
+GitHub Copilot was used for initial project scaffolding (PR #1), README spelling and consistency fixes (PRs #5, #6), multi-file rename refactors, PR review checks, and as a learning aid throughout development. `database/connection.py` and `database/mixins.py` originated from the Copilot scaffold and were subsequently refined by the team.
+
 
 ## 🤝 Contributing
 
 This is a closed academic project submitted for assessment. External contributions are not accepted.
+
+## 🧪 Testing
+
+**Explain what you test and how to run tests.**
+
+**Test mix:**
+- **Overall 42 tests**
+- **35 Database tests** — e.g., user creation persists to DB, username/email uniqueness constraints prevent duplicates, project-task relationships cascade on deletion, ProjectNote and TaskNote CRUD operations
+- **5 Task Manager Workflow tests** — e.g., owner can create task, owner can assign user to task, assignee can change task status, non-owners cannot perform restricted actions
+- **1 Collaborator Manager Permission test** — e.g., adding/removing collaborators, permission boundaries for different roles
+- **1 Constraint test** — e.g., unique constraint prevents duplicate assignments
+
+### How to Run Tests
+
+Run all tests:
+
+```bash
+pytest tests/ -v
+```
+
+Run a specific test file:
+
+```bash
+pytest tests/test_db.py -v
+pytest tests/test_task_manager_workflow.py -v
+pytest tests/test_collab_manager_permissions.py -v
+```
+
+Run tests with coverage:
+
+```bash
+pytest tests/ --cov=logic --cov=database --cov-report=term-missing
+```
+
+### Template for Writing Test Cases
+
+When adding new tests, follow this structure:
+
+1. **Test case ID** — unique identifier (e.g., TC_001)
+2. **Test case title/description** — What is the test about?
+3. **Preconditions** — Requirements before executing the test (e.g., "User must exist", "Project must be created")
+4. **Test steps** — Actions to perform (e.g., "Create task", "Assign user", "Update status")
+5. **Test data/input** — Example values (e.g., task title "Implement API", assignee ID 5)
+6. **Expected result** — What should happen (e.g., "Task status changes to 'in_progress'")
+7. **Actual result** — What actually happened
+8. **Status** — Pass or fail
+9. **Comments** — Additional notes or defects found
+
+### Example Test Cases
+
+**TC_001: Database — User creation persists to DB**
+- **Preconditions:** In-memory SQLite database initialized
+- **Test steps:** Create User object, add to session, commit
+- **Test data:** username="testuser", email="test@example.com"
+- **Expected result:** User retrieved from DB has correct username and email
+- **Status:** ✅ Pass
+
+**TC_002: Task Manager — Owner can create task in owned project**
+- **Preconditions:** Owner user exists, project created by owner
+- **Test steps:** Call `tm.create_task(owner, project, title="Implement API", ...)`
+- **Test data:** title="Implement API", priority="high", status="todo"
+- **Expected result:** Task created with correct fields, task.id is not None
+- **Status:** ✅ Pass
+
+**TC_003: Task Manager — Non-owner cannot create task in project**
+- **Preconditions:** Normal user exists, project owned by different user
+- **Test steps:** Call `tm.create_task(normal_user, project, ...)`
+- **Test data:** title="Test Task"
+- **Expected result:** `PermissionDenied` exception raised
+- **Status:** ✅ Pass
+
+**TC_004: Collaborator Manager — Adding collaborators to project**
+- **Preconditions:** Owner user exists, collaborator user exists, project created by owner
+- **Test steps:** Call `cm.add_collaborator(owner, project, collaborator)`
+- **Test data:** collaborator is normal (non-admin) user
+- **Expected result:** ProjectMember entry created, collaborator can now view project
+- **Status:** ✅ Pass
+
+**TC_005: Collaborator Manager — Permission boundary enforcement**
+- **Preconditions:** Project exists, user is not owner or collaborator
+- **Test steps:** Attempt to add collaborator as non-owner
+- **Test data:** user_id=5 (non-owner), project_id=1
+- **Expected result:** Permission denied or operation fails
+- **Status:** ✅ Pass
 
 ## Known Limitations & Deferred Decisions
 
