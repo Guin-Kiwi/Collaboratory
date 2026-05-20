@@ -429,39 +429,45 @@ class DashboardFrame(AuthenticatedFrame):
 
             ui.separator()
 
-            with ui.row().classes("w-full gap-6 mt-6"):
+            with ui.row().classes("w-full gap-6 items-start no-wrap"):
 
-                with ui.card().classes("flex-1 min-h-[260px] p-6 shadow-md"):
-                    ui.label("Owned Projects").classes("text-2xl font-bold mb-4")
+                # Owned Projects
+                with ui.card().classes("w-1/3 p-6 shadow-md"):
+                    ui.label("Owned Projects").classes("text-2xl font-bold mb-6")
 
                     if owned_projects:
-                        with ui.column().classes("w-full gap-3"):
-                            for project in owned_projects:
-                                with ui.card().classes(
-                                    "w-full p-4 bg-blue-50 shadow-sm hover:shadow-md transition"
-                                ):
-                                    ui.link(
-                                        project.name,
-                                        f"/project/{project.id}"
-                                    ).classes("text-lg font-medium text-blue-700 hover:underline")
-                    else:
-                        ui.label("You do not own any projects yet.").classes("text-sm text-grey-6 italic")
+                        for project in owned_projects:
+                            with ui.card().classes("w-full bg-blue-50 p-4 mb-3 shadow-sm"):
+                                ui.link(
+                                    project.name,
+                                    f"/project/{project.id}"
+                                ).classes("text-blue-700 underline text-lg")
 
-                with ui.card().classes("flex-1 min-h-[260px] p-6 shadow-md"):
-                    ui.label("Collaborations").classes("text-2xl font-bold mb-4")
+                # Collaborations
+                with ui.card().classes("w-1/3 p-6 shadow-md"):
+                    ui.label("Collaborations").classes("text-2xl font-bold mb-6")
 
                     if collab_projects:
-                        with ui.column().classes("w-full gap-3"):
-                            for project in collab_projects:
-                                with ui.card().classes(
-                                    "w-full p-4 bg-blue-50 shadow-sm hover:shadow-md transition"
-                                ):
-                                    ui.link(
-                                        project.name,
-                                        f"/project/{project.id}"
-                                    ).classes("text-lg font-medium text-blue-700 hover:underline")
-                    else:
-                        ui.label("You are not collaborating on any projects yet.").classes("text-sm text-grey-6 italic")
+                        for project in collab_projects:
+                            with ui.card().classes("w-full bg-blue-50 p-4 mb-3 shadow-sm"):
+                                ui.link(
+                                    project.name,
+                                    f"/project/{project.id}"
+                                ).classes("text-blue-700 underline text-lg")
+
+                # Tasks
+                with ui.card().classes("w-1/3 p-6 shadow-md"):
+                    ui.label("My Tasks").classes("text-2xl font-bold mb-6")
+
+                    if task_rows:
+                        for task in task_rows:
+                            with ui.card().classes("w-full bg-blue-50 p-4 mb-3 shadow-sm"):
+                                ui.link(
+                                    task["title"],
+                                    f"/task/{task['id']}"
+                                ).classes("text-blue-700 underline text-lg")
+
+            ui.separator()
 
             ui.label("Task Overview").classes("text-2xl font-bold mt-8")
 
