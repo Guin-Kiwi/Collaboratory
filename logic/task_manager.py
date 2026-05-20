@@ -83,7 +83,7 @@ class TaskManager:
         if not task:
             return None
 
-        return task.project
+        return self.session.query(Project).filter_by(id=task.project_id).first()
 
     def get_tasks_by_user(
         self,
@@ -203,11 +203,12 @@ class TaskManager:
         if not task:
             return []
 
+        project = self.session.query(Project).filter_by(id=task.project_id).first()
         require_permission(
             user,
             PermissionAction.VIEW_TASK,
             self.session,
-            project=task.project,
+            project=project,
             task=task,
         )
 
@@ -226,11 +227,12 @@ class TaskManager:
         if not task:
             return False
 
+        project = self.session.query(Project).filter_by(id=task.project_id).first()
         require_permission(
             user,
             PermissionAction.ASSIGN_TASK,
             self.session,
-            project=task.project,
+            project=project,
             task=task,
         )
 
