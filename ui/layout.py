@@ -316,27 +316,68 @@ class DashboardFrame(AuthenticatedFrame):
                 ui.label(f'Hello, {self.user.name}!').classes('text-3xl')
                 ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
 
-        with ui.column().classes('items-center mx-auto p-4'):
-            ui.label('Welcome to Collaboratory!').classes('text-5xl font-bold')
+        
+        with ui.column().classes("w-full p-6 gap-6"):
 
-            with ui.row().classes('w-full gap-4'):
-                with ui.card().classes('p-4 shadow rounded'):
-                    ui.label('Owned Projects').classes('text-xl font-bold mb-2')
+            with ui.card().classes("w-full p-6 shadow-md"):
+                ui.label("Welcome to Collaboratory!").classes("text-3xl font-bold")
+
+                ui.label(
+                    "Manage your projects, collaborations, and assigned tasks."
+                ).classes("text-lg text-grey-8 mt-2")
+
+                ui.separator()
+
+                with ui.row().classes("gap-4 mt-2"):
+                    ui.badge(f"Owned Projects: {len(owned_projects)}", color="blue")
+                    ui.badge(f"Collaborations: {len(collab_projects)}", color="orange")
+                    ui.badge(f"Tasks: {len(task_rows)}", color="green")
+
+            ui.separator()
+
+            with ui.row().classes("w-full gap-6 mt-6"):
+
+                with ui.card().classes("flex-1 min-h-[260px] p-6 shadow-md"):
+                    ui.label("Owned Projects").classes("text-2xl font-bold mb-4")
+
                     if owned_projects:
-                        for project in owned_projects:
-                            ui.link(project.name, f'/project/{project.id}').classes('text-lg')
+                        with ui.column().classes("w-full gap-3"):
+                            for project in owned_projects:
+                                with ui.card().classes(
+                                    "w-full p-4 bg-blue-50 shadow-sm hover:shadow-md transition"
+                                ):
+                                    ui.link(
+                                        project.name,
+                                        f"/project/{project.id}"
+                                    ).classes(
+                                        "text-lg font-medium text-blue-700 hover:underline"
+                                    )
                     else:
-                        ui.label('You do not own any projects yet.').classes('text-sm text-grey')
+                        ui.label("You do not own any projects yet.").classes(
+                            "text-sm text-grey-6 italic"
+                        )
 
-                with ui.card().classes('p-4 shadow rounded'):
-                    ui.label('Collaborations').classes('text-xl font-bold mb-2')
+                with ui.card().classes("flex-1 min-h-[260px] p-6 shadow-md"):
+                    ui.label("Collaborations").classes("text-2xl font-bold mb-4")
+
                     if collab_projects:
-                        for project in collab_projects:
-                            ui.link(project.name, f'/project/{project.id}').classes('text-lg')
+                        with ui.column().classes("w-full gap-3"):
+                            for project in collab_projects:
+                                with ui.card().classes(
+                                    "w-full p-4 bg-blue-50 shadow-sm hover:shadow-md transition"
+                                ):
+                                    ui.link(
+                                        project.name,
+                                        f"/project/{project.id}"
+                                    ).classes(
+                                        "text-lg font-medium text-blue-700 hover:underline"
+                                    )
                     else:
-                        ui.label('You are not collaborating on any projects yet.').classes('text-sm text-grey')
-                
-            ui.label('Task Overview').classes('text-2xl font-bold mt-8')
+                        ui.label("You are not collaborating on any projects yet.").classes(
+                            "text-sm text-grey-6 italic"
+                        )
+
+            ui.label("Task Overview").classes("text-2xl font-bold mt-8")
 
             columns = [
                 {"name": "title", "label": "Task", "field": "title", "align": "left"},
@@ -344,9 +385,15 @@ class DashboardFrame(AuthenticatedFrame):
                 {"name": "status", "label": "Status", "field": "status", "align": "left"},
                 {"name": "priority", "label": "Priority", "field": "priority", "align": "left"},
                 {"name": "assigned_to", "label": "Assigned To", "field": "assigned_to", "align": "left"},
-            ]        
+            ]
 
-            ui.table(columns=columns, rows=task_rows).classes('w-full')
+            if task_rows:
+                ui.table(columns=columns, rows=task_rows).classes("w-full")
+            else:
+                with ui.card().classes("w-full p-4 shadow-sm"):
+                    ui.label("You do not have any tasks yet.").classes(
+                        "text-sm text-grey-6 italic"
+                    )
 
             
 class ProjectFrame(NoteableFrame):
