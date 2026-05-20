@@ -347,7 +347,6 @@ class ProjectFrame(NoteableFrame):
 
                     with ui.row().classes("gap-2"):
                         ui.button("Manage Notes", on_click=self.on_manage_notes)
-                        ui.button("Create Note", on_click=self.on_create_note)
 
                     ui.label("Create, edit, or delete notes related to this project.").classes("text-grey-7")
 
