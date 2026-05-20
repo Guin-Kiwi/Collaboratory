@@ -369,7 +369,7 @@ class TaskPage(TaskFrame):
                     return
                 
                 try:
-                    ok = tm.edit_task(
+                    ok = tm.update_task(
                         user=self.user,
                         project=self.project,
                         task_id=self.task.id,
