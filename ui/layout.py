@@ -173,6 +173,55 @@ class DashboardFrame(AuthenticatedFrame):
 
         dialog.open()
 
+    def on_manage_projects(self) -> None:
+        pm = ProjectManager()
+
+        owned_projects = pm.get_projects_by_owner(self.user.id)
+
+        with ui.dialog().props("persistent") as dialog, ui.card().classes("w-[650px]"):
+            ui.label("Manage Projects").classes("text-h6")
+
+            if not owned_projects:
+                ui.label("You do not own any projects yet.").classes("text-sm text-grey")
+            else:
+                for project in owned_projects:
+                    collaborator_count = len(project.collaborator_memberships or [])
+
+                    with ui.row().classes("w-full items-center justify-between"):
+                        with ui.column().classes("gap-0"):
+                            ui.label(project.name).classes("font-bold")
+                            ui.label(
+                                f"{collaborator_count} collaborator(s)"
+                            ).classes("text-sm text-grey")
+
+                        def delete_project(project_id=project.id):
+                            try:
+                                ok = pm.delete_project(
+                                    user=self.user,
+                                    project_id=project_id,
+                                )
+
+                                if ok:
+                                    ui.notify("Project deleted", color="positive")
+                                    dialog.close()
+                                    ui.navigate.reload()
+                                else:
+                                    ui.notify("Could not delete project", color="negative")
+
+                            except Exception as exc:
+                                ui.notify(f"Error deleting project: {exc}", color="negative")
+
+                        ui.button(
+                            "Delete",
+                            on_click=delete_project,
+                            color="red",
+                        )
+
+            with ui.row().classes("w-full justify-end"):
+                ui.button("Close", on_click=dialog.close)
+
+        dialog.open()
+
     def render_content(self) -> None:
         pm = ProjectManager(session=self.session) 
 
@@ -212,6 +261,7 @@ class DashboardFrame(AuthenticatedFrame):
             with ui.column().classes("w-full gap-3 p-3"):
                 ui.label("Actions").classes("text-xl font-bold")
                 ui.button("Create New Project", on_click=self.on_create_project).classes("w-full")
+                ui.button("Manage Projects", on_click=self.on_manage_projects).classes("w-full")
                 if self.user and self.user.is_admin:
                     ui.button("Manage Admins", on_click=self.on_manage_admins).classes("w-full")
 
