@@ -618,7 +618,7 @@ class ProjectFrame(NoteableFrame):
                             project=self.project,
                         )
                         if can_manage_notes:
-                            ui.button('Manage Notes', on_click=self.on_manage_notes).classes('absolute top-4 right-4')
+                            ui.button('Manage Notes', on_click=self.on_manage_notes).classes('absolute top-4 right-36')
 
                     ui.label('Create, edit, or delete notes related to this project.').classes('text-grey-7')
 
@@ -780,7 +780,7 @@ class TaskFrame(NoteableFrame):
                         task=self.task,
                     )
                     if can_manage_notes:
-                        ui.button('Manage Notes', on_click=self.on_manage_notes).classes('absolute top-4 right-4')
+                        ui.button('Manage Notes', on_click=self.on_manage_notes).classes('absolute top-4 right-36')
 
                 ui.label('Create, edit, or delete notes related to this task.').classes('text-grey-7')
 
