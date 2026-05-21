@@ -735,7 +735,7 @@ class TaskFrame(NoteableFrame):
                         task=self.task,
                     )
                     if can_change_status:
-                        ui.button('Edit Status', on_click=self.on_edit_status).classes('absolute top-4 right-4')
+                        ui.button('Edit Status', on_click=self.on_edit_status).classes('absolute top-4 right-36')
 
                     can_edit_details = check_permission(
                         self.user,
@@ -770,7 +770,7 @@ class TaskFrame(NoteableFrame):
                         task=self.task,
                     )
                     if can_create_note:
-                        ui.button('Create Note', on_click=self.on_create_note).props('size=sm')
+                        ui.button('Create Note', on_click=self.on_create_note).classes('absolute top-4 right-36')
 
                     can_manage_notes = check_permission(
                         self.user,
@@ -780,7 +780,7 @@ class TaskFrame(NoteableFrame):
                         task=self.task,
                     )
                     if can_manage_notes:
-                        ui.button('Manage Notes', on_click=self.on_manage_notes).classes('absolute top-4 right-36')
+                        ui.button('Manage Notes', on_click=self.on_manage_notes).classes('absolute top-4 right-4')
 
                 ui.label('Create, edit, or delete notes related to this task.').classes('text-grey-7')
 
