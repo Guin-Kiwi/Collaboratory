@@ -19,7 +19,7 @@ class DatabaseSeeder:
     def seed(self, session: Session) -> None:
         """Insert sample data only if the database is empty."""
         if session.query(User).first():
-            return  # already seeded, skip
+            return 
         """Insert sample users, projects, tasks, assignments, and notes."""
 
         def hash_pw(password: str) -> str:
