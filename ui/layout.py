@@ -723,7 +723,7 @@ class TaskFrame(NoteableFrame):
         )
 
         with ui.grid(columns='1fr 1fr').classes('w-full gap-4'):
-            with ui.card().classes('w-full p-6 shadow-md border-t-4 border-blue-500'):
+            with ui.card().classes('w-full p-6 shadow-md relative'):
                 with ui.row().classes('w-full items-center gap-4'):
                     ui.label(self.task.title).classes('text-3xl font-bold text-blue-900')
 
@@ -735,7 +735,7 @@ class TaskFrame(NoteableFrame):
                         task=self.task,
                     )
                     if can_change_status:
-                        ui.button('Edit Status', on_click=self.on_edit_status).props('size=sm')
+                        ui.button('Edit Status', on_click=self.on_edit_status).classes('absolute top-4 right-4')
 
                     can_edit_details = check_permission(
                         self.user,
@@ -745,7 +745,7 @@ class TaskFrame(NoteableFrame):
                         task=self.task,
                     )
                     if can_edit_details:
-                        ui.button('Edit Task Details', on_click=self.on_edit_task_details).props('size=sm')
+                        ui.button('Edit Task Details', on_click=self.on_edit_task_details).classes('absolute top-4 right-4')
 
                 ui.separator().classes('my-4')
 
@@ -758,7 +758,7 @@ class TaskFrame(NoteableFrame):
                     if self.task.due_date:
                         ui.badge(f"Due: {self.task.due_date}", color='blue')
 
-            with ui.card().classes('w-full p-6 shadow-md'):
+            with ui.card().classes('w-full p-6 shadow-md relative'):
                 with ui.row().classes('w-full items-center gap-4'):
                     ui.label('Task Notes').classes('text-2xl font-bold')
 
@@ -780,7 +780,7 @@ class TaskFrame(NoteableFrame):
                         task=self.task,
                     )
                     if can_manage_notes:
-                        ui.button('Manage Notes', on_click=self.on_manage_notes).props('size=sm')
+                        ui.button('Manage Notes', on_click=self.on_manage_notes).classes('absolute top-4 right-4')
 
                 ui.label('Create, edit, or delete notes related to this task.').classes('text-grey-7')
 
