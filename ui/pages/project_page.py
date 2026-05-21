@@ -486,7 +486,7 @@ class ProjectPage(ProjectFrame):
                 try:
                     ok = pm.edit_project_details(
                         user=self.user,
-                        project=self.project,
+                        project_id=self.project.id,
                         name=name,
                         description=description
                     )
