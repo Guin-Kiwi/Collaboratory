@@ -301,7 +301,7 @@ class DashboardFrame(AuthenticatedFrame):
 
     def on_manage_projects(self) -> None:
         """Open a dialog to delete owned projects."""
-        pm = ProjectManager()
+        pm = ProjectManager(session=self.session)
 
         owned_projects = pm.get_projects_by_owner(self.user.id)
 
