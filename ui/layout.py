@@ -598,7 +598,7 @@ class ProjectFrame(NoteableFrame):
                     else:
                         ui.label('No tasks yet.').classes('text-sm text-grey-6 italic mt-2')
 
-                with ui.card().classes('w-full p-6 shadow-md'):
+                with ui.card().classes('w-full p-6 shadow-md relative'):
                     ui.label('Project Notes').classes('text-2xl font-bold')
 
                     with ui.row().classes('gap-2'):
@@ -609,7 +609,7 @@ class ProjectFrame(NoteableFrame):
                             project=self.project,
                         )
                         if can_create_note:
-                            ui.button('Create Note', on_click=self.on_create_note).props('size=sm')
+                            ui.button('Create Note', on_click=self.on_create_note).classes('absolute top-4 right-4')
 
                         can_manage_notes = check_permission(
                             self.user,
@@ -618,7 +618,7 @@ class ProjectFrame(NoteableFrame):
                             project=self.project,
                         )
                         if can_manage_notes:
-                            ui.button('Manage Notes', on_click=self.on_manage_notes).props('size=sm')
+                            ui.button('Manage Notes', on_click=self.on_manage_notes).classes('absolute top-4 right-4')
 
                     ui.label('Create, edit, or delete notes related to this project.').classes('text-grey-7')
 
