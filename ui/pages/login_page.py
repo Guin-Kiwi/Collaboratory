@@ -103,22 +103,39 @@ class LoginPage(UnauthenticatedFrame):
                 .classes('border border-solid border-gray-400 rounded') \
                 .style("background-color: #FFFFFF")
 
+            forgot_new_password = ui.input("New Password", password=True) \
+                .props('bordered') \
+                .classes('border border-solid border-gray-400 rounded') \
+                .style("background-color: #FFFFFF")
+
+            forgot_confirm_password = ui.input("Confirm New Password", password=True) \
+                .props('bordered') \
+                .classes('border border-solid border-gray-400 rounded') \
+                .style("background-color: #FFFFFF")
+
             forgot_error = ui.label("").classes("text-red text-sm")
             forgot_success = ui.label("").classes("text-green text-sm")
 
             def handle_reset():
-                """Validate the username and reset the password to a temporary one."""
                 username = forgot_username.value.strip()
-                if not username:
-                    forgot_error.set_text("Please enter your username.")
+                new_password = forgot_new_password.value.strip()
+                confirm = forgot_confirm_password.value.strip()
+
+                if not username or not new_password or not confirm:
+                    forgot_error.set_text("Please fill in all fields.")
                     forgot_success.set_text("")
                     return
 
-                temp_password = self._service.reset_password(username)
+                if new_password != confirm:
+                    forgot_error.set_text("Passwords do not match.")
+                    forgot_success.set_text("")
+                    return
 
-                if temp_password:
+                ok = self._service.reset_password(username, new_password)
+
+                if ok:
                     forgot_error.set_text("")
-                    forgot_success.set_text(f"Your temporary password is: {temp_password}")
+                    forgot_success.set_text("Password reset successfully. You can now log in.")
                 else:
                     forgot_success.set_text("")
                     forgot_error.set_text("Username not found.")
