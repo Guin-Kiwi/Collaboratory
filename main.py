@@ -25,7 +25,6 @@ def main() -> None:
     """Initialise each layer and register NiceGUI routes."""
 
     # ── Data tier ──────────────────────────────────────────────────────────
-    #db = DatabaseConnection()
     db_conn.init()
 
     seeder = DatabaseSeeder()
