@@ -643,7 +643,6 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 **Role:** Repository setup, core architecture, collaboration layer, permissions system, UI framework, and integration.
 
 **Primary file ownership**
-- `database/models.py` — `BaseModel` declarative base and all core ORM models (`User`, `Project`, `Task`, `Assignment`) including relationships, foreign keys, cascade rules, and Enum definitions for task status and priority
 - `database/collab_models.py` — `ProjectMember`, `ProjectNote`, and `TaskNote` ORM models including back-references and `UniqueConstraint` on project membership
 - `logic/permissions_manager.py` — full 18-action permission system: `PermissionAction` enum, `check_permission`, `require_permission`, and all role checker functions (`is_owner`, `is_collaborator`, `is_assignee_on_task`, `is_assignee_in_project`) covering Owner, Collaborator, Assignee, and Admin roles
 - `logic/collab_manager.py` — all collaboration business logic: adding/removing collaborators, project note CRUD, task note CRUD, permission-guarded access throughout, and author-bypass logic for note deletion
@@ -665,6 +664,7 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 **Role:** User authentication, `UserManager`, ORM query layer, database infrastructure, and README documentation.
 
 **Primary file ownership**
+- `database/models.py` — `BaseModel` declarative base and all core ORM models (`User`, `Project`, `Task`, `Assignment`) including relationships, foreign keys, cascade rules, and Enum definitions for task status and priority
 - `logic/user_manager.py` — `create_user` (bcrypt password hashing), `delete_user`, `update_user`, `validate_login`, `get_user_by_id`, `get_all_users`, `user_exists`
 - `ui/pages/login_page.py` — full login and signup interface using `UnauthenticatedFrame`: bcrypt credential verification, signup with name/username/email/password, error handling, redirect for already-authenticated users, password reset flow, account deletion with password confirmation
 - `database/connection.py` — refined `DatabaseConnection` façade: engine setup, session factory, `init()`, `get_session()`, `dispose()`; shared `db_conn` singleton in `database/__init__.py` used across all managers
