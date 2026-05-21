@@ -64,8 +64,7 @@ db.sqlite3
 db.sqlite3-journal
 
 # Collaboratory database
-database/tracker_app.db
-database/tracker_app.db-journal
+/data
 
 # Flask stuff:
 instance/
