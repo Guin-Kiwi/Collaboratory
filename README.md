@@ -746,30 +746,41 @@ pip install -r requirements.txt
 - Add task notes (communication with owner/collaborators)
 - View project details for context
 
-## �👥 Team & Contributions
+## 👥 Team & Contributions
 
-Collaboratory was built by a team of four over approximately eight weeks, with a concentrated final sprint in the last week of May. Contributions are documented below by primary file ownership and sprint activity, derived from commit history.
+Collaboratory was built by a team of four over approximately eight weeks, with a concentrated final sprint in the last week of May. Contributions are documented below by primary file ownership and README section, derived from commit history. Several files were worked on collaboratively and are noted under each contributor.
 
 | Contributor | Primary responsibility |
 |---|---|
-| Ayla Allen | Architecture, permissions, collaboration layer, UI framework |
-| Polina Yemelianenkova | Authentication, ORM queries, database infrastructure |
-| Sümeyya Güçlü-Babür | Task management, assignee system, permission debugging |
-| Marta Greschuk | Application state, logic layer setup, dashboard, testing |
+| Ayla Allen | Architecture, permissions, collaboration layer, project management |
+| Polina Yemelianenkova | Authentication, ORM layer, database infrastructure, login UI, test coverage |
+| Sümeyya Güçlü-Babür | Task management, assignee system, task UI, README |
+| Marta Greschuk | Application state, session abstraction, dashboard UI, test suite |
 
 ---
 
 ### Ayla Allen
 
-**Role:** Repository setup, core architecture, collaboration layer, permissions system, UI framework, and integration.
+**Role:** Repository setup, core architecture, collaboration layer, permissions system, project management, and integration.
 
 **Primary file ownership**
 - `database/collab_models.py`: `ProjectMember`, `ProjectNote`, and `TaskNote` ORM models including back-references and `UniqueConstraint` on project membership
 - `logic/permissions_manager.py`: full 18-action permission system: `PermissionAction` enum, `check_permission`, `require_permission`, and all role checker functions (`is_owner`, `is_collaborator`, `is_assignee_on_task`, `is_assignee_in_project`) covering Owner, Collaborator, Assignee, and Admin roles
 - `logic/collab_manager.py`: all collaboration business logic: adding/removing collaborators, project note CRUD, task note CRUD, permission-guarded access throughout, and author-bypass logic for note deletion
-- `ui/layout.py`: all reusable frame classes (`UnauthenticatedFrame`, `DashboardFrame`, `ProjectFrame`, `TaskFrame`) defining the shared navigation, header, and routing structure every page inherits from
-- `ui/pages/project_page.py`: full project view (18,857 bytes, largest file in the project): collaborator display, task listing, project and task note creation and display, all permission-gated action buttons
+- `logic/project_manager.py`: project CRUD operations and membership queries
+- `ui/pages/project_page.py`: collaborator display, task listing, project and task note creation and display, all permission-gated action buttons; worked on collaboratively with Polina and Sümeyya
 - `tests/test_collab_manager_permissions.py`: permission boundary tests for collaborator actions
+
+**Shared file contributions**
+- `ui/layout.py`: authored the initial frame structure (`UnauthenticatedFrame`, `DashboardFrame`, `ProjectFrame`, `TaskFrame`) and the routing skeleton all pages inherit from; extended collaboratively with Polina and Marta during the sprint
+
+**README contributions**
+- Analysis: Problem statement, Scenario, and Why Collaboratory bullet points
+- All 17 detailed use cases (inputs/outputs) at project and task level
+- Use Case Diagrams section, including authoring both diagram images
+- Data Validation section
+- Implementation section: Technology, Repository Structure, How to Run, Libraries Used
+- This contributions section
 
 **Sprint activity**
 - `ui/layout.py`: introduced `UnauthenticatedFrame`; kept `login_frame()` backwards-compatible; refactored page imports across the UI layer
@@ -782,50 +793,77 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 
 ### Polina Yemelianenkova
 
-**Role:** User authentication, `UserManager`, ORM query layer, database infrastructure, and README documentation.
+**Role:** User authentication, `UserManager`, ORM query layer, database infrastructure, login UI, and README schema documentation.
 
 **Primary file ownership**
 - `database/models.py`: `BaseModel` declarative base and all core ORM models (`User`, `Project`, `Task`, `Assignment`) including relationships, foreign keys, cascade rules, and Enum definitions for task status and priority
+- `database/mixins.py`: shared model mixins
+- `database/seed.py`: full database seeding logic
 - `logic/user_manager.py`: `create_user` (bcrypt password hashing), `delete_user`, `update_user`, `validate_login`, `get_user_by_id`, `get_all_users`, `user_exists`
 - `ui/pages/login_page.py`: full login and signup interface using `UnauthenticatedFrame`: bcrypt credential verification, signup with name/username/email/password, error handling, redirect for already-authenticated users, password reset flow, account deletion with password confirmation
-- `database/connection.py`: refined `DatabaseConnection` façade: engine setup, session factory, `init()`, `get_session()`, `dispose()`; shared `db_conn` singleton in `database/__init__.py` used across all managers
+- `tests/test_db.py`: integration test suite covering the full database layer
+
+**Shared file contributions**
+- `ui/layout.py`: added session handling, frame refinements, and import cleanup during the sprint
+- `ui/pages/dashboard_page.py`: extended project listing, collaboration windows, and session wiring; worked on collaboratively with Marta
+- `ui/pages/project_page.py`: contributed task, collaborator, and note management methods alongside Ayla
+
+**README contributions**
+- All database schema entity sections: User, Project, Task, Assignment, ProjectMember, ProjectNote, TaskNote
+- ERD section and diagram
+- Features section
 
 **Sprint activity**
 - `ui/pages/login_page.py`: added login page; implemented login/signup handlers with `UnauthenticatedFrame`; added error handling; fixed authenticated user redirect; added password reset and account deletion with password confirmation; removed admin registration option
 - `logic/user_manager.py`: added `create_user`, `delete_user`, `update_user`; added name and email parameters; added `user_exists`
 - `logic/project_manager.py` / `logic/collab_manager.py`: refactored to `joinedload` for memberships, tasks, and notes; removed unused `collaborator_memberships` from project creation; added `is_admin` filter; refactored database connection usage across logic modules
-- `ui/pages/project_page.py`: implemented task, collaborator, and note management methods
 - `DashboardFrame` / `ProjectFrame`: added session control; refactored session initialisation; introduced `db_session` module
 - `ui/layout.py`: removed unused `public_frame` and `task_frame` functions; cleaned up `BaseView` and unused imports
-- `README.md`: added ERD section and image; added `ProjectNote`/`TaskNote` schema entries; applied README audit suggestions; renamed entities for consistency
 
 ---
 
 ### Sümeyya Güçlü-Babür
 
-**Role:** Task page, `TaskManager`, assignee management, permission debugging, and README documentation.
+**Role:** Task page, `TaskManager`, assignee management, permission debugging, and primary README author.
 
 **Primary file ownership**
 - `logic/task_manager.py`: `create_task`, `get_task_by_id`, `get_tasks_by_user`, `update_task`, `delete_task`, `assign_task`, `remove_assignee`, `get_assignees`, `change_task_status`, and `get_task_project` helper: all with `require_permission` guards
-- `ui/pages/task_page.py`: full task detail view (13,923 bytes): `TaskFrame` layout, task metadata display, status controls, assignee management UI, task notes, and all permission-gated buttons
+- `ui/pages/task_page.py`: `TaskFrame` layout, task metadata display, status controls, assignee management UI, task notes, and all permission-gated buttons; worked on collaboratively with Ayla and Marta
+
+**README contributions (primary author)**
+- User Stories (Owner, Assignee, Collaborator)
+- Target Users, Why Collaboratory, Scenario framing
+- Roles and Permissions table structure and role descriptions
+- Architecture section: all three tiers, Design Patterns
+- Project Requirements: Browser-based App section
+- Database Information: Core Entities, Relationships
+- Usage Walkthrough
+- Testing section
+- Known Limitations and Deferred Decisions
 
 **Sprint activity**
 - `ui/pages/task_page.py`: added initial task page; updated layout; added `TaskFrame` support and missing methods; refactored to use shared `TaskFrame` from `ui/layout.py`; fixed routing (`task_id` parameter, `project` argument passing)
 - `logic/task_manager.py`: added `get_task_project` helper; fixed `get_tasks_by_user` permission check; fixed `CREATE_TASK` permission check; implemented `assign_task`, `remove_assignee`, `get_assignees`; resolved multiple `DetachedInstanceError` crashes on `task.project` access
 - `logic/task_manager.py`: fixed detached task and project access in task permissions; fixed detached project lazy loading
 - `ui/pages/task_page.py`: fixed task page session errors through multiple debugging iterations
-- `README.md`: added user stories, use cases, roles & permissions table, and UML use case diagram; fixed table formatting; finalised architecture overview
 
 ---
 
 ### Marta Greschuk
 
-**Role:** Application state, logic layer setup, dashboard UI, session abstraction, and integration testing.
+**Role:** Application state, session abstraction, dashboard UI, and test suite.
 
 **Primary file ownership**
 - `logic/app_state.py`: `AppState` class managing the logged-in user across NiceGUI's page lifecycle (`login`, `logout`, `is_authenticated`, `get_current_user`, `is_admin`); shared global `app_state` instance used across all pages
-- `ui/pages/dashboard_page.py`: full dashboard view: user's projects, collaborations, and task summary; project and collaboration sub-windows with per-project task display
-- `tests/test_sqlite_backend.py`: integration tests covering task manager workflows end-to-end against a real SQLite backend
+- `tests/conftest.py`: shared test fixtures and SQLite backend setup
+- `tests/test_models.py`: ORM model unit tests
+- `tests/test_task_manager_workflow.py`: end-to-end task manager workflow tests against a real SQLite backend
+- `tests/unit_testing.py`: unit test utilities
+
+**Shared file contributions**
+- `ui/layout.py`: contributed the initial dashboard layout structure and UI refinements during the sprint
+- `ui/pages/dashboard_page.py`: built the initial dashboard view including project and collaboration sub-windows and per-project task display; extended collaboratively with Polina during the sprint
+- `ui/pages/task_page.py`: contributed session and layout fixes alongside Sümeyya
 
 **Sprint activity**
 - `logic/app_state.py`: set up logic layer structure via `application_state` branch (PR #17); authored `AppState` with full session lifecycle
@@ -833,11 +871,11 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 - `logic/`: implemented `AdminManager`; fixed `is_admin()` crash (method called and result compared to string)
 - `db_session.py`: created thin wrapper around `db_conn.get_session()`; added session management to dashboard; added optional session parameter across managers
 - `ui/pages/dashboard_page.py`: built initial dashboard; added project and collaboration sub-windows; added per-project task display with titles; fixed duplicated task display; added db session; added task creation and edit button; aligned project and task page layouts
-- `tests/test_sqlite_backend.py`: wrote task manager workflow tests; resolved merge conflicts in test files
+- `tests/`: wrote task manager workflow tests; resolved merge conflicts in test files
 
 ---
 
-> **Note:** During the final sprint (18–24 May), all team members worked collaboratively across the codebase. The commit history reflects active parallel contributions to shared files, session management, and integration fixes across all layers. Attributions above reflect primary authorship based on commit history.
+> **Note:** During the final sprint (18-24 May), all team members worked collaboratively across the codebase. The commit history reflects active parallel contributions to shared files, session management, and integration fixes across all layers. Attributions above reflect primary authorship based on commit history.
 
 ---
 
