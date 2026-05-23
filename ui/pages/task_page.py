@@ -78,12 +78,13 @@ class TaskPage(TaskFrame):
             ui.separator()
 
             assigned_user_ids = [assignee.id for assignee in assignees]
-            users = UserManager(session=self.session).get_all_users()
+            users = sorted(UserManager(session=self.session).get_all_users(), key=lambda u: u.name.lower())
 
             options = {
-                user.id: (f'{user.name} ({user.email})')
+                user.id: f'{user.name} ({user.email})'
                 for user in users
-                if user.id not in assigned_user_ids
+                if not user.is_admin
+                and user.id not in assigned_user_ids
             }
 
             selected_user = ui.select(
@@ -227,6 +228,8 @@ class TaskPage(TaskFrame):
 
                             if ok:
                                 removed += 1
+                            else:
+                                ui.notify("Could not delete one or more notes", color="negative")
 
                         except PermissionDenied:
                             ui.notify(

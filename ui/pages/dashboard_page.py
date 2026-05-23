@@ -46,7 +46,7 @@ class DashboardPage(DashboardFrame):
                     )
 
                     dialog.close()
-                    ui.notify("Project created successfully.")
+                    ui.notify("Project created successfully.", color='positive')
                     ui.navigate.to("/dashboard")
 
                 except Exception as error:

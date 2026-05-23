@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from nicegui import ui, Client
 
 from logic.app_state import app_state
@@ -19,13 +21,12 @@ class ProjectPage(ProjectFrame):
     notes, collaborators, and project details.
     """
 
-    def on_create_task(self) -> None:
-        """Delegate task creation to the manage tasks dialog."""
-        self.on_manage_tasks()
-
-    def on_add_collaborator(self) -> None:
-        """Delegate collaborator addition to the manage collaborators dialog."""
-        self.on_manage_collaborators()
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.cm = CollabManager(session=self.session)
+        self.tm = TaskManager(session=self.session)
+        self.pm = ProjectManager(session=self.session)
+        self.um = UserManager(session=self.session)
 
     def on_create_note(self) -> None:
         """Open a dialog to create a new project note.
@@ -33,8 +34,6 @@ class ProjectPage(ProjectFrame):
         Prompts the user for note content and calls CollabManager
         to persist it. Reloads the page on success.
         """
-        cm = CollabManager(session=self.session)
-
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
             ui.label('Create Project Note').classes('text-h6')
 
@@ -47,11 +46,11 @@ class ProjectPage(ProjectFrame):
                     ui.notify('Note cannot be empty', color='negative')
                     return
                 try:
-                    ok = cm.create_project_note(user=self.user, project_id=self.project.id, content=text)
+                    ok = self.cm.create_project_note(user=self.user, project_id=self.project.id, content=text)
                     if ok:
                         ui.notify('Note created', color='positive')
                         dlg.close()
-                        ui.navigate.reload()
+                        self._render_notes_card.refresh()
                     else:
                         ui.notify('Could not create note', color='negative')
                 except PermissionDenied:
@@ -72,10 +71,8 @@ class ProjectPage(ProjectFrame):
         a form to create new tasks with title, description, due date,
         priority, and status fields.
         """
-        tm = TaskManager(session=self.session)
-        pm = ProjectManager(session=self.session)
         try:
-            project = pm.view_project(self.user, self.project.id)
+            project = self.pm.view_project(self.user, self.project.id)
         except PermissionDenied:
             ui.notify('Access denied', color='negative')
             return
@@ -100,9 +97,11 @@ class ProjectPage(ProjectFrame):
                         for cb, task_id in checks:
                             if cb.value:
                                 try:
-                                    ok = tm.delete_task(user=self.user, project=project, task_id=task_id)
+                                    ok = self.tm.delete_task(user=self.user, project=project, task_id=task_id)
                                     if ok:
                                         removed += 1
+                                    else:
+                                        ui.notify('Could not delete one or more tasks', color='negative')
                                 except PermissionDenied:
                                     ui.notify('You do not have permission to delete one or more selected tasks', color='negative')
                                     return
@@ -113,7 +112,8 @@ class ProjectPage(ProjectFrame):
                         if removed:
                             ui.notify(f'Removed {removed} task(s)', color='positive')
                             dlg.close()
-                            ui.navigate.reload()
+                            self._render_tasks_card.refresh()
+                            self._render_project_info.refresh()
                         else:
                             ui.notify('No tasks selected', color='negative')
 
@@ -136,12 +136,11 @@ class ProjectPage(ProjectFrame):
                 due_date = None
                 if due.value:
                     try:
-                        from datetime import datetime
                         due_date = datetime.fromisoformat(due.value).date()
                     except Exception:
                         ui.notify('Invalid date', color='negative'); return
                 try:
-                    new_task = tm.create_task(
+                    new_task = self.tm.create_task(
                         user=self.user,
                         project=project,
                         title=t,
@@ -158,55 +157,6 @@ class ProjectPage(ProjectFrame):
                 except Exception as exc:
                     ui.notify(f'Error: {exc}', color='negative')
 
-            def _open_edit(task):
-                """Open a nested dialog to edit an existing task's title and description."""
-                with ui.dialog().props('persistent') as ed, ui.card():
-                    ui.label('Edit Task')
-                    etitle = ui.input('Title', value=task.title)
-                    edesc = ui.textarea('Description', value=task.description or '')
-                    def save(_=None):
-                        """Validate and save the updated task details."""
-                        if not etitle.value.strip():
-                            ui.notify('Title required', color='negative'); return
-                        try:
-                            ok = tm.update_task(
-                                user=self.user,
-                                project=project,
-                                task_id=task.id,
-                                title=etitle.value.strip(),
-                                description=edesc.value or '',
-                            )
-                            if ok:
-                                ui.notify('Task updated', color='positive')
-                                ed.close()
-                                dlg.close()
-                                ui.navigate.reload()
-                            else:
-                                ui.notify('Could not update task', color='negative')
-                        except PermissionDenied:
-                            ui.notify('No permission to update task', color='negative')
-                        except Exception as exc:
-                            ui.notify(f'Error: {exc}', color='negative')
-                    with ui.row():
-                        ui.button('Save', on_click=save)
-                        ui.button('Cancel', on_click=lambda _=None: ed.close())
-                ed.open()
-
-            def _delete_task(task):
-                """Delete a single task and reload the page on success."""
-                try:
-                    ok = tm.delete_task(user=self.user, project=project, task_id=task.id)
-                    if ok:
-                        ui.notify('Task deleted', color='positive')
-                        dlg.close()
-                        ui.navigate.reload()
-                    else:
-                        ui.notify('Could not delete task', color='negative')
-                except PermissionDenied:
-                    ui.notify('No permission to delete task', color='negative')
-                except Exception as exc:
-                    ui.notify(f'Error deleting task: {exc}', color='negative')
-
             with ui.row():
                 ui.button('Create', on_click=create_task)
                 ui.button('Close', on_click=lambda _=None: dlg.close())
@@ -222,7 +172,6 @@ class ProjectPage(ProjectFrame):
         Args:
             note: The ProjectNote object to edit.
         """
-        cm = CollabManager(session=self.session)
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
             ui.label('Edit Project Note').classes('text-h6')
             edit_content = ui.textarea('Note', value=note.content).props('autogrow')
@@ -234,11 +183,11 @@ class ProjectPage(ProjectFrame):
                     ui.notify('Note cannot be empty', color='negative')
                     return
                 try:
-                    ok = cm.edit_project_note(user=self.user, project_id=self.project.id, pnote_id=note.id, content=text)
+                    ok = self.cm.edit_project_note(user=self.user, project_id=self.project.id, pnote_id=note.id, content=text)
                     if ok:
                         ui.notify('Note updated', color='positive')
                         dlg.close()
-                        ui.navigate.reload()
+                        self._render_notes_card.refresh()
                     else:
                         ui.notify('Could not update note', color='negative')
                 except PermissionDenied:
@@ -258,8 +207,6 @@ class ProjectPage(ProjectFrame):
         Args:
             note: The ProjectNote object to delete.
         """
-        cm = CollabManager(session=self.session)
-
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
             ui.label('Delete Note').classes('text-h6')
             ui.label('Are you sure you want to delete this note? This cannot be undone.').classes('text-sm')
@@ -267,7 +214,7 @@ class ProjectPage(ProjectFrame):
 
             def confirm(_=None):
                 try:
-                    ok = cm.delete_project_note(
+                    ok = self.cm.delete_project_note(
                         user=self.user,
                         project_id=self.project.id,
                         pnote_id=note.id,
@@ -275,7 +222,7 @@ class ProjectPage(ProjectFrame):
                     if ok:
                         ui.notify('Note deleted', color='positive')
                         dlg.close()
-                        ui.navigate.reload()
+                        self._render_notes_card.refresh()
                     else:
                         ui.notify('Could not delete note', color='negative')
                 except PermissionDenied:
@@ -296,17 +243,16 @@ class ProjectPage(ProjectFrame):
         a dropdown to add new collaborators. Admins and the project owner
         are excluded from the add dropdown.
         """
-        cm = CollabManager(session=self.session)
-        um = UserManager(session=self.session)
         members = self.project.collaborator_memberships or []
         current_collaborator_ids = {membership.user.id for membership in members}
 
-        all_users = um.get_all_users()
+        all_users = sorted(self.um.get_all_users(), key=lambda u: u.name.lower())
         user_options = {
-            user.username: f"{user.name}, ({user.email})"
+            user.id: f"{user.name} ({user.email})"
             for user in all_users
-            if user.id != self.user.id and user.id not in current_collaborator_ids
-            and not user.is_admin
+            if not user.is_admin
+            and user.id != self.project.owner_id
+            and user.id not in current_collaborator_ids
         }
 
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
@@ -331,13 +277,15 @@ class ProjectPage(ProjectFrame):
                 for cb, user_id in checks:
                     if cb.value:
                         try:
-                            ok = cm.remove_collaborator(
+                            ok = self.cm.remove_collaborator(
                                 user=self.user,
                                 project_id=self.project.id,
                                 user_id=user_id,
                             )
                             if ok:
                                 removed += 1
+                            else:
+                                ui.notify('Could not remove one or more collaborators', color='negative')
                         except PermissionDenied:
                             ui.notify('You do not have permission to remove collaborators', color='negative')
                             return
@@ -348,7 +296,7 @@ class ProjectPage(ProjectFrame):
                 if removed:
                     ui.notify(f'Removed {removed} collaborator(s)', color='positive')
                     dlg.close()
-                    ui.navigate.reload()
+                    self._render_collaborators_panel.refresh()
                 else:
                     ui.notify('No collaborators selected', color='negative')
 
@@ -365,27 +313,20 @@ class ProjectPage(ProjectFrame):
             ).classes('w-full')
 
             def add_collaborator(_=None):
-                """Look up the selected user and add them as a collaborator."""
-                username = username_select.value
-                if not username:
-                    ui.notify('Select a username', color='negative')
-                    return
-
-                target_user = um.get_user_by_id(username_select.value)
-                if not target_user:
-                    ui.notify('User not found', color='negative')
+                if not username_select.value:
+                    ui.notify('Select a user', color='negative')
                     return
 
                 try:
-                    ok = cm.add_collaborator(
+                    ok = self.cm.add_collaborator(
                         user=self.user,
                         project_id=self.project.id,
-                        user_id=target_user.id,
+                        user_id=username_select.value,
                     )
                     if ok:
                         ui.notify('Collaborator added', color='positive')
                         dlg.close()
-                        ui.navigate.reload()
+                        self._render_collaborators_panel.refresh()
                     else:
                         ui.notify('Could not add collaborator', color='negative')
                 except PermissionDenied:
@@ -400,20 +341,12 @@ class ProjectPage(ProjectFrame):
         dlg.open()
 
     def on_manage_notes(self, e=None) -> None:
-        """Open a dialog to delete existing project notes.
-
-        Users can only delete their own notes unless they have the
-        DELETE_PROJECT_NOTE permission, in which case they can delete any note.
-        """
-        cm = CollabManager(session=self.session)
+        """Open a dialog to delete project notes. Only accessible to owners."""
         try:
-            notes = cm.view_project_note(self.user, self.project.id) or []
+            notes = self.cm.view_project_note(self.user, self.project.id) or []
         except Exception as exc:
             ui.notify(f'Could not load notes: {exc}', color='negative')
             return
-
-        can_delete_any = cm.can_delete_project_note(self.user, self.project)
-        notes = notes if can_delete_any else [n for n in notes if n.created_by == self.user.id]
 
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
             ui.label('Manage Project Notes').classes('text-h6')
@@ -426,7 +359,7 @@ class ProjectPage(ProjectFrame):
                         with ui.row().classes('w-full items-center justify-between'):
                             with ui.column().classes('flex-1'):
                                 ui.label(n.content).classes('text-sm')
-                                ui.label(f'{n.author.username} • {n.created_at}').classes('text-xs text-grey')
+                                ui.label(f'{n.author.name} • {n.created_at}').classes('text-xs text-grey')
                             with ui.row().classes('gap-2'):
                                 cb = ui.checkbox()
                                 checks.append((cb, n.id))
@@ -441,9 +374,11 @@ class ProjectPage(ProjectFrame):
                 for cb, n_id in checks:
                     if cb.value:
                         try:
-                            ok = cm.delete_project_note(user=self.user, project_id=self.project.id, pnote_id=n_id)
+                            ok = self.cm.delete_project_note(user=self.user, project_id=self.project.id, pnote_id=n_id)
                             if ok:
                                 removed += 1
+                            else:
+                                ui.notify('Could not delete one or more notes', color='negative')
                         except PermissionDenied:
                             ui.notify('You do not have permission to delete one or more selected notes', color='negative')
                             return
@@ -453,7 +388,7 @@ class ProjectPage(ProjectFrame):
                 if removed:
                     ui.notify(f'Removed {removed} note(s)', color='positive')
                     dlg.close()
-                    ui.navigate.reload()
+                    self._render_notes_card.refresh()
                 else:
                     ui.notify('No notes selected', color='negative')
 
@@ -462,14 +397,18 @@ class ProjectPage(ProjectFrame):
 
         dlg.open()
 
+    def on_create_task(self) -> None:
+        self.on_manage_tasks()
+
+    def on_add_collaborator(self) -> None:
+        self.on_manage_collaborators()
+
     def on_edit_project_details(self, e=None) -> None:
         """Open a dialog to edit the project name and description.
 
         Only the project owner has permission to edit project details.
         Reloads the page on success.
         """
-        pm = ProjectManager(session=self.session)
-
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
             ui.label('Edit Project Details').classes('text-h6')
             ui.separator()
@@ -487,7 +426,7 @@ class ProjectPage(ProjectFrame):
                     return
 
                 try:
-                    ok = pm.edit_project_details(
+                    ok = self.pm.edit_project_details(
                         user=self.user,
                         project_id=self.project.id,
                         name=name,
@@ -496,7 +435,7 @@ class ProjectPage(ProjectFrame):
                     if ok:
                         ui.notify('Project details updated', color='positive')
                         dlg.close()
-                        ui.navigate.reload()
+                        self._render_project_info.refresh()
                     else:
                         ui.notify('Could not update project details', color='negative')
                 except PermissionDenied:

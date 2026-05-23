@@ -7,8 +7,7 @@ from logic.app_state import app_state
 from logic.project_manager import ProjectManager
 from logic.collab_manager import CollabManager
 from logic.user_manager import UserManager
-from logic.task_manager import TaskManager
-from logic.permissions_manager import check_permission, PermissionAction, is_owner
+from logic.permissions_manager import check_permission, PermissionAction, PermissionDenied
 
 
 class UnauthenticatedFrame(ABC):
@@ -97,11 +96,16 @@ class AuthenticatedFrame(ABC):
         """Navigate to the dashboard page."""
         ui.navigate.to('/dashboard')
 
+    def _resolve_permissions(self) -> None:
+        """Compute and cache permission flags before rendering. Override in subclasses."""
+        pass
+
     def render(self) -> None:
         """Render the page, redirecting to login if not authenticated."""
         if not app_state.is_authenticated():
             ui.navigate.to('/')
             return
+        self._resolve_permissions()
         self.render_content()
 
     @abstractmethod
@@ -113,22 +117,16 @@ class AuthenticatedFrame(ABC):
 class NoteableFrame(AuthenticatedFrame):
     """Abstract base frame for pages that display notes.
 
-    Extends AuthenticatedFrame with shared header and note rendering
-    helpers. Used by ProjectFrame and TaskFrame. Subclasses must
-    implement on_create_note(), on_edit_note(), and render_content().
+    Extends AuthenticatedFrame with shared header and note rendering.
+    Used by ProjectFrame and TaskFrame.
     """
 
     @abstractmethod
     def on_delete_note(self, note) -> None:
-        """Handle deleting a note. Must be implemented by subclass.
-
-        Args:           note: The note object to delete."""
-        
         pass
 
-
     def render_header(self, title: str, right_drawer, extra_buttons=None) -> None:
-        """Render the shared page header with navigation buttons and a drawer toggle.
+        """Render the shared page header with navigation and a drawer toggle.
 
         Args:
             title: The page title displayed in the header.
@@ -148,32 +146,18 @@ class NoteableFrame(AuthenticatedFrame):
                 ui.label(title).classes('text-3xl')
                 ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
 
-    def render_notes(self, notes) -> None:
-        """Render a list of notes with an Add/Remove Notes button and a scroll-to-top button.
-
-        Args:
-            notes: List of note objects to display. Each note must have
-                   content, author, and created_at attributes.
-        """
-        with ui.row().classes('w-full items-center gap-2'):
-            ui.label('Notes').classes('text-lg font-bold')
-            ui.button('Add or Remove Notes', on_click=self.on_manage_notes).classes('text-sm')
-
-        if notes:
-            with ui.column().classes('w-full gap-2 mt-2'):
-                for note in notes:
-                    with ui.card().classes('w-full p-3 bg-blue-50 shadow-sm'):
-                        ui.label(note.content).classes('text-sm')
-                        if hasattr(note, 'author') and note.author:
-                            ui.label(f"{note.author.name} • {note.created_at}").classes('text-xs text-grey-6')
-        else:
-            ui.label('No notes yet.').classes('text-sm text-grey-6 italic mt-2')
-
-        with ui.page_sticky(x_offset=18, y_offset=18):
-            ui.button(
-                icon='arrow_upward',
-                on_click=lambda: ui.run_javascript("window.scrollTo({top:0, behavior:'smooth'})"),
-            ).props('fab')
+    def _render_note_card(self, note) -> None:
+        """Render a single note card with edit/delete buttons for the note author."""
+        with ui.card().classes('w-full p-3 bg-blue-50 shadow-sm'):
+            with ui.row().classes('w-full items-start justify-between'):
+                with ui.column().classes('flex-1'):
+                    ui.label(note.content).classes('text-sm')
+                    if hasattr(note, 'author') and note.author:
+                        ui.label(f"{note.author.name} • {note.created_at}").classes('text-xs text-grey-6')
+                if note.created_by == self.user.id:
+                    with ui.row().classes('gap-1'):
+                        ui.button('Edit', on_click=lambda _, n=note: self.on_edit_note(n)).props('size=sm')
+                        ui.button('Delete', on_click=lambda _, n=note: self.on_delete_note(n)).props('size=sm color=red')
 
     @abstractmethod
     def on_create_note(self) -> None:
@@ -233,13 +217,13 @@ class DashboardFrame(AuthenticatedFrame):
         users = um.get_all_users()
 
         non_admin_users = {
-            user.id: f"{user.name} - {user.name or ''}"
+            user.id: f"{user.name} ({user.email})"
             for user in users
             if not user.is_admin
         }
 
         admin_users = {
-            user.id: f"{user.name} - {user.name or ''}"
+            user.id: f"{user.name} ({user.email})"
             for user in users
             if user.is_admin and user.id != self.user.id
         }
@@ -260,15 +244,16 @@ class DashboardFrame(AuthenticatedFrame):
                     if selected_user.value is None:
                         ui.notify("Please select a user", color="negative")
                         return
-
-                    ok = um.promote_user_to_admin(selected_user.value)
-
-                    if ok:
-                        ui.notify("User promoted to admin", color="positive")
-                        dialog.close()
-                        ui.navigate.reload()
-                    else:
-                        ui.notify("Could not promote user", color="negative")
+                    try:
+                        ok = um.promote_user_to_admin(selected_user.value)
+                        if ok:
+                            ui.notify("User promoted to admin", color="positive")
+                            dialog.close()
+                            ui.navigate.reload()
+                        else:
+                            ui.notify("Could not promote user", color="negative")
+                    except Exception as exc:
+                        ui.notify(f"Error promoting user: {exc}", color="negative")
 
                 ui.button("Promote", on_click=promote_user)
 
@@ -289,15 +274,16 @@ class DashboardFrame(AuthenticatedFrame):
                         if selected_admin.value is None:
                             ui.notify("Please select an admin", color="negative")
                             return
-
-                        ok = um.revoke_admin_status(selected_admin.value)
-
-                        if ok:
-                            ui.notify("Admin status revoked", color="positive")
-                            dialog.close()
-                            ui.navigate.reload()
-                        else:
-                            ui.notify("Could not revoke admin status", color="negative")
+                        try:
+                            ok = um.revoke_admin_status(selected_admin.value)
+                            if ok:
+                                ui.notify("Admin status revoked", color="positive")
+                                dialog.close()
+                                ui.navigate.reload()
+                            else:
+                                ui.notify("Could not revoke admin status", color="negative")
+                        except Exception as exc:
+                            ui.notify(f"Error revoking admin status: {exc}", color="negative")
 
                     with ui.row():
                         ui.button("Revoke", on_click=revoke_admin, color="red")
@@ -345,6 +331,8 @@ class DashboardFrame(AuthenticatedFrame):
                                 else:
                                     ui.notify("Could not delete project", color="negative")
 
+                            except PermissionDenied:
+                                ui.notify("You do not have permission to delete this project", color="negative")
                             except Exception as exc:
                                 ui.notify(f"Error deleting project: {exc}", color="negative")
 
@@ -535,157 +523,112 @@ class ProjectFrame(NoteableFrame):
     def on_edit_note(self, note) -> None:
         pass
 
+    def _resolve_permissions(self) -> None:
+        self.can_manage_collabs = check_permission(self.user, PermissionAction.ADD_COLLABORATOR, self.session, project=self.project)
+        self.can_edit_project = check_permission(self.user, PermissionAction.EDIT_PROJECT_DETAILS, self.session, project=self.project)
+        self.can_manage_tasks = check_permission(self.user, PermissionAction.CREATE_TASK, self.session, project=self.project)
+        self.can_create_project_note = check_permission(self.user, PermissionAction.WRITE_PROJECT_NOTE, self.session, project=self.project)
+        self.can_manage_project_notes = check_permission(self.user, PermissionAction.DELETE_PROJECT_NOTE, self.session, project=self.project)
+
+    @ui.refreshable
+    def _render_collaborators_panel(self) -> None:
+        if self.project.collaborator_memberships:
+            for membership in self.project.collaborator_memberships:
+                with ui.card().classes('w-full p-3 shadow-sm'):
+                    ui.label(membership.user.name).classes('font-bold')
+                    ui.link(membership.user.email, f'mailto:{membership.user.email}').classes('text-sm text-grey')
+
+    @ui.refreshable
+    def _render_project_info(self) -> None:
+        with ui.card().classes("w-full p-6 shadow-md relative"):
+            ui.label(self.project.name).classes("text-3xl font-bold")
+            if self.can_edit_project:
+                with ui.row().classes('gap-2 mt-2 flex-wrap'):
+                    ui.button('Edit Project Details', on_click=self.on_edit_project_details).props('size=sm')
+            ui.label(self.project.description or "No description").classes("text-lg text-grey-8 mt-2")
+            ui.separator()
+            with ui.row().classes("gap-4 mt-2 flex-wrap"):
+                ui.badge(f"Project ID: {self.project.id}", color="blue")
+                ui.badge(f"Tasks: {len(self.project.tasks or [])}", color="orange")
+
+    @ui.refreshable
+    def _render_tasks_card(self) -> None:
+        with ui.card().classes('w-full p-6 shadow-md relative'):
+            ui.label('Project Tasks').classes('text-2xl font-bold')
+            if self.can_manage_tasks:
+                with ui.row().classes('gap-2 mt-2 flex-wrap'):
+                    ui.button('Add or Remove Tasks', on_click=self.on_manage_tasks).props('size=sm')
+            if self.project.tasks:
+                with ui.column().classes('w-full gap-2 mt-3'):
+                    for task in self.project.tasks:
+                        with ui.row().classes('w-full items-center justify-between p-3 rounded bg-blue-50'):
+                            with ui.column().classes('gap-0'):
+                                ui.link(task.title, f'/task/{task.id}').classes('font-bold text-base')
+                                ui.label(task.description or 'No description').classes('text-sm text-grey-7')
+                            with ui.row().classes('gap-2'):
+                                ui.badge(task.status or 'no status', color='blue')
+                                ui.badge(task.priority or 'no priority', color='orange')
+            else:
+                ui.label('No tasks yet.').classes('text-sm text-grey-6 italic mt-2')
+
+    @ui.refreshable
+    def _render_notes_card(self) -> None:
+        cm = CollabManager(session=self.session)
+        with ui.card().classes('w-full p-6 shadow-md relative'):
+            ui.label('Project Notes').classes('text-2xl font-bold')
+            with ui.row().classes('gap-2 mt-2 flex-wrap'):
+                if self.can_create_project_note:
+                    ui.button('Create Note', on_click=self.on_create_note).props('size=sm')
+                if self.can_manage_project_notes:
+                    ui.button('Manage Notes', on_click=self.on_manage_notes).props('size=sm')
+            ui.label('Create, edit, or delete notes related to this project.').classes('text-grey-7')
+            try:
+                notes = cm.view_project_note(self.user, self.project.id) or []
+            except Exception:
+                notes = []
+            ui.separator()
+            if notes:
+                with ui.column().classes('w-full gap-2 mt-2'):
+                    for note in notes:
+                        self._render_note_card(note)
+            else:
+                ui.label('No notes yet.').classes('text-sm text-grey-6 italic')
+
     def render_content(self) -> None:
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
             with ui.column().classes('w-full p-4 gap-4'):
-                cm = CollabManager(session=self.session)
-                can_manage_collabs = cm.can_add_collaborator(self.user, self.project)
-
-                if can_manage_collabs:
-                    ui.button(
-                        'Manage Collaborators',
-                        on_click=self.on_manage_collaborators
-                    ).classes('w-full')
+                if self.can_manage_collabs:
+                    ui.button('Manage Collaborators', on_click=self.on_manage_collaborators).classes('w-full')
 
                 with ui.column().classes('gap-2'):
                     ui.label('Project Owner').classes('font-bold text-lg')
-                    ui.label("The owner set up this project and has full management access:"
-                    " tasks, collaborators, and notes. Task status is owned by assignees, "
-                    "though the owner can assign themselves to a task if they need to step in."
-                     ).classes('text-sm text-grey-7')
-
+                    with ui.expansion('Role details', value=False).classes('text-xs text-grey-7 w-full'):
+                        ui.label(
+                            "The owner set up this project and has full management access:"
+                            " tasks, collaborators, and notes. Task status is owned by assignees, "
+                            "though the owner can assign themselves to a task if they need to step in."
+                        ).classes('text-sm text-grey-7')
                     with ui.card().classes('w-full p-3 shadow-sm').style('background-color: #fff4e6'):
                         ui.label(self.project.owner.name).classes('font-bold')
-                        ui.link(
-                            self.project.owner.email,
-                            f'mailto:{self.project.owner.email}'
-                        ).classes('text-sm text-grey')
+                        ui.link(self.project.owner.email, f'mailto:{self.project.owner.email}').classes('text-sm text-grey')
 
                 with ui.column().classes('gap-2'):
                     ui.label('Collaborators').classes('font-bold text-lg')
-                    ui.label("Collaborators have full visibility of this project. "
-                    "They can create and edit tasks, assign users, and write project notes. "
-                    "To update a task's status or write task notes, a collaborator also needs to be assigned to that task."
-                     ).classes('text-sm text-grey-7')
-
-                    if self.project.collaborator_memberships:
-                        for membership in self.project.collaborator_memberships:
-                            with ui.card().classes('w-full p-3 shadow-sm'):
-                                ui.label(membership.user.name).classes('font-bold')
-
-                                ui.link(
-                                    membership.user.email,
-                                    f'mailto:{membership.user.email}'
-                                ).classes('text-sm text-grey')
+                    with ui.expansion('Role details', value=False).classes('text-xs text-grey-7 w-full'):
+                        ui.label(
+                            "Collaborators have full visibility of this project. "
+                            "They can create and edit tasks, assign users, and write project notes. "
+                            "To update a task's status or write task notes, a collaborator also needs to be assigned to that task."
+                        ).classes('text-sm text-grey-7')
+                    self._render_collaborators_panel()
 
         self.render_header(self.project.name, right_drawer)
 
         with ui.column().classes("w-full h-full p-6 gap-6"):
-            with ui.card().classes("w-full p-6 shadow-md relative"):
-                ui.label(self.project.name).classes("text-3xl font-bold")
-                
-                can_edit_project = check_permission(
-                        self.user,
-                        PermissionAction.EDIT_PROJECT_DETAILS,
-                        self.session,
-                        project=self.project,
-                    )
-
-                if can_edit_project:
-                    with ui.row().classes('gap-2 mt-2 flex-wrap'):
-                        ui.button('Edit Project Details', on_click=self.on_edit_project_details).props('size=sm')
-                
-                ui.label(self.project.description or "No description").classes("text-lg text-grey-8 mt-2")
-                ui.separator()
-
-                task_count = len(self.project.tasks or [])
-
-                with ui.row().classes("gap-4 mt-2 flex-wrap"):
-                    ui.badge(f"Project ID: {self.project.id}", color="blue")
-                    ui.badge(f"Tasks: {task_count}", color="orange")
-
-                    
+            self._render_project_info()
             with ui.grid(columns='1fr 1fr').classes('w-full gap-4'):
-                with ui.card().classes('w-full p-6 shadow-md relative'):
-                    with ui.row().classes('w-full gap-4 items-start'):
-                        ui.label('Project Tasks').classes('text-2xl font-bold')
-                        can_manage_tasks = check_permission(
-                            self.user,
-                            PermissionAction.CREATE_TASK,
-                            self.session,
-                            project=self.project,
-                        )
-                    if can_manage_tasks:
-                        with ui.row().classes('gap-2 mt-2 flex-wrap'):
-                            ui.button('Add or Remove Tasks', on_click=self.on_manage_tasks).props('size=sm')
-
-                    if self.project.tasks:
-                        with ui.column().classes('w-full gap-2 mt-3'):
-                            for task in self.project.tasks:
-                                with ui.row().classes(
-                                    'w-full items-center justify-between p-3 rounded bg-blue-50'
-                                ):
-                                    with ui.column().classes('gap-0'):
-                                        ui.link(task.title, f'/task/{task.id}').classes('font-bold text-base')
-                                        ui.label(task.description or 'No description').classes('text-sm text-grey-7')
-
-                                    with ui.row().classes('gap-2'):
-                                        ui.badge(task.status or 'no status', color='blue')
-                                        ui.badge(task.priority or 'no priority', color='orange')
-                    else:
-                        ui.label('No tasks yet.').classes('text-sm text-grey-6 italic mt-2')
-
-                with ui.card().classes('w-full p-6 shadow-md relative'):
-                    ui.label('Project Notes').classes('text-2xl font-bold')
-
-                    with ui.row().classes('gap-2'):
-                        can_create_note = check_permission(
-                            self.user,
-                            PermissionAction.WRITE_PROJECT_NOTE,
-                            self.session,
-                            project=self.project,
-                        )
-                    if can_create_note:
-                        with ui.row().classes('gap-2 mt-2 flex-wrap'):
-                            ui.button('Create Note', on_click=self.on_create_note).props('size=sm')
-
-                        can_manage_notes = check_permission(
-                            self.user,
-                            PermissionAction.DELETE_PROJECT_NOTE,
-                            self.session,
-                            project=self.project,
-                        )
-                    if can_manage_notes:
-                        with ui.row().classes('gap-2 mt-2 flex-wrap'):
-                            ui.button('Manage Notes', on_click=self.on_manage_notes).props('size=sm')
-
-                    ui.label('Create, edit, or delete notes related to this project.').classes('text-grey-7')
-
-                    try:
-                        notes = cm.view_project_note(self.user, self.project.id) or []
-                    except Exception:
-                        notes = []
-
-                    ui.separator()
-
-                    if notes:
-                        with ui.column().classes('w-full gap-2 mt-2'):
-                            for note in notes:
-                                with ui.card().classes('w-full p-3 bg-blue-50 shadow-sm'):
-                                    with ui.row().classes('w-full items-start justify-between'):
-                                        with ui.column().classes('flex-1'):
-                                            ui.label(note.content).classes('text-sm')
-                                            if hasattr(note, 'author') and note.author:
-                                                ui.label(
-                                                    f"{note.author.name} • {note.created_at}"
-                                                ).classes('text-xs text-grey-6')
-
-                                        if note.created_by == self.user.id:
-                                            with ui.row().classes('gap-1'):
-                                                ui.button('Edit', on_click=lambda _, n=note: self.on_edit_note(n)).props('size=sm')
-                                                ui.button('Delete', on_click=lambda _, n=note: self.on_delete_note(n)).props('size=sm color=red')
-                    else:
-                        ui.label('No notes yet.').classes('text-sm text-grey-6 italic')
+                self._render_tasks_card()
+                self._render_notes_card()
 
 
 class TaskFrame(NoteableFrame):
@@ -729,38 +672,82 @@ class TaskFrame(NoteableFrame):
     def on_edit_note(self, note) -> None:
         pass
 
+    def _resolve_permissions(self) -> None:
+        self.can_manage_assignees = check_permission(self.user, PermissionAction.ASSIGN_TASK, self.session, project=self.project, task=self.task)
+        self.can_change_status = check_permission(self.user, PermissionAction.CHANGE_TASK_STATUS, self.session, project=self.project, task=self.task)
+        self.can_edit_task_details = check_permission(self.user, PermissionAction.EDIT_TASK_DETAILS, self.session, project=self.project, task=self.task)
+        self.can_create_task_note = check_permission(self.user, PermissionAction.WRITE_TASK_NOTE, self.session, project=self.project, task=self.task)
+        self.can_manage_task_notes = check_permission(self.user, PermissionAction.DELETE_TASK_NOTE, self.session, project=self.project, task=self.task)
+
+    @ui.refreshable
+    def _render_assignees_panel(self) -> None:
+        with ui.column().props('w-full bordered separator'):
+            if self.task.assignments:
+                for assignment in self.task.assignments:
+                    with ui.card().classes('w-full p-2'):
+                        with ui.row().classes('items-center justify-between'):
+                            with ui.column():
+                                ui.label(assignment.user.name).classes('font-bold')
+                                ui.link(assignment.user.email, f'mailto:{assignment.user.email}').classes('text-sm text-grey')
+            else:
+                ui.label('No assignees yet').classes('text-sm text-grey')
+
+    @ui.refreshable
+    def _render_task_detail_card(self) -> None:
+        with ui.card().classes('w-full p-6 shadow-md relative'):
+            ui.label(self.task.title).classes('text-3xl font-bold text-blue-900')
+            with ui.row().classes('gap-2 mt-2 flex-wrap'):
+                if self.can_change_status:
+                    ui.button('Edit Status', on_click=self.on_edit_status).props('size=sm')
+                if self.can_edit_task_details:
+                    ui.button('Edit Task Details', on_click=self.on_edit_task_details).props('size=sm')
+            ui.separator().classes('my-4')
+            ui.label(self.task.description or 'No description').classes('text-lg text-grey-8')
+            with ui.row().classes('gap-4 mt-4 flex-wrap'):
+                ui.badge(self.task.status or 'No status', color='primary')
+                ui.badge(f"Priority: {self.task.priority or 'N/A'}", color='orange')
+            if self.task.due_date:
+                ui.badge(f"Due: {self.task.due_date}", color='blue')
+
+    @ui.refreshable
+    def _render_task_notes_card(self) -> None:
+        cm = CollabManager(session=self.session)
+        with ui.card().classes('w-full p-6 shadow-md relative'):
+            ui.label('Task Notes').classes('text-2xl font-bold')
+            with ui.row().classes('w-full items-center gap-2 mt-2 flex-wrap'):
+                if self.can_create_task_note:
+                    ui.button('Create Note', on_click=self.on_create_note).props('size=sm')
+                if self.can_manage_task_notes:
+                    ui.button('Manage Notes', on_click=self.on_manage_notes).props('size=sm')
+            ui.label('Create, edit, or delete notes related to this task.').classes('text-grey-7')
+            try:
+                notes = cm.view_task_note(self.user, self.task.id) or []
+            except Exception:
+                notes = []
+            ui.separator()
+            if notes:
+                with ui.column().classes('w-full gap-2 mt-2'):
+                    for note in notes:
+                        self._render_note_card(note)
+            else:
+                ui.label('No notes yet.').classes('text-sm text-grey-6 italic')
+
     def render_content(self) -> None:
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
             ui.label('Management').classes('font-bold text-lg mb-4')
-            can_manage_assignees = check_permission(
-                self.user,
-                PermissionAction.ASSIGN_TASK,
-                self.session,
-                project=self.project,
-                task=self.task,
-            )
-            if can_manage_assignees:
+            if self.can_manage_assignees:
                 ui.button('Manage Assignees', on_click=self.on_manage_assignees)
             ui.label('Assignees').classes('font-bold')
-            ui.label("Assignees are responsible for this task. Only assignees"
-            " can update the task status and write task notes: they know best whether the work is done."
-             ).classes('text-sm text-grey-7 mb-2')
-            with ui.column().props('w-full bordered separator'):
-                if self.task.assignments:
-                    for assignment in self.task.assignments:
-                        with ui.card().classes('w-full p-2'):
-                            with ui.row().classes('items-center justify-between'):
-                                with ui.column():
-                                    ui.label(assignment.user.name).classes('font-bold')
-                                    ui.link(
-                                        assignment.user.email,
-                                        f'mailto:{assignment.user.email}'
-                                    ).classes('text-sm text-grey')
-                else:
-                    ui.label('No assignees yet').classes('text-sm text-grey')
+            with ui.expansion('Role details', value=False).classes('text-xs text-grey-7 w-full'):
+                ui.label(
+                    "Assignees are responsible for this task. Only assignees"
+                    " can update the task status and write task notes: they know best whether the work is done."
+                ).classes('text-sm text-grey-7')
+            self._render_assignees_panel()
             ui.space()
-            ui.label("Think this task needs breaking down further?"
-            " Reach out to a project collaborator or the owner to create additional tasks."
+            ui.label(
+                "Think this task needs breaking down further?"
+                " Reach out to a project collaborator or the owner to create additional tasks."
             ).classes('text-sm text-grey-7 mt-4 italic')
 
         self.render_header(
@@ -770,88 +757,5 @@ class TaskFrame(NoteableFrame):
         )
         with ui.column().classes("w-full h-full p-6 gap-6"):
             with ui.grid(columns='1fr 1fr').classes('w-full gap-4'):
-                with ui.card().classes('w-full p-6 shadow-md relative'):
-                        ui.label(self.task.title).classes('text-3xl font-bold text-blue-900')
-
-                        with ui.row().classes('gap-2 mt-2 flex-wrap'):
-
-                            can_change_status = check_permission(
-                                self.user,
-                                PermissionAction.CHANGE_TASK_STATUS,
-                                self.session,
-                                project=self.project,
-                                task=self.task,
-                            )
-                            if can_change_status:
-                                ui.button('Edit Status', on_click=self.on_edit_status).props('size=sm')
-
-                            can_edit_details = check_permission(
-                                self.user,
-                                PermissionAction.EDIT_TASK_DETAILS,
-                                self.session,
-                                project=self.project,
-                                task=self.task,
-                            )
-                            if can_edit_details:
-                                ui.button('Edit Task Details', on_click=self.on_edit_task_details).props('size=sm')
-
-                        ui.separator().classes('my-4')
-
-                        ui.label(self.task.description or 'No description').classes('text-lg text-grey-8')
-
-                        with ui.row().classes('gap-4 mt-4 flex-wrap'):
-                            ui.badge(self.task.status or 'No status', color='primary')
-                            ui.badge(f"Priority: {self.task.priority or 'N/A'}", color='orange')
-
-                        if self.task.due_date:
-                            ui.badge(f"Due: {self.task.due_date}", color='blue')
-
-                with ui.card().classes('w-full p-6 shadow-md relative'):
-                    ui.label('Task Notes').classes('text-2xl font-bold')
-                    with ui.row().classes('w-full items-center gap-4'):
-
-                        can_create_note = check_permission(
-                            self.user,
-                            PermissionAction.WRITE_TASK_NOTE,
-                            self.session,
-                            project=self.project,
-                            task=self.task,
-                        )
-                        if can_create_note:
-                            ui.button('Create Note', on_click=self.on_create_note).props('size=sm')
-
-                        can_manage_notes = (
-                            self.user.is_admin
-                            or is_owner(self.user, self.project)
-                        )
-                        if can_manage_notes:
-                            ui.button('Manage Notes', on_click=self.on_manage_notes).props('size=sm')
-
-                    ui.label('Create, edit, or delete notes related to this task.').classes('text-grey-7')
-
-                    try:
-                        cm = CollabManager(session=self.session)
-                        notes = cm.view_task_note(self.user, self.task.id) or []
-                    except Exception:
-                        notes = []
-
-                    ui.separator()
-
-                    if notes:
-                        with ui.column().classes('w-full gap-2 mt-2'):
-                            for note in notes:
-                                with ui.card().classes('w-full p-3 bg-blue-50 shadow-sm'):
-                                    with ui.row().classes('w-full items-start justify-between'):
-                                        with ui.column().classes('flex-1'):
-                                            ui.label(note.content).classes('text-sm')
-                                            if hasattr(note, 'author') and note.author:
-                                                ui.label(
-                                                    f"{note.author.name} • {note.created_at}"
-                                                ).classes('text-xs text-grey-6')
-
-                                        if note.created_by == self.user.id:
-                                            with ui.row().classes('gap-1'):
-                                                ui.button('Edit', on_click=lambda _, n=note: self.on_edit_note(n)).props('size=sm')
-                                                ui.button('Delete', on_click=lambda _, n=note: self.on_delete_note(n)).props('size=sm color=red')
-                    else:
-                        ui.label('No notes yet.').classes('text-sm text-grey-6 italic')
+                self._render_task_detail_card()
+                self._render_task_notes_card()

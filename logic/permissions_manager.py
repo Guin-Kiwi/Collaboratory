@@ -1,7 +1,17 @@
 """
 Permissions Manager
 
-Authenticates users for interactions
+Enforces role-based access control across all write and read operations.
+
+Roles (in order of trust):
+  admin       — is_admin flag on User; bypasses all checks
+  owner       — created the project (project.owner_id)
+  collaborator — added to ProjectMember by the owner; can assign tasks and manage notes
+  assignee    — assigned to a specific task via Assignment; can update that task's status and write task notes
+  (no role)   — can only create new projects; denied access to all existing project content
+
+All write operations call require_permission(), which raises PermissionDenied on failure.
+UI visibility checks call check_permission() to conditionally show/hide buttons.
 """
 import enum
 
@@ -11,33 +21,34 @@ from database.collab_models import ProjectMember
 
 
 class PermissionAction(enum.Enum):
-    # Project
-    CREATE_PROJECT      = "create_project"
-    VIEW_PROJECT        = "view_project"
-    EDIT_PROJECT_DETAILS = "edit_project"
-    CHANGE_PROJECT_STATUS = "change_project_status"
-    DELETE_PROJECT      = "delete_project"
+    # --- Projects ---
+    CREATE_PROJECT        = "create_project"         # all authenticated users
+    VIEW_PROJECT          = "view_project"            # admin, owner, collaborator, any assignee
+    EDIT_PROJECT_DETAILS  = "edit_project"            # admin, owner, collaborator  (name, description)
+    CHANGE_PROJECT_STATUS = "change_project_status"  # admin, owner, collaborator
+    DELETE_PROJECT        = "delete_project"          # admin, owner
 
-    # Collaborators
-    ADD_COLLABORATOR    = "add_collaborator"        # owner only
+    # --- Collaborators ---
+    ADD_COLLABORATOR      = "add_collaborator"        # admin, owner
+    # Note: admins and the project owner cannot themselves be added (enforced in collab_manager)
 
-    # Project Notes
-    VIEW_PROJECT_NOTE   = "view_project_note"       # owners and collaborators
-    WRITE_PROJECT_NOTE  = "write_project_note"      # owners and collaborators
-    DELETE_PROJECT_NOTE = "delete_project_note"     # owners and collaborators
+    # --- Project Notes ---
+    VIEW_PROJECT_NOTE     = "view_project_note"       # admin, owner, collaborator, any assignee
+    WRITE_PROJECT_NOTE    = "write_project_note"      # admin, owner, collaborator
+    DELETE_PROJECT_NOTE   = "delete_project_note"     # admin, owner  (collaborators may delete their own via author bypass in collab_manager)
 
-    # Tasks
-    CREATE_TASK         = "create_task"
-    VIEW_TASK           = "view_task"               # owners, collaborators, and assignees
-    EDIT_TASK_DETAILS   = "edit_task_details"       # title / description
-    CHANGE_TASK_STATUS  = "change_task_status"      # assignees only
-    ASSIGN_TASK         = "assign_task"             # owners and collaborators
-    DELETE_TASK         = "delete_task"
+    # --- Tasks ---
+    CREATE_TASK           = "create_task"             # admin, owner, collaborator
+    VIEW_TASK             = "view_task"               # admin, owner, collaborator, task assignee
+    EDIT_TASK_DETAILS     = "edit_task_details"       # admin, owner, collaborator  (title, description)
+    CHANGE_TASK_STATUS    = "change_task_status"      # admin, task assignee only  (owners/collaborators must also be assigned)
+    ASSIGN_TASK           = "assign_task"             # admin, owner, collaborator
+    DELETE_TASK           = "delete_task"             # admin, owner, collaborator
 
-    # Task Notes
-    VIEW_TASK_NOTE      = "view_task_note"          # owners, collaborators, and assignees
-    WRITE_TASK_NOTE     = "write_task_note"         # assignees only
-    DELETE_TASK_NOTE    = "delete_task_note"        # owners, and assignees
+    # --- Task Notes ---
+    VIEW_TASK_NOTE        = "view_task_note"          # admin, owner, collaborator, task assignee
+    WRITE_TASK_NOTE       = "write_task_note"         # admin, task assignee only  (owners/collaborators must also be assigned)
+    DELETE_TASK_NOTE      = "delete_task_note"        # admin, owner, task assignee  (authors may also delete their own via author bypass in collab_manager)
 
 class PermissionDenied(Exception):
     def __init__(self, action: PermissionAction):
@@ -147,9 +158,8 @@ def check_permission(
             if project is None:
                 return False
             return (
-                user.is_admin 
-                or is_owner(user, project) 
-                or is_collaborator(user, project, session)
+                user.is_admin
+                or is_owner(user, project)
             )
 
         case PermissionAction.DELETE_PROJECT:

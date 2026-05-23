@@ -980,6 +980,7 @@ When adding new tests, follow this structure:
 - Some UI workflows could still be improved
 - Singleton behaviour is implemented by convention only
 - UI-level permission checks were introduced for button visibility where a single permission enum value could not cleanly express both display and logic concerns. This is a known deviation from the permissions layer design that would be resolved in a future refactor
+- **Single concurrent user (`app_state`):** `logic/app_state.py` stores the currently logged-in user as a module-level Python singleton (`app_state = AppState()`). Because Python module state is shared across all browser connections on the same server process, logging in as a second user overwrites the first user's session — the first user's subsequent page loads will run under the second user's identity. The fix is to replace the in-memory `current_user` object with NiceGUI's per-connection `app.storage.user` (stores a user ID keyed to the browser session) and load the full `User` from the database in each page route. This requires setting a `storage_secret` in `ui.run()` and updating `app_state.py` and the three page route functions (`dashboard`, `project`, `task`). The application is safe for single-user use or sequential (non-overlapping) logins.
 
 ### Deferred Decisions
 
