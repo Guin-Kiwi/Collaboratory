@@ -810,6 +810,8 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 
 **README contributions**
 - All database schema entity sections: User, Project, Task, Assignment, ProjectMember, ProjectNote, TaskNote
+- Database Information: Core Entities, Relationships
+- Architecture section: all three tiers, Design Patterns
 - ERD section and diagram
 - Features section
 
@@ -832,11 +834,10 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 
 **README contributions (primary author)**
 - User Stories (Owner, Assignee, Collaborator)
-- Target Users, Why Collaboratory, Scenario framing
+- Initial use cases and use case diagram
 - Roles and Permissions table structure and role descriptions
-- Architecture section: all three tiers, Design Patterns
+- Target Users, Why Collaboratory, Scenario framing
 - Project Requirements: Browser-based App section
-- Database Information: Core Entities, Relationships
 - Usage Walkthrough
 - Testing section
 - Known Limitations and Deferred Decisions
