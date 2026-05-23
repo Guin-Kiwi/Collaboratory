@@ -599,7 +599,7 @@ Collaboratory/
 │   ├── connection.py           # DatabaseConnection façade
 │   ├── models.py               # core ORM models (User, Project, Task, Assignment)
 │   ├── collab_models.py        # collaboration ORM models (ProjectMember, notes)
-│   └── mixins.py               # shared timestamp mixin
+│   ├── mixins.py               # shared timestamp mixin
 │   └── seed.py                 # seeding for the database
 ├── logic/
 │   ├── __init__.py
@@ -619,13 +619,23 @@ Collaboratory/
 │       ├── dashboard_page.py   # user dashboard with projects and tasks
 │       ├── project_page.py     # project detail view with collaborators and notes
 │       └── task_page.py        # task detail view with assignees and notes
+├── docs/
+│   ├── screenshots/
+│   │   ├── login_page.png
+│   │   ├── dashboard_page.png
+│   │   ├── project_page.png
+│   │   └── task_page.png
+│   ├── use_case/
+│   │   ├── project_level.png
+│   │   └── task_level.png
+│   └── er_diagram/
+│       └── er_diagram.png
 ├── tests/                      # 42 pytest tests (database, workflows, permissions)
 ├── .gitignore
 ├── LICENSE
 ├── README.md                   # this file
 ├── main.py                     # application entry point
 └── requirements.txt            # Python dependencies
-```
 
 ### How to Run
 
