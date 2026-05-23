@@ -637,7 +637,12 @@ Collaboratory/
    python main.py
    ```
 
-5. Open your browser and navigate to the URL displayed in the terminal (typically `http://localhost:8080`)
+5. Optional - Seed the Database:
+   ```bash
+   python database/seed.py
+   ```
+
+6. Open your browser and navigate to the URL displayed in the terminal (typically `http://localhost:8080`)
 
 **Troubleshooting:**
 - If port 8080 is in use, NiceGUI will automatically try the next available port
