@@ -254,17 +254,36 @@ As an assignee, I want to update the status of a task I am assigned to.
 
 ## Use Case Diagrams – Collaboratory
 
-![Use Case Diagram - Project Level](docs/project_level.png)
-![Use Case Diagram - Task Level](docs/task_level.png)
+![Use Case Diagram - Project Level](docs/use_case/project_level.png)
+![Use Case Diagram - Task Level](docs/use_case/task_level.png)
 
 ---
 
-## 🧩 Wireframes / Mockups
+## 🧩 Application Screenshots
 
-> 🚧 Add screenshots of the core UI screens (Dashboard, Project view, Task view).
+### Login Page
 
-![Wireframes – Dashboard/Project/Task](docs/ui-images/wireframes.png)
+![Login Page](docs/screenshots/login_page.png)
 
+---
+
+### Dashboard
+
+![Dashboard](docs/screenshots/dashboard_page.png)
+
+---
+
+### Project Page
+
+![Project Page](docs/screenshots/project_page.png)
+
+---
+
+### Task Page
+
+![Task Page](docs/screenshots/task_page.png)
+
+---
 
 ## Roles & Permissions
 
