@@ -34,6 +34,17 @@ class ProjectManager:
         """Get all projects a user is collaborating on."""
         return self.session.query(Project).join(ProjectMember).filter(ProjectMember.user_id == user_id).all()
 
+    def get_projects_by_task_assignment(self, user_id: int) -> list[Project]:
+        """Get all projects where the user is assigned to at least one task."""
+        return (
+            self.session.query(Project)
+            .join(Task, Task.project_id == Project.id)
+            .join(Assignment, Assignment.task_id == Task.id)
+            .filter(Assignment.user_id == user_id)
+            .distinct()
+            .all()
+        )
+
 
 ###----------- core functions of the project manager (e.g. CRUD ) -----------
 

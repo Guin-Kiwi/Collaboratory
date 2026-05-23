@@ -1,35 +1,4 @@
-# --- FOR UI DEVELOPERS ---
-# To run the app locally:
-#   1. Run: python main.py
-#   2. Log in at http://localhost:8080, then navigate to a project.
-#
-# This page inherits ProjectFrame from ui/layout.py.
-# Override these action methods:
-#
-#   def on_create_task(self) -> None:
-#       called when "Create Task" is clicked in the left drawer
-#
-#   def on_add_collaborator(self) -> None:
-#       called when "Add Collaborator" is clicked in the right drawer
-#       owner only — CollabManager will raise PermissionDenied if not allowed
-#
-#   def on_create_note(self) -> None:
-#       called when "Create Note" is clicked in the body
-#
-# Data available in your methods:
-#   self.user     — the logged-in User object
-#   self.project  — the current Project object
-#
-# Useful manager calls (CollabManager from logic/collab_manager.py):
-#   manager.view_collaborators(user, project_id)
-#   manager.add_collaborator(user, project_id, user_id)
-#   manager.remove_collaborator(user, project_id, user_id)
-#   manager.create_project_note(user, project_id, content)
-#   manager.edit_project_note(user, project_id, pnote_id, content)
-#   manager.delete_project_note(user, project_id, pnote_id)
-
-
-from nicegui import ui
+from nicegui import ui, Client
 
 from logic.app_state import app_state
 from logic.collab_manager import CollabManager
@@ -283,6 +252,43 @@ class ProjectPage(ProjectFrame):
 
         dlg.open()
 
+    def on_delete_note(self, note) -> None:
+        """Open a confirmation dialog before deleting a project note.
+
+        Args:
+            note: The ProjectNote object to delete.
+        """
+        cm = CollabManager(session=self.session)
+
+        with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
+            ui.label('Delete Note').classes('text-h6')
+            ui.label('Are you sure you want to delete this note? This cannot be undone.').classes('text-sm')
+            ui.label(f'"{note.content}"').classes('text-sm text-grey italic')
+
+            def confirm(_=None):
+                try:
+                    ok = cm.delete_project_note(
+                        user=self.user,
+                        project_id=self.project.id,
+                        pnote_id=note.id,
+                    )
+                    if ok:
+                        ui.notify('Note deleted', color='positive')
+                        dlg.close()
+                        ui.navigate.reload()
+                    else:
+                        ui.notify('Could not delete note', color='negative')
+                except PermissionDenied:
+                    ui.notify('You do not have permission to delete this note', color='negative')
+                except Exception as exc:
+                    ui.notify(f'Error: {exc}', color='negative')
+
+            with ui.row():
+                ui.button('Delete', on_click=confirm, color='red')
+                ui.button('Cancel', on_click=lambda _=None: dlg.close())
+
+        dlg.open()
+
     def on_manage_collaborators(self, e=None) -> None:
         """Open a dialog to add or remove project collaborators.
 
@@ -297,7 +303,7 @@ class ProjectPage(ProjectFrame):
 
         all_users = um.get_all_users()
         user_options = {
-            user.username: f'{user.username} - {user.name or ""}'
+            user.username: f"{user.name}, ({user.email})"
             for user in all_users
             if user.id != self.user.id and user.id not in current_collaborator_ids
             and not user.is_admin
@@ -305,6 +311,9 @@ class ProjectPage(ProjectFrame):
 
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
             ui.label('Manage Collaborators').classes('text-h6')
+            ui.label("Collaborators get full visibility of this project and can create tasks, "
+            "assign users, and write project notes. They cannot update task status or write"
+            " task notes unless also assigned to a task.").classes('text-sm text-grey mb-4')
             ui.separator()
             ui.label('Remove collaborators').classes('text-h7')
 
@@ -312,7 +321,7 @@ class ProjectPage(ProjectFrame):
             with ui.column().classes('w-full gap-2'):
                 for membership in members:
                     with ui.row().classes('w-full items-center justify-between'):
-                        ui.label(membership.user.username).classes('flex-1')
+                        ui.label(membership.user.name).classes('flex-1')
                         cb = ui.checkbox()
                         checks.append((cb, membership.user.id))
 
@@ -362,12 +371,7 @@ class ProjectPage(ProjectFrame):
                     ui.notify('Select a username', color='negative')
                     return
 
-                target_user = um.get_user_by_id(
-                    next(
-                        (user.id for user in all_users if user.username == username),
-                        None,
-                    )
-                )
+                target_user = um.get_user_by_id(username_select.value)
                 if not target_user:
                     ui.notify('User not found', color='negative')
                     return
@@ -409,22 +413,21 @@ class ProjectPage(ProjectFrame):
             return
 
         can_delete_any = cm.can_delete_project_note(self.user, self.project)
-        deletable_notes = notes if can_delete_any else [n for n in notes if n.created_by == self.user.id]
+        notes = notes if can_delete_any else [n for n in notes if n.created_by == self.user.id]
 
         with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
             ui.label('Manage Project Notes').classes('text-h6')
 
             ui.label('Delete notes').classes('text-h7')
             checks: list[tuple] = []
-            if deletable_notes:
+            if notes:
                 with ui.column().classes('w-full gap-2'):
-                    for n in deletable_notes:
+                    for n in notes:
                         with ui.row().classes('w-full items-center justify-between'):
                             with ui.column().classes('flex-1'):
                                 ui.label(n.content).classes('text-sm')
                                 ui.label(f'{n.author.username} • {n.created_at}').classes('text-xs text-grey')
                             with ui.row().classes('gap-2'):
-                                ui.button('Edit', on_click=lambda _, note=n: self.on_edit_note(note)).props('size=sm')
                                 cb = ui.checkbox()
                                 checks.append((cb, n.id))
                     with ui.row().classes('w-full justify-end'):
@@ -509,12 +512,12 @@ class ProjectPage(ProjectFrame):
 
 
 @ui.page('/project/{project_id}')
-def project(project_id: int) -> None:
+async def project(project_id: int, client: Client) -> None:
     """Register the project page at /project/{project_id} and render it.
 
     Redirects to login if the user is not authenticated. Loads the project
     via ProjectManager and passes it along with the current user and session
-    to ProjectPage for rendering.
+    to ProjectPage for rendering. The session is closed when the client disconnects.
 
     Args:
         project_id: The ID of the project to display, taken from the URL.
@@ -526,15 +529,18 @@ def project(project_id: int) -> None:
 
     user = app_state.get_current_user()
     session = db_conn.get_session()
-
     try:
-        project = ProjectManager(session=session).view_project(user, project_id)
-    except PermissionDenied:
-        ui.notify('Access denied', color='negative')
-        return
+        try:
+            project = ProjectManager(session=session).view_project(user, project_id)
+        except PermissionDenied:
+            ui.notify('Access denied', color='negative')
+            return
 
-    if not project:
-        ui.notify('Project not found', color='negative')
-        return
+        if not project:
+            ui.notify('Project not found', color='negative')
+            return
 
-    ProjectPage(user, project, session=session).render()
+        ProjectPage(user, project, session=session).render()
+        await client.disconnected()
+    finally:
+        session.close()
