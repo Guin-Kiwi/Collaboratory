@@ -493,7 +493,9 @@ The ORM uses SQLAlchemy relationships with cascade rules (e.g. projects → task
 
 #### Entity Relationship Diagram
 
-<img width="1213" height="1209" alt="ERCollab_Notes (2)" src="https://github.com/user-attachments/assets/199f9147-afc6-4767-9e04-17df8013b0eb" />
+#### Entity Relationship Diagram
+
+![ER Diagram](docs/er_diagram/er_diagram.png)
 
 ## Architecture
 
