@@ -752,9 +752,9 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 
 | Contributor | Primary responsibility |
 |---|---|
-| Ayla Allen | Architecture, permissions, collaboration layer, project management |
-| Polina Yemelianenkova | Authentication, ORM layer, database infrastructure, login UI, test coverage |
-| Sümeyya Güçlü-Babür | Task management, assignee system, task UI, README |
+| Ayla Allen | Permissions system, collaboration logic, project management, UI framework |
+| Polina Yemelianenkova | User authentication, database models and infrastructure, login UI, database testing |
+| Sümeyya Güçlü-Babür | Task management, task UI, documentation |
 | Marta Greschuk | Application state, session abstraction, dashboard UI, test suite |
 
 ---
