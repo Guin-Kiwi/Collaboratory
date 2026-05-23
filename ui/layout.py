@@ -366,6 +366,7 @@ class DashboardFrame(AuthenticatedFrame):
         owned_projects = []
         collab_projects = []
         task_rows = []
+        assigned_tasks = []
 
         if self.user:
             owned_projects = pm.get_projects_by_owner(self.user.id)
@@ -396,6 +397,10 @@ class DashboardFrame(AuthenticatedFrame):
                         "priority": task.priority,
                         "assigned_to": assigned_users if assigned_users else "-",
                     })
+
+            for task in task_rows:
+                if self.user.name in task["assigned_to"]:
+                    assigned_tasks.append(task)
 
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
             with ui.column().classes("w-full gap-3 p-3"):
@@ -461,13 +466,15 @@ class DashboardFrame(AuthenticatedFrame):
                 with ui.card().classes("w-1/3 p-6 shadow-md"):
                     ui.label("My Tasks").classes("text-2xl font-bold mb-6")
 
-                    if task_rows:
-                        for task in task_rows:
+                    if assigned_tasks:
+                        for task in assigned_tasks:
                             with ui.card().classes("w-full bg-blue-50 p-4 mb-3 shadow-sm"):
                                 ui.link(
                                     task["title"],
                                     f"/task/{task['id']}"
                                 ).classes("text-blue-700 underline text-lg")
+                    else:
+                        ui.label("You are not assigned to any tasks yet.").classes("text-sm text-grey-6 italic")
 
             ui.separator()
 
