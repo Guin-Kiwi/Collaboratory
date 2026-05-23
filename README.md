@@ -254,8 +254,8 @@ As an assignee, I want to update the status of a task I am assigned to.
 
 ## Use Case Diagrams – Collaboratory
 
-![Use Case Diagram - Project Level](project_level.png)
-![Use Case Diagram - Task Level](task_level.png)
+![Use Case Diagram - Project Level](docs/project_level.png)
+![Use Case Diagram - Task Level](docs/task_level.png)
 
 ---
 
