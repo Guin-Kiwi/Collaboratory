@@ -941,6 +941,7 @@ When adding new tests, follow this structure:
 - SQLite is suitable for small-scale projects but not large production systems
 - Some UI workflows could still be improved
 - Singleton behaviour is implemented by convention only
+- UI-level permission checks were introduced for button visibility where a single permission enum value could not cleanly express both display and logic concerns. This is a known deviation from the permissions layer design that would be resolved in a future refactor
 
 ### Deferred Decisions
 
