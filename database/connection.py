@@ -22,6 +22,10 @@ class DatabaseConnection:
             db_path: Filesystem path for the SQLite database file.
                      Use ``":memory:"`` for an in-memory database.
         """
+
+        # ensure the data folder exists before SQLAlchemy tries to open the file
+        if db_path != ":memory:":
+            Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         
         self._db_url = f"sqlite:///{db_path}"
         self._engine: Engine | None = None

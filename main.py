@@ -19,9 +19,12 @@ from logic import app_state
 from nicegui import ui
 import ui.pages as pages
 from database import db_conn
+from pathlib import Path
 
 def main() -> None:
     """Initialise each layer and register NiceGUI routes."""
+     # ── Ensure database folder exists ──────────────────────────────────────
+    Path("data").mkdir(exist_ok=True)
 
     # ── Data tier ──────────────────────────────────────────────────────────
     db_conn.init()
