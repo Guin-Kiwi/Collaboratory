@@ -5,6 +5,13 @@ We insert sample users, projects, tasks, and notes on first start.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# Add project root to path so imports work when running directly
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 import bcrypt
 import datetime
 from sqlalchemy.orm import Session
@@ -96,3 +103,10 @@ class DatabaseSeeder:
             session.add(n)
 
         session.commit()
+
+if __name__ == "__main__":
+    from database import db_conn
+    db_conn.init()
+    seeder = DatabaseSeeder()
+    seeder.seed(db_conn.get_session())
+    print("Database seeded successfully.")

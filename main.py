@@ -18,7 +18,6 @@ from database.connection import DatabaseConnection
 from logic import app_state
 from nicegui import ui
 import ui.pages as pages
-from database.seed import DatabaseSeeder
 from database import db_conn
 
 def main() -> None:
@@ -26,9 +25,6 @@ def main() -> None:
 
     # ── Data tier ──────────────────────────────────────────────────────────
     db_conn.init()
-
-    seeder = DatabaseSeeder()
-    seeder.seed(db_conn.get_session())
 
     # ── Start the NiceGUI server ────────────────────────────────────────────
     ui.run(title="Collaboratory", host="0.0.0.0")
