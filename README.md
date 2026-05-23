@@ -62,12 +62,6 @@ Collaboratory solves these problems through:
 - As a Collaborator, I want to assign tasks to users so that work is distributed effectively.
 - As a Collaborator, I want to add and view project notes so that important information is shared within the team.
 
-## Use Case Diagram – Collaboratory
-
-![Use Case Diagram - Project Level](project_level.png)
-![Use Case Diagram - Task Level](task_level.png)
-
-
 ### Main Use Cases
 
 ## Project Management
@@ -137,6 +131,13 @@ Collaboratory solves these problems through:
 
 - **Inputs:** project id (`int`), content (`str`)
 - **Outputs:** `ProjectNote` created, list of project notes
+
+---
+
+## Use Case Diagrams – Collaboratory
+
+![Use Case Diagram - Project Level](project_level.png)
+![Use Case Diagram - Task Level](task_level.png)
 
 ---
 
