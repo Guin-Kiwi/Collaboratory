@@ -64,7 +64,9 @@ Collaboratory solves these problems through:
 
 ## Use Case Diagram – Collaboratory
 
-![Use Case Diagram](usecase_collaboratory.png)
+![Use Case Diagram - Project Level](project_level.png)
+![Use Case Diagram - Task Level](task_level.png)
+
 
 ### Main Use Cases
 
