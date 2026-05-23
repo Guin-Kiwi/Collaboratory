@@ -579,6 +579,7 @@ Collaboratory/
 │   ├── models.py               # core ORM models (User, Project, Task, Assignment)
 │   ├── collab_models.py        # collaboration ORM models (ProjectMember, notes)
 │   └── mixins.py               # shared timestamp mixin
+│   └── seed.py                 # seeding for the database
 ├── logic/
 │   ├── __init__.py
 │   ├── app_state.py            # global AppState for session management
