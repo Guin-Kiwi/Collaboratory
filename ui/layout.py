@@ -583,6 +583,18 @@ class ProjectFrame(NoteableFrame):
         with ui.column().classes("w-full h-full p-6 gap-6"):
             with ui.card().classes("w-full p-6 shadow-md relative"):
                 ui.label(self.project.name).classes("text-3xl font-bold")
+                
+                can_edit_project = check_permission(
+                        self.user,
+                        PermissionAction.EDIT_PROJECT_DETAILS,
+                        self.session,
+                        project=self.project,
+                    )
+
+                if can_edit_project:
+                    with ui.row().classes('gap-2 mt-2 flex-wrap'):
+                        ui.button('Edit Project Details', on_click=self.on_edit_project_details).props('size=sm')
+                
                 ui.label(self.project.description or "No description").classes("text-lg text-grey-8 mt-2")
                 ui.separator()
 
@@ -592,15 +604,7 @@ class ProjectFrame(NoteableFrame):
                     ui.badge(f"Project ID: {self.project.id}", color="blue")
                     ui.badge(f"Tasks: {task_count}", color="orange")
 
-                    can_edit_project = check_permission(
-                        self.user,
-                        PermissionAction.EDIT_PROJECT_DETAILS,
-                        self.session,
-                        project=self.project,
-                    )
-                    if can_edit_project:
-                        ui.button('Edit Project Details', on_click=self.on_edit_project_details).classes('absolute top-4 right-4')
-
+                    
             with ui.grid(columns='1fr 1fr').classes('w-full gap-4'):
                 with ui.card().classes('w-full p-6 shadow-md relative'):
                     with ui.row().classes('w-full gap-4 items-start'):
@@ -611,8 +615,9 @@ class ProjectFrame(NoteableFrame):
                             self.session,
                             project=self.project,
                         )
-                        if can_manage_tasks:
-                            ui.button('Add or Remove Tasks', on_click=self.on_manage_tasks).classes('absolute top-4 right-4')
+                    if can_manage_tasks:
+                        with ui.row().classes('gap-2 mt-2 flex-wrap'):
+                            ui.button('Add or Remove Tasks', on_click=self.on_manage_tasks).props('size=sm')
 
                     if self.project.tasks:
                         with ui.column().classes('w-full gap-2 mt-3'):
@@ -640,8 +645,9 @@ class ProjectFrame(NoteableFrame):
                             self.session,
                             project=self.project,
                         )
-                        if can_create_note:
-                            ui.button('Create Note', on_click=self.on_create_note).classes('absolute top-4 right-4')
+                    if can_create_note:
+                        with ui.row().classes('gap-2 mt-2 flex-wrap'):
+                            ui.button('Create Note', on_click=self.on_create_note).props('size=sm')
 
                         can_manage_notes = check_permission(
                             self.user,
@@ -649,8 +655,9 @@ class ProjectFrame(NoteableFrame):
                             self.session,
                             project=self.project,
                         )
-                        if can_manage_notes:
-                            ui.button('Manage Notes', on_click=self.on_manage_notes).classes('absolute top-4 right-36')
+                    if can_manage_notes:
+                        with ui.row().classes('gap-2 mt-2 flex-wrap'):
+                            ui.button('Manage Notes', on_click=self.on_manage_notes).props('size=sm')
 
                     ui.label('Create, edit, or delete notes related to this project.').classes('text-grey-7')
 
@@ -764,36 +771,37 @@ class TaskFrame(NoteableFrame):
         with ui.column().classes("w-full h-full p-6 gap-6"):
             with ui.grid(columns='1fr 1fr').classes('w-full gap-4'):
                 with ui.card().classes('w-full p-6 shadow-md relative'):
-                    with ui.row().classes('w-full items-center gap-4'):
                         ui.label(self.task.title).classes('text-3xl font-bold text-blue-900')
 
-                        can_change_status = check_permission(
-                            self.user,
-                            PermissionAction.CHANGE_TASK_STATUS,
-                            self.session,
-                            project=self.project,
-                            task=self.task,
-                        )
-                        if can_change_status:
-                            ui.button('Edit Status', on_click=self.on_edit_status).classes('absolute top-4 right-36')
+                        with ui.row().classes('gap-2 mt-2 flex-wrap'):
 
-                        can_edit_details = check_permission(
-                            self.user,
-                            PermissionAction.EDIT_TASK_DETAILS,
-                            self.session,
-                            project=self.project,
-                            task=self.task,
-                        )
-                        if can_edit_details:
-                            ui.button('Edit Task Details', on_click=self.on_edit_task_details).classes('absolute top-4 right-4')
+                            can_change_status = check_permission(
+                                self.user,
+                                PermissionAction.CHANGE_TASK_STATUS,
+                                self.session,
+                                project=self.project,
+                                task=self.task,
+                            )
+                            if can_change_status:
+                                ui.button('Edit Status', on_click=self.on_edit_status).props('size=sm')
 
-                    ui.separator().classes('my-4')
+                            can_edit_details = check_permission(
+                                self.user,
+                                PermissionAction.EDIT_TASK_DETAILS,
+                                self.session,
+                                project=self.project,
+                                task=self.task,
+                            )
+                            if can_edit_details:
+                                ui.button('Edit Task Details', on_click=self.on_edit_task_details).props('size=sm')
 
-                    ui.label(self.task.description or 'No description').classes('text-lg text-grey-8')
+                        ui.separator().classes('my-4')
 
-                    with ui.row().classes('gap-4 mt-4 flex-wrap'):
-                        ui.badge(self.task.status or 'No status', color='primary')
-                        ui.badge(f"Priority: {self.task.priority or 'N/A'}", color='orange')
+                        ui.label(self.task.description or 'No description').classes('text-lg text-grey-8')
+
+                        with ui.row().classes('gap-4 mt-4 flex-wrap'):
+                            ui.badge(self.task.status or 'No status', color='primary')
+                            ui.badge(f"Priority: {self.task.priority or 'N/A'}", color='orange')
 
                         if self.task.due_date:
                             ui.badge(f"Due: {self.task.due_date}", color='blue')
@@ -810,14 +818,14 @@ class TaskFrame(NoteableFrame):
                             task=self.task,
                         )
                         if can_create_note:
-                            ui.button('Create Note', on_click=self.on_create_note).classes('absolute top-4 right-36')
+                            ui.button('Create Note', on_click=self.on_create_note).props('size=sm')
 
                         can_manage_notes = (
                             self.user.is_admin
                             or is_owner(self.user, self.project)
                         )
                         if can_manage_notes:
-                            ui.button('Manage Notes', on_click=self.on_manage_notes).classes('absolute top-4 right-4')
+                            ui.button('Manage Notes', on_click=self.on_manage_notes).props('size=sm')
 
                     ui.label('Create, edit, or delete notes related to this task.').classes('text-grey-7')
 
