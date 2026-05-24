@@ -66,22 +66,22 @@ def world(cm):
 
 
 # ---------------------------------------------------------------------------
-# can_add_collaborator – admin and owner only
+# can_manage_collaborator – admin and owner only
 # ---------------------------------------------------------------------------
 
-class TestCanAddCollaborator:
+class TestCanManageCollaborator:
     def test_admin_and_owner_allowed(self, cm, world):
-        assert cm.can_add_collaborator(world["admin"], world["proj"]) is True
-        assert cm.can_add_collaborator(world["owner"], world["proj"]) is True
+        assert cm.can_manage_collaborator(world["admin"], world["proj"]) is True
+        assert cm.can_manage_collaborator(world["owner"], world["proj"]) is True
 
     def test_others_denied(self, cm, world):
-        assert cm.can_add_collaborator(world["collab"],   world["proj"]) is False
-        assert cm.can_add_collaborator(world["assignee"], world["proj"]) is False
-        assert cm.can_add_collaborator(world["other"],    world["proj"]) is False
+        assert cm.can_manage_collaborator(world["collab"],   world["proj"]) is False
+        assert cm.can_manage_collaborator(world["assignee"], world["proj"]) is False
+        assert cm.can_manage_collaborator(world["other"],    world["proj"]) is False
 
     def test_none_args_safe(self, cm, world):
-        assert cm.can_add_collaborator(None, world["proj"]) is False
-        assert cm.can_add_collaborator(world["owner"], None) is False
+        assert cm.can_manage_collaborator(None, world["proj"]) is False
+        assert cm.can_manage_collaborator(world["owner"], None) is False
 
 
 # ---------------------------------------------------------------------------

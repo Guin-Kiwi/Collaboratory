@@ -123,6 +123,7 @@ class NoteableFrame(AuthenticatedFrame):
 
     @abstractmethod
     def on_delete_note(self, note) -> None:
+        """Delete the given note. Must be implemented by subclass."""
         pass
 
     def render_header(self, title: str, right_drawer, extra_buttons=None) -> None:
@@ -493,38 +494,46 @@ class ProjectFrame(NoteableFrame):
 
     @abstractmethod
     def on_create_task(self) -> None:
+        """Open the create-task dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_add_collaborator(self) -> None:
+        """Open the add-collaborator dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_create_note(self) -> None:
+        """Open the create-note dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_edit_project_details(self) -> None:
+        """Open the edit-project-details dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_manage_tasks(self) -> None:
+        """Open the manage-tasks dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_manage_collaborators(self) -> None:
+        """Open the manage-collaborators dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_manage_notes(self) -> None:
+        """Open the manage-notes dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_edit_note(self, note) -> None:
+        """Open the edit-note dialog. Must be implemented by subclass."""
         pass
 
     def _resolve_permissions(self) -> None:
-        self.can_manage_collabs = check_permission(self.user, PermissionAction.ADD_COLLABORATOR, self.session, project=self.project)
+        self.can_manage_collabs = check_permission(self.user, PermissionAction.MANAGE_COLLABORATOR, self.session, project=self.project)
         self.can_edit_project = check_permission(self.user, PermissionAction.EDIT_PROJECT_DETAILS, self.session, project=self.project)
         self.can_manage_tasks = check_permission(self.user, PermissionAction.CREATE_TASK, self.session, project=self.project)
         self.can_create_project_note = check_permission(self.user, PermissionAction.WRITE_PROJECT_NOTE, self.session, project=self.project)
@@ -595,6 +604,7 @@ class ProjectFrame(NoteableFrame):
                 ui.label('No notes yet.').classes('text-sm text-grey-6 italic')
 
     def render_content(self) -> None:
+        """Render the project detail layout with tasks, notes, and collaborators."""
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
             with ui.column().classes('w-full p-4 gap-4'):
                 if self.can_manage_collabs:
@@ -642,34 +652,42 @@ class TaskFrame(NoteableFrame):
 
     @abstractmethod
     def on_assign_user(self) -> None:
+        """Open the assign-user dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_create_note(self) -> None:
+        """Open the create-note dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_manage_notes(self) -> None:
+        """Open the manage-notes dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_manage_assignees(self, e=None) -> None:
+        """Open the manage-assignees dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_edit_status(self, e=None) -> None:
+        """Open the edit-status dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_edit_task_details(self, e=None) -> None:
+        """Open the edit-task-details dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_return_to_project(self) -> None:
+        """Navigate back to the project page. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_edit_note(self, note) -> None:
+        """Open the edit-note dialog. Must be implemented by subclass."""
         pass
 
     def _resolve_permissions(self) -> None:
@@ -733,6 +751,7 @@ class TaskFrame(NoteableFrame):
                 ui.label('No notes yet.').classes('text-sm text-grey-6 italic')
 
     def render_content(self) -> None:
+        """Render the task detail layout with notes and assignees."""
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
             ui.label('Management').classes('font-bold text-lg mb-4')
             if self.can_manage_assignees:

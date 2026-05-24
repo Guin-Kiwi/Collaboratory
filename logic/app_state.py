@@ -17,23 +17,29 @@ class AppState:
         self.current_user: User | None = None
 
     def login(self, user: User) -> None:
+        """Set the active session user."""
         self.current_user = user
 
     def logout(self) -> None:
+        """Clear the active session user."""
         self.current_user = None
 
     def is_authenticated(self) -> bool:
+        """Return True if a user is currently logged in."""
         return self.current_user is not None
 
     def get_current_user(self) -> User | None:
+        """Return the current User object, or None if not logged in."""
         return self.current_user
 
     def get_current_user_id(self) -> int | None:
+        """Return the current user's primary key, or None."""
         if self.current_user is None:
             return None
         return self.current_user.id
 
     def get_current_username(self) -> str | None:
+        """Return the current user's username, or None."""
         if self.current_user is None:
             return None
         return self.current_user.username
@@ -47,11 +53,13 @@ class AppState:
     #     return self.current_user.role
 
     def is_admin(self) -> bool:
+        """Return True if the current user has admin privileges."""
         if self.current_user is None:
             return False
         return self.current_user.is_admin
-    
+
     def get_name(self) -> str | None:
+        """Return the current user's display name, or None."""
         if self.current_user is None:
             return None
         return self.current_user.name

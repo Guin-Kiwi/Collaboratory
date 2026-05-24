@@ -21,6 +21,8 @@ from database.collab_models import ProjectMember
 
 
 class PermissionAction(enum.Enum):
+    """Enumeration of all permission-gated actions in the system."""
+
     # --- Projects ---
     CREATE_PROJECT        = "create_project"         # all authenticated users
     VIEW_PROJECT          = "view_project"            # admin, owner, collaborator, any assignee
@@ -29,7 +31,7 @@ class PermissionAction(enum.Enum):
     DELETE_PROJECT        = "delete_project"          # admin, owner
 
     # --- Collaborators ---
-    ADD_COLLABORATOR      = "add_collaborator"        # admin, owner
+    MANAGE_COLLABORATOR   = "manage_collaborator"      # admin, owner (covers add and remove)
     # Note: admins and the project owner cannot themselves be added (enforced in collab_manager)
 
     # --- Project Notes ---
@@ -51,6 +53,8 @@ class PermissionAction(enum.Enum):
     DELETE_TASK_NOTE      = "delete_task_note"        # admin, owner, task assignee  (authors may also delete their own via author bypass in collab_manager)
 
 class PermissionDenied(Exception):
+    """Raised when a user attempts an action they are not permitted to perform."""
+
     def __init__(self, action: PermissionAction):
         super().__init__(f"Permission denied: {action.value}")
         self.action = action
@@ -89,13 +93,14 @@ def is_assignee_in_project(user : User, project : Project, session: Session) -> 
 #  --- core functions of the permission manager ---
 
 def check_permission(
-    user: User, 
-    action: PermissionAction, 
-    session: Session, 
+    user: User,
+    action: PermissionAction,
+    session: Session,
     *,
     task: Task = None,
     project: Project = None
 ) -> bool:
+    """Return True if user is allowed to perform action, False otherwise."""
     if user is None:
         return False
     # If caller provided a task but not a project, resolve project by id
@@ -170,7 +175,7 @@ def check_permission(
                 or is_owner(user, project)
             )
         
-        case PermissionAction.ADD_COLLABORATOR:
+        case PermissionAction.MANAGE_COLLABORATOR:
             if project is None:
                 return False
             return (
@@ -277,5 +282,6 @@ def require_permission(
         task: Task = None,
         project: Project = None
 ) -> None:
+    """Raise PermissionDenied if user is not allowed to perform action."""
     if not check_permission(user, action, session, project = project, task = task):
         raise PermissionDenied(action)

@@ -117,6 +117,7 @@ class LoginPage(UnauthenticatedFrame):
             forgot_success = ui.label("").classes("text-green text-sm")
 
             def handle_reset():
+                """Validate inputs and reset the user's password."""
                 username = forgot_username.value.strip()
                 new_password = forgot_new_password.value.strip()
                 confirm = forgot_confirm_password.value.strip()

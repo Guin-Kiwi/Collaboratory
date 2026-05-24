@@ -14,6 +14,7 @@ from logic.permissions_manager import require_permission, PermissionAction
 
 
 class TaskManager:
+    """Manages task lifecycle including creation, assignment, and status changes."""
 
     def __init__(self, session=None):
         self.session = session or db_conn.get_session()

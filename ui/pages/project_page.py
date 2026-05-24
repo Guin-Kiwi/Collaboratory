@@ -398,9 +398,11 @@ class ProjectPage(ProjectFrame):
         dlg.open()
 
     def on_create_task(self) -> None:
+        """Alias for on_manage_tasks."""
         self.on_manage_tasks()
 
     def on_add_collaborator(self) -> None:
+        """Alias for on_manage_collaborators."""
         self.on_manage_collaborators()
 
     def on_edit_project_details(self, e=None) -> None:

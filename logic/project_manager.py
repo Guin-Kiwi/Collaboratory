@@ -9,12 +9,15 @@ from logic.permissions_manager import require_permission, PermissionAction
 from sqlalchemy.orm import joinedload
 
 class ProjectManager:
-    def __init__(self, session=None): 
+    """Manages project lifecycle: create, view, edit, and delete."""
+
+    def __init__(self, session=None):
         self.session = session or db_conn.get_session() 
 
 ###----------- helper functions for the project manager (e.g. get project by id, get projects by user, etc.) -----------
     
     def get_project_by_id(self, project_id: int) -> Project | None:
+        """Fetch a project by ID with collaborators, tasks, and notes eager-loaded."""
         return (
             self.session.query(Project)
             .options(

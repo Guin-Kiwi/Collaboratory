@@ -4,6 +4,13 @@ Collaboratory is a web-based team task management application built in Python. I
 
 The application follows a 3-tier architecture using NiceGUI for the presentation layer, Python for the application logic, and SQLite with SQLAlchemy for data persistence.
 
+It aims to:
+- Implement a clean 3-tier layered architecture with clear separation of concerns between UI, logic, and data
+- Validate all user input at the application boundary before processing or persisting
+- Use SQLAlchemy as a full ORM for all database access — no raw SQL
+- Cover core functionality with a meaningful automated test suite
+- Demonstrate collaborative team development across a four-person team
+
 ## 📝 Analysis
 
 ### Problem
@@ -64,7 +71,7 @@ Collaboratory solves these problems through:
 
 ### Main Use Cases
 
-## Project Management
+#### Project Management
 - **View Projects & Tasks**: Users can view projects and tasks they have access to.
 - **Create & Manage Projects**: Owners create new projects and manage project details.
 - **Edit Project Details**: Owners and Collaborators update project information and status.
@@ -259,7 +266,9 @@ As an assignee, I want to update the status of a task I am assigned to.
 
 ---
 
-## 🧩 Application Screenshots
+## Wireframes / Mockups
+
+Wireframes were not produced prior to implementation. The following screenshots of the working application serve as the equivalent documentation of the implemented UI, covering all four main screens.
 
 ### Login Page
 
@@ -350,8 +359,6 @@ Users can perform the following actions:
 
 The graphical user interface is implemented entirely with NiceGUI components running on the server side. The browser acts as a thin client while the application logic and UI state are managed by the Python backend.
 
-**Architecture note:** The browser is a thin client; UI state and business logic live on the server-side NiceGUI application.
-
 ### 2. Data Validation
 
 The application validates all user input to ensure data integrity and a smooth user experience.
@@ -379,6 +386,82 @@ The application uses SQLite as its persistent database and SQLAlchemy as an Obje
 - Avoid writing raw SQL statements directly (all queries use ORM methods)
 
 **Architecture:** Database access is separated from the user interface. Manager classes (`UserManager`, `ProjectManager`, `TaskManager`, `CollabManager`) interact with the database through SQLAlchemy sessions to keep the architecture clean and maintainable.
+
+## Architecture
+
+This application follows a 3-tier layered architecture.
+
+### 1. Presentation Tier (Frontend)
+
+- **Technology:** NiceGUI
+- UI rendered with Vue.js and Quasar through NiceGUI
+- Renders the user interface directly from Python
+- UI components are served through NiceGUI
+- Runs in the browser
+- No business logic stored in the browser
+- Browser acts as a thin client
+
+### 2. Application Tier (Backend)
+
+- **Technology:** Python + NiceGUI
+- Business logic implemented in Python
+- NiceGUI components instantiated on the server
+- Object-oriented structure for modular logic
+- Handles business logic and user interactions
+- Manages authentication and sessions
+- Connects UI and database
+
+### 3. Data Tier (Database)
+
+- **Technology:** SQLAlchemy + SQLite
+- SQLite used as persistent storage
+- SQLAlchemy used as ORM
+- No raw SQL required
+- Stores persistent application data
+- Uses ORM models instead of raw SQL
+- Database accessed through SQLAlchemy sessions
+
+### Design Patterns
+
+#### Service Layer (Manager Pattern)
+
+**Files:**
+- `logic/user_manager.py`
+- `logic/project_manager.py`
+- `logic/task_manager.py`
+- `logic/collab_manager.py`
+
+Four manager classes handle the business logic for different domains. The UI communicates with the managers, and managers interact with the database through SQLAlchemy sessions.
+
+**Status:** Implemented
+
+#### Mixin Pattern
+
+**File:**
+- `database/mixins.py`
+
+Adds shared timestamp fields (`created_at`, `updated_at`) to multiple ORM models through inheritance.
+
+**Status:** Implemented
+
+#### Façade Pattern
+
+**Files:**
+- `database/connection.py`
+- `logic/permissions_manager.py`
+
+Simplifies database session handling and permission checking behind shared interfaces. All four managers use the shared `db_conn` instance from `database/__init__.py`. Note: `main.py` also constructs its own `DatabaseConnection()` at startup: see Known Limitations.
+
+**Status:** Implemented
+
+#### Singleton (by convention)
+
+**File:**
+- `database/__init__.py`
+
+Uses a shared `db_conn` database connection instance across the application. Python does not enforce that additional instances cannot be created; `main.py` creates an additional instance at startup.
+
+**Status:** Partial
 
 ## Database Information
 
@@ -493,92 +576,8 @@ The ORM uses SQLAlchemy relationships with cascade rules (e.g. projects → task
 
 #### Entity Relationship Diagram
 
-#### Entity Relationship Diagram
-
 ![ER Diagram](docs/er_diagram/er_diagram.png)
 
-## Architecture
-
-This application follows a 3-tier layered architecture.
-
-### 1. Presentation Tier (Frontend)
-
-- **Technology:** NiceGUI
-- UI rendered with Vue.js and Quasar through NiceGUI
-- Renders the user interface directly from Python
-- UI components are served through NiceGUI
-- Runs in the browser
-- No business logic stored in the browser
-- Browser acts as a thin client
-
-### 2. Application Tier (Backend)
-
-- **Technology:** Python + NiceGUI
-- Business logic implemented in Python
-- NiceGUI components instantiated on the server
-- Object-oriented structure for modular logic
-- Handles business logic and user interactions
-- Manages authentication and sessions
-- Connects UI and database
-
-### 3. Data Tier (Database)
-
-- **Technology:** SQLAlchemy + SQLite
-- SQLite used as persistent storage
-- SQLAlchemy used as ORM
-- No raw SQL required
-- Stores persistent application data
-- Uses ORM models instead of raw SQL
-- Database accessed through SQLAlchemy sessions
-
-## Design Patterns
-
-### Service Layer (Manager Pattern)
-
-**Files:**
-- `logic/user_manager.py`
-- `project_manager.py`
-- `task_manager.py`
-- `collab_manager.py`
-
-Four manager classes handle the business logic for different domains. The UI communicates with the managers, and managers interact with the database through SQLAlchemy sessions.
-
-**Status:** Implemented
-
----
-
-### Mixin Pattern
-
-**File:**
-- `database/mixins.py`
-
-Adds shared timestamp fields (`created_at`, `updated_at`) to multiple ORM models through inheritance.
-
-**Status:** Implemented
-
----
-
-### Façade Pattern
-
-**Files:**
-- `database/connection.py`
-- `logic/permissions_manager.py`
-
-Simplifies database session handling and permission checking behind shared interfaces. All four managers use the shared `db_conn` instance from `database/__init__.py`. Note: `main.py` also constructs its own `DatabaseConnection()` at startup: see Known Limitations.
-
-**Status:** Implemented
-
----
-
-### Singleton (by convention)
-
-**File:**
-- `database/__init__.py`
-
-Uses a shared `db_conn` database connection instance across the application. Python does not enforce that additional instances cannot be created; `main.py` creates an additional instance at startup.
-
-**Status:** Partial
-  
 ## ⚙️ Implementation
 
 ### Technology
@@ -630,12 +629,13 @@ Collaboratory/
 │   │   └── task_level.png
 │   └── er_diagram/
 │       └── er_diagram.png
-├── tests/                      # 42 pytest tests (database, workflows, permissions)
+├── tests/                      # 68 pytest tests (database, workflows, permissions)
 ├── .gitignore
 ├── LICENSE
 ├── README.md                   # this file
 ├── main.py                     # application entry point
 └── requirements.txt            # Python dependencies
+```
 
 ### How to Run
 
@@ -694,35 +694,9 @@ All dependencies are listed in `requirements.txt` and installed via:
 pip install -r requirements.txt
 ```
 
-## Features
+### Usage Walkthrough
 
-**Core Functionality:**
-- ✅ User authentication and account management (login, signup, password reset, account deletion)
-- ✅ Project creation and lifecycle management
-- ✅ Task creation, editing, assignment, and deletion
-- ✅ Task status workflow (To Do → In Progress → Completed)
-- ✅ Collaborator management with granular role-based access
-- ✅ Project-level and task-level note documentation
-- ✅ Admin recovery mechanism for system access
-
-**Technical Features:**
-- ✅ 18-action permission system with Owner, Collaborator, Assignee, and Admin roles
-- ✅ Input validation for usernames, emails, passwords, project names, task titles, and status values
-- ✅ Error handling with user-friendly feedback messages
-- ✅ Browser-based UI with real-time updates (no page reloads for most actions)
-- ✅ SQLite database with cascade rules and referential integrity
-- ✅ 42 unit, integration, and boundary tests
-- ✅ Session management and security with bcrypt password hashing
-
-**Architecture:**
-- ✅ 3-tier layered architecture (UI, Logic, Database)
-- ✅ Design patterns: Manager Pattern, Façade, Singleton (by convention), Mixin
-- ✅ Clean separation of concerns: business logic independent of UI
-- ✅ ORM-based data access with no raw SQL
-
-## � Usage Walkthrough
-
-### Scenario: Create a Project and Assign Tasks
+#### Scenario: Create a Project and Assign Tasks
 
 **Step 1: Log In**
 1. Open Collaboratory in your browser
@@ -742,7 +716,7 @@ pip install -r requirements.txt
 
 **Step 4: Create Tasks**
 1. In the project view, click **Create New Task**
-2. Enter task title, description, priority, and due date
+2. Enter task title, description, priority, status, and optionally due date
 3. Click **Create Task**: the task appears in the project's task list
 
 **Step 5: Assign Tasks**
@@ -760,28 +734,36 @@ pip install -r requirements.txt
 2. **Task Notes** (Assignee only): Add progress updates or blockers in the task detail view
 3. All notes are visible to project members with appropriate access
 
-### Key Workflows by Role
+## 🧪 Testing
 
-**As a Project Owner:**
-- Create projects and manage all aspects
-- Add/remove collaborators
-- Create and assign tasks to team members
-- Edit and delete tasks
-- Add and delete project notes
-- Monitor all project activity
+**Test mix:**
+- **Overall 68 tests**
+- **35 Database tests** (`test_db.py`): user creation persists to DB, username/email uniqueness constraints prevent duplicates, project-task relationships cascade on deletion, ProjectNote and TaskNote CRUD operations
+- **27 Collaborator Manager Permission tests** (`test_collab_manager_permissions.py`): adding/removing collaborators, permission boundaries for all roles across project and task note operations
+- **5 Task Manager Workflow tests** (`test_task_manager_workflow.py`): owner can create task, owner can assign user to task, assignee can change task status, non-owners cannot perform restricted actions
+- **1 ORM Model test** (`test_models.py`): unique constraint prevents duplicate assignments
 
-**As a Collaborator:**
-- View all project details
-- Create and edit tasks
-- Assign tasks to team members
-- Add project notes
-- View task progress
+### How to Run Tests
 
-**As an Assignee:**
-- View tasks assigned to you
-- Update task status (track progress)
-- Add task notes (communication with owner/collaborators)
-- View project details for context
+Run all tests:
+
+```bash
+pytest tests/ -v
+```
+
+Run a specific test file:
+
+```bash
+pytest tests/test_db.py -v
+pytest tests/test_task_manager_workflow.py -v
+pytest tests/test_collab_manager_permissions.py -v
+```
+
+Run tests with coverage:
+
+```bash
+pytest tests/ --cov=logic --cov=database --cov-report=term-missing
+```
 
 ## 👥 Team & Contributions
 
@@ -789,7 +771,7 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 
 | Contributor | Primary responsibility |
 |---|---|
-| Ayla Allen | Permissions system, collaboration logic, project management, UI framework |
+| Ayla Allen | Permissions system, collaboration logic, project management, UI framework, documentation |
 | Polina Yemelianenkova | User authentication, database models and infrastructure, login UI, database testing |
 | Sümeyya Güçlü-Babür | Task management, task UI, documentation |
 | Marta Greschuk | Application state, session abstraction, dashboard UI, test suite |
@@ -815,16 +797,13 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 - Analysis: Problem statement, Scenario, and Why Collaboratory bullet points
 - All 17 detailed use cases (inputs/outputs) at project and task level
 - Use Case Diagrams section, including authoring both diagram images
-- Data Validation section
+- Data Validation section, ERD Diagram update (Notes tables)
 - Implementation section: Technology, Repository Structure, How to Run, Libraries Used
 - This contributions section
 
 **Sprint activity**
-- `ui/layout.py`: introduced `UnauthenticatedFrame`; kept `login_frame()` backwards-compatible; refactored page imports across the UI layer
-- `ui/pages/project_page.py`: added task and note CRUD; wired permission-gated buttons across UI and logic layers; fixed note view wiring
-- `logic/permissions_manager.py`: implemented permission checks for adding collaborators and deleting project notes without breaking layer separation
-- `tests/`: moved SQLite backend seeding to test folder for isolation; added collaborator permission boundary tests
-- Cross-branch: resolved merge conflicts maintaining `ui-layer` as source of truth (PRs #15, #17, #19)
+- Wired permission-gated UI buttons across project and task pages; implemented collaborator and note permission checks without breaking layer separation
+- Resolved merge conflicts across PRs #15, #17, #19 maintaining `ui-layer` as source of truth; added collaborator permission boundary tests
 
 ---
 
@@ -836,7 +815,7 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 - `database/models.py`: `BaseModel` declarative base and all core ORM models (`User`, `Project`, `Task`, `Assignment`) including relationships, foreign keys, cascade rules, and Enum definitions for task status and priority
 - `database/mixins.py`: shared model mixins
 - `database/seed.py`: full database seeding logic
-- `logic/user_manager.py`: `create_user` (bcrypt password hashing), `delete_user`, `update_user`, `validate_login`, `get_user_by_id`, `get_all_users`, `user_exists`
+- `logic/user_manager.py`: `create_user` (bcrypt password hashing), `delete_account`, `update_user`, `validate_login`, `get_user_by_id`, `get_all_users`, `user_exists`
 - `ui/pages/login_page.py`: full login and signup interface using `UnauthenticatedFrame`: bcrypt credential verification, signup with name/username/email/password, error handling, redirect for already-authenticated users, password reset flow, account deletion with password confirmation
 - `tests/test_db.py`: integration test suite covering the full database layer
 
@@ -853,11 +832,8 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 - Features section
 
 **Sprint activity**
-- `ui/pages/login_page.py`: added login page; implemented login/signup handlers with `UnauthenticatedFrame`; added error handling; fixed authenticated user redirect; added password reset and account deletion with password confirmation; removed admin registration option
-- `logic/user_manager.py`: added `create_user`, `delete_user`, `update_user`; added name and email parameters; added `user_exists`
-- `logic/project_manager.py` / `logic/collab_manager.py`: refactored to `joinedload` for memberships, tasks, and notes; removed unused `collaborator_memberships` from project creation; added `is_admin` filter; refactored database connection usage across logic modules
-- `DashboardFrame` / `ProjectFrame`: added session control; refactored session initialisation; introduced `db_session` module
-- `ui/layout.py`: removed unused `public_frame` and `task_frame` functions; cleaned up `BaseView` and unused imports
+- Built full login/signup UI with error handling, password reset, and account deletion; implemented `UserManager` CRUD methods with bcrypt hashing
+- Refactored managers to use `joinedload` and a shared session abstraction; cleaned up unused frame functions and imports across the UI layer
 
 ---
 
@@ -880,10 +856,8 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 - Known Limitations and Deferred Decisions
 
 **Sprint activity**
-- `ui/pages/task_page.py`: added initial task page; updated layout; added `TaskFrame` support and missing methods; refactored to use shared `TaskFrame` from `ui/layout.py`; fixed routing (`task_id` parameter, `project` argument passing)
-- `logic/task_manager.py`: added `get_task_project` helper; fixed `get_tasks_by_user` permission check; fixed `CREATE_TASK` permission check; implemented `assign_task`, `remove_assignee`, `get_assignees`; resolved multiple `DetachedInstanceError` crashes on `task.project` access
-- `logic/task_manager.py`: fixed detached task and project access in task permissions; fixed detached project lazy loading
-- `ui/pages/task_page.py`: fixed task page session errors through multiple debugging iterations
+- Built task page UI with `TaskFrame`, status controls, and permission-gated buttons; fixed routing and session errors through multiple debugging iterations
+- Resolved multiple `DetachedInstanceError` crashes in `task_manager.py` caused by lazy-loaded project access across session boundaries
 
 ---
 
@@ -904,12 +878,8 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 - `ui/pages/task_page.py`: contributed session and layout fixes alongside Sümeyya
 
 **Sprint activity**
-- `logic/app_state.py`: set up logic layer structure via `application_state` branch (PR #17); authored `AppState` with full session lifecycle
-- `logic/permissions_manager.py`: added UI-level permission checks; fixed lazy-loaded relationship bug causing unnecessary DB queries on every permission check
-- `logic/`: implemented `AdminManager`; fixed `is_admin()` crash (method called and result compared to string)
-- `db_session.py`: created thin wrapper around `db_conn.get_session()`; added session management to dashboard; added optional session parameter across managers
-- `ui/pages/dashboard_page.py`: built initial dashboard; added project and collaboration sub-windows; added per-project task display with titles; fixed duplicated task display; added db session; added task creation and edit button; aligned project and task page layouts
-- `tests/`: wrote task manager workflow tests; resolved merge conflicts in test files
+- Authored `AppState` session lifecycle (PR #17); added UI-level permission checks; fixed `is_admin()` crash and lazy-loaded relationship bug
+- Built initial dashboard with project/collaboration sub-windows; created `db_session` wrapper with optional session parameter; wrote task manager workflow tests
 
 ---
 
@@ -926,98 +896,15 @@ GitHub Copilot was used for initial project scaffolding (PR #1), README spelling
 
 This is a closed academic project submitted for assessment. External contributions are not accepted.
 
-## 🧪 Testing
-
-**Explain what you test and how to run tests.**
-
-**Test mix:**
-- **Overall 42 tests**
-- **35 Database tests**: e.g., user creation persists to DB, username/email uniqueness constraints prevent duplicates, project-task relationships cascade on deletion, ProjectNote and TaskNote CRUD operations
-- **5 Task Manager Workflow tests**: e.g., owner can create task, owner can assign user to task, assignee can change task status, non-owners cannot perform restricted actions
-- **1 Collaborator Manager Permission test**: e.g., adding/removing collaborators, permission boundaries for different roles
-- **1 Constraint test**: e.g., unique constraint prevents duplicate assignments
-
-### How to Run Tests
-
-Run all tests:
-
-```bash
-pytest tests/ -v
-```
-
-Run a specific test file:
-
-```bash
-pytest tests/test_db.py -v
-pytest tests/test_task_manager_workflow.py -v
-pytest tests/test_collab_manager_permissions.py -v
-```
-
-Run tests with coverage:
-
-```bash
-pytest tests/ --cov=logic --cov=database --cov-report=term-missing
-```
-
-### Template for Writing Test Cases
-
-When adding new tests, follow this structure:
-
-1. **Test case ID**: unique identifier (e.g., TC_001)
-2. **Test case title/description**: What is the test about?
-3. **Preconditions**: Requirements before executing the test (e.g., "User must exist", "Project must be created")
-4. **Test steps**: Actions to perform (e.g., "Create task", "Assign user", "Update status")
-5. **Test data/input**: Example values (e.g., task title "Implement API", assignee ID 5)
-6. **Expected result**: What should happen (e.g., "Task status changes to 'in_progress'")
-7. **Actual result**: What actually happened
-8. **Status**: Pass or fail
-9. **Comments**: Additional notes or defects found
-
-### Example Test Cases
-
-**TC_001: Database: User creation persists to DB**
-- **Preconditions:** In-memory SQLite database initialized
-- **Test steps:** Create User object, add to session, commit
-- **Test data:** username="testuser", email="test@example.com"
-- **Expected result:** User retrieved from DB has correct username and email
-- **Status:** ✅ Pass
-
-**TC_002: Task Manager: Owner can create task in owned project**
-- **Preconditions:** Owner user exists, project created by owner
-- **Test steps:** Call `tm.create_task(owner, project, title="Implement API", ...)`
-- **Test data:** title="Implement API", priority="high", status="todo"
-- **Expected result:** Task created with correct fields, task.id is not None
-- **Status:** ✅ Pass
-
-**TC_003: Task Manager: Non-owner cannot create task in project**
-- **Preconditions:** Normal user exists, project owned by different user
-- **Test steps:** Call `tm.create_task(normal_user, project, ...)`
-- **Test data:** title="Test Task"
-- **Expected result:** `PermissionDenied` exception raised
-- **Status:** ✅ Pass
-
-**TC_004: Collaborator Manager: Adding collaborators to project**
-- **Preconditions:** Owner user exists, collaborator user exists, project created by owner
-- **Test steps:** Call `cm.add_collaborator(owner, project, collaborator)`
-- **Test data:** collaborator is normal (non-admin) user
-- **Expected result:** ProjectMember entry created, collaborator can now view project
-- **Status:** ✅ Pass
-
-**TC_005: Collaborator Manager: Permission boundary enforcement**
-- **Preconditions:** Project exists, user is not owner or collaborator
-- **Test steps:** Attempt to add collaborator as non-owner
-- **Test data:** user_id=5 (non-owner), project_id=1
-- **Expected result:** Permission denied or operation fails
-- **Status:** ✅ Pass
-
 ## Known Limitations & Deferred Decisions
 
 ### Known Limitations
 
-- SQLite is suitable for small-scale projects but not large production systems
-- Some UI workflows could still be improved
-- Singleton behaviour is implemented by convention only
-- UI-level permission checks were introduced for button visibility where a single permission enum value could not cleanly express both display and logic concerns. This is a known deviation from the permissions layer design that would be resolved in a future refactor
+- **SQLite concurrency:** SQLite uses an exclusive file lock and does not support concurrent writes; simultaneous write requests will block or fail. It is also file-based and cannot be shared across multiple server instances, ruling out horizontal scaling.
+- **UI polish:** There is no inline editing for tasks or notes (a separate form is required), and destructive actions such as deleting a project or task have no confirmation dialog.
+- **No DAO layer:** Queries are embedded in the manager classes alongside permission checks. The tight coupling reduced testability and would make swapping the data source impractical; a clean DAO layer was deferred as out of scope.
+- **`Assignment.assigned_at` style inconsistency:** This column uses the SQLAlchemy 2.0 `mapped_column()` / `Mapped[datetime]` API while every other model column uses the legacy `Column()` style. The inconsistency was not corrected as the file is maintained by another team member.
+- **UI-level permission checks:** Button visibility is controlled by direct `check_permission()` calls in the UI layer rather than the permissions manager alone. This is a known deviation that would be resolved in a future refactor.
 - **Single concurrent user (`app_state`):** `logic/app_state.py` stores the currently logged-in user as a module-level Python singleton (`app_state = AppState()`). Because Python module state is shared across all browser connections on the same server process, logging in as a second user overwrites the first user's session — the first user's subsequent page loads will run under the second user's identity. The fix is to replace the in-memory `current_user` object with NiceGUI's per-connection `app.storage.user` (stores a user ID keyed to the browser session) and load the full `User` from the database in each page route. This requires setting a `storage_secret` in `ui.run()` and updating `app_state.py` and the three page route functions (`dashboard`, `project`, `task`). The application is safe for single-user use or sequential (non-overlapping) logins.
 
 ### Deferred Decisions

@@ -6,13 +6,15 @@ from sqlalchemy.orm import joinedload
 
 
 class CollabManager:
-    
+    """Manages collaborators, project notes, and task notes."""
+
     def __init__(self, session=None):
         self.session = session or db_conn.get_session()
 
 #------- helpers
 
     def get_project_by_id(self, project_id: int) -> Project:
+        """Fetch a project by ID with collaborators, tasks, and notes eager-loaded."""
         return (
             self.session.query(Project)
             .options(
@@ -25,6 +27,7 @@ class CollabManager:
         )
 
     def get_project_list_as_collaborator(self, user_id: int) -> list[Project]:
+        """Return all projects the user is a collaborator on."""
         return (
             self.session.query(Project)
             .join(PMember, PMember.project_id == Project.id)
@@ -34,13 +37,15 @@ class CollabManager:
 
 #------- permission checks
 
-    def can_add_collaborator(self, user: User, project: Project) -> bool:
+    def can_manage_collaborator(self, user: User, project: Project) -> bool:
+        """Return True if user can manage collaborators on the project."""
         try:
-            return check_permission(user, PermissionAction.ADD_COLLABORATOR, self.session, project=project)
+            return check_permission(user, PermissionAction.MANAGE_COLLABORATOR, self.session, project=project)
         except Exception:
             return False
 
     def can_delete_project_note(self, user: User, project: Project) -> bool:
+        """Return True if user can delete notes on the project."""
         try:
             return check_permission(user, PermissionAction.DELETE_PROJECT_NOTE, self.session, project=project)
         except Exception:
@@ -79,7 +84,7 @@ class CollabManager:
         if existing:
             return False
 
-        require_permission(user, PermissionAction.ADD_COLLABORATOR, self.session, project = project)
+        require_permission(user, PermissionAction.MANAGE_COLLABORATOR, self.session, project = project)
         membership = PMember(project_id=project_id, user_id=user_id)
         self.session.add(membership)
         self.session.commit()
@@ -102,7 +107,7 @@ class CollabManager:
         if not membership:
             return False
 
-        require_permission(user, PermissionAction.ADD_COLLABORATOR, self.session, project = project)
+        require_permission(user, PermissionAction.MANAGE_COLLABORATOR, self.session, project = project)
         self.session.delete(membership)
         self.session.commit()
         return True

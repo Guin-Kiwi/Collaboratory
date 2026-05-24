@@ -19,10 +19,13 @@ from database import db_conn
 
 
 class TaskPage(TaskFrame):
+    """Task detail page implementing TaskFrame for the /task/{task_id} route."""
+
     def __init__(self, user, task, session=None):
         super().__init__(user, task, session=session)
 
     def on_manage_assignees(self, e=None) -> None:
+        """Open a dialog to add or remove task assignees."""
         tm = TaskManager(session=self.session)
         assignees = tm.get_assignees(self.user, self.task.id)
 
@@ -131,9 +134,11 @@ class TaskPage(TaskFrame):
         dlg.open()
 
     def on_assign_user(self) -> None:
+        """Alias for on_manage_assignees."""
         self.on_manage_assignees()
 
     def on_create_note(self) -> None:
+        """Open a dialog to create a new task note."""
         cm = CollabManager(session=self.session)
 
         with ui.dialog().props("persistent") as dlg, ui.card().classes("w-[640px]"):
@@ -179,6 +184,7 @@ class TaskPage(TaskFrame):
         dlg.open()
 
     def on_manage_notes(self, e=None) -> None:
+        """Open a dialog to view and delete task notes."""
         cm = CollabManager(session=self.session)
 
         try:
@@ -263,6 +269,7 @@ class TaskPage(TaskFrame):
         dlg.open()
 
     def on_edit_note(self, note) -> None:
+        """Open a dialog to edit an existing task note."""
         cm = CollabManager(session=self.session)
 
         with ui.dialog().props("persistent") as dlg, ui.card().classes("w-[640px]"):
@@ -349,6 +356,7 @@ class TaskPage(TaskFrame):
         dlg.open()
 
     def on_edit_status(self, e=None) -> None:
+        """Open a dialog to change the task's status."""
         tm = TaskManager(session=self.session)
 
         with ui.dialog().props("persistent") as dlg, ui.card().classes("w-[450px]"):
@@ -393,8 +401,9 @@ class TaskPage(TaskFrame):
         dlg.open()
 
     def on_edit_task_details(self, e=None) -> None:
+        """Open a dialog to edit the task title and description."""
         tm = TaskManager(session=self.session)
-        
+
         with ui.dialog().props("persistent") as dlg, ui.card().classes("w-[640px]"):
             ui.label("Edit Task Details").classes("text-h6")
             ui.separator()
@@ -437,11 +446,13 @@ class TaskPage(TaskFrame):
         dlg.open()
 
     def on_return_to_project(self, e=None) -> None:
+        """Navigate back to the parent project page."""
         ui.navigate.to(f"/project/{self.project.id}")
 
 
 @ui.page("/task/{task_id}")
 async def task(task_id: int, client: Client) -> None:
+    """Load and render the task page for the given task_id."""
     if not app_state.is_authenticated():
         ui.navigate.to("/")
         return

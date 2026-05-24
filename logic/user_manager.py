@@ -11,6 +11,7 @@ from database.models import User
 from database import db_conn
 
 class UserManager:
+    """Manages user accounts: create, update, delete, and authenticate."""
 
     def __init__(self, session=None):
         self.session = session or db_conn.get_session()
