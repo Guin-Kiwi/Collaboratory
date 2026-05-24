@@ -38,7 +38,7 @@ A small team uses Collaboratory to manage a development project. The project own
 
 Collaboratory solves these problems through:
 - **Role-based access control**: Each team member has specific permissions tied to their role (Owner, Collaborator, Assignee, Admin)
-- **Simple permission model**: 18 granular actions prevent unauthorized changes while enabling delegation
+- **Simple permission model**: 17 granular actions prevent unauthorized changes while enabling delegation
 - **Lightweight and self-hosted**: No external service dependencies; runs in GitHub Codespaces or locally
 - **Python-native**: Easy to understand, modify, and extend for educational purposes
 
@@ -315,7 +315,6 @@ A user can simultaneously be a Collaboratory Admin, Owner or Collaborator of a p
 |---|---|---|---|
 | View project & tasks | ✅ | ✅ | ✅ |
 | Edit project details | ✅ | ✅ |- |
-| Change project status | ✅ | ✅ |- |
 | Delete project | ✅ |- |- |
 | Add/remove collaborators | ✅ |- |- |
 | View project notes | ✅ | ✅ | ✅ |
@@ -362,10 +361,10 @@ The application validates all user input to ensure data integrity and a smooth u
 **Validated input includes:**
 - Usernames and email addresses (format, uniqueness)
 - Login credentials (bcrypt verification)
-- Project names and descriptions (non-empty)
+- Project names (non-empty) and descriptions
 - Task titles and task status values (valid status enums)
 - Collaborator assignments (role validation)
-- Required form fields (no empty submissions)
+- Required form fields (no empty submissions where None is invalid)
 - Due dates (valid date format)
 - Priority levels (valid priority enums)
 
@@ -468,6 +467,8 @@ Uses a shared `db_conn` database connection instance across the application. Pyt
 - **Task**: work items inside projects
 - **Assignment**: links tasks to users
 - **ProjectMember**: links projects to collaborators
+- **TaskNotes**: user notes linked to tasks
+- **ProjectNotes** user notes linked to projects
 
 ### Schema
 
@@ -605,7 +606,7 @@ Collaboratory/
 │   ├── project_manager.py      # project CRUD and queries
 │   ├── task_manager.py         # task CRUD, assignment, and status
 │   ├── collab_manager.py       # collaborator and note management
-│   ├── permissions_manager.py  # 18-action permission system
+│   ├── permissions_manager.py  # 17-action permission system
 │   └── db_session.py           # session abstraction layer
 ├── ui/
 │   ├── __init__.py
