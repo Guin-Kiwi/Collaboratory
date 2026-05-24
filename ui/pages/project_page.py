@@ -92,30 +92,40 @@ class ProjectPage(ProjectFrame):
                         checks.append((cb, t.id))
                 with ui.row().classes('w-full justify-end'):
                     def delete_selected_tasks(_=None):
-                        """Delete all checked tasks from the project."""
-                        removed = 0
-                        for cb, task_id in checks:
-                            if cb.value:
-                                try:
-                                    ok = self.tm.delete_task(user=self.user, project=project, task_id=task_id)
-                                    if ok:
-                                        removed += 1
-                                    else:
-                                        ui.notify('Could not delete one or more tasks', color='negative')
-                                except PermissionDenied:
-                                    ui.notify('You do not have permission to delete one or more selected tasks', color='negative')
-                                    return
-                                except Exception as exc:
-                                    ui.notify(f'Error deleting task: {exc}', color='negative')
-                                    return
-
-                        if removed:
-                            ui.notify(f'Removed {removed} task(s)', color='positive')
-                            dlg.close()
-                            self._render_tasks_card.refresh()
-                            self._render_project_info.refresh()
-                        else:
+                        """Prompt for confirmation before deleting checked tasks."""
+                        selected = [(cb, task_id) for cb, task_id in checks if cb.value]
+                        if not selected:
                             ui.notify('No tasks selected', color='negative')
+                            return
+
+                        with ui.dialog().props('persistent') as confirm_dlg, ui.card():
+                            ui.label(f'Delete {len(selected)} task(s)?').classes('font-bold')
+                            ui.label('This cannot be undone.').classes('text-sm')
+                            with ui.row():
+                                def confirm(_=None):
+                                    removed = 0
+                                    for cb, task_id in selected:
+                                        try:
+                                            ok = self.tm.delete_task(user=self.user, project=project, task_id=task_id)
+                                            if ok:
+                                                removed += 1
+                                            else:
+                                                ui.notify('Could not delete one or more tasks', color='negative')
+                                        except PermissionDenied:
+                                            ui.notify('You do not have permission to delete one or more selected tasks', color='negative')
+                                            return
+                                        except Exception as exc:
+                                            ui.notify(f'Error deleting task: {exc}', color='negative')
+                                            return
+                                    if removed:
+                                        ui.notify(f'Removed {removed} task(s)', color='positive')
+                                        confirm_dlg.close()
+                                        dlg.close()
+                                        self._render_tasks_card.refresh()
+                                        self._render_project_info.refresh()
+                                ui.button('Delete', on_click=confirm, color='red')
+                                ui.button('Cancel', on_click=lambda _=None: confirm_dlg.close())
+                        confirm_dlg.open()
 
                     ui.button('Delete Selected', on_click=delete_selected_tasks)
 
