@@ -39,7 +39,6 @@ A small team uses Collaboratory to manage a development project. The project own
 Collaboratory solves these problems through:
 - **Role-based access control**: Each team member has specific permissions tied to their role (Owner, Collaborator, Assignee, Admin)
 - **Simple permission model**: 18 granular actions prevent unauthorized changes while enabling delegation
-- **Built-in accountability**: Task creation, assignment, and status changes are all tracked
 - **Lightweight and self-hosted**: No external service dependencies; runs in GitHub Codespaces or locally
 - **Python-native**: Easy to understand, modify, and extend for educational purposes
 
