@@ -14,11 +14,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
+
 class BaseModel(DeclarativeBase):
     """Declarative base shared by all ORM model classes.
 
     Every concrete model should inherit from :class:`BaseModel` and define
-    its own ``__tablename__`` and columns.  Common audit columns
+    its own ``__tablename__`` and columns. Common audit columns
     (``id``, ``created_at``, ``updated_at``) are provided via
     :class:`TimestampMixin`.
 
@@ -30,10 +31,26 @@ class BaseModel(DeclarativeBase):
             name: Mapped[str]
     """
 
+
 # ---------------------------------------------------------------------------
 # User
 # ---------------------------------------------------------------------------
 class User(BaseModel, TimestampMixin):
+    """Represents a registered user of the application.
+
+    Users can own projects, create tasks, be assigned to tasks,
+    and collaborate on projects. Admin users have elevated permissions
+    to manage other users and perform restricted actions.
+
+    Attributes:
+        id: Primary key.
+        username: Unique login handle, max 50 characters.
+        name: Optional full name, max 100 characters.
+        email: Unique email address, max 120 characters.
+        password: Bcrypt-hashed password string.
+        is_admin: True if the user has admin privileges.
+    """
+
     __tablename__ = "users"
 
     id         = Column(Integer, primary_key=True, index=True)
@@ -54,6 +71,7 @@ class User(BaseModel, TimestampMixin):
     )
 
     def __repr__(self):
+        """Return a developer-friendly string representation of the user."""
         return f"<User id={self.id} username={self.username!r}>"
 
 
@@ -61,6 +79,19 @@ class User(BaseModel, TimestampMixin):
 # Project
 # ---------------------------------------------------------------------------
 class Project(BaseModel, TimestampMixin):
+    """Represents a project owned by a user.
+
+    Projects contain tasks and notes, and can have collaborators
+    added via ProjectMember. Only the owner can edit or delete
+    the project and manage collaborators.
+
+    Attributes:
+        id: Primary key.
+        name: Project name, max 100 characters.
+        description: Optional longer description of the project.
+        owner_id: Foreign key referencing the User who owns this project.
+    """
+
     __tablename__ = "projects"
 
     id          = Column(Integer, primary_key=True, index=True)
@@ -79,6 +110,7 @@ class Project(BaseModel, TimestampMixin):
     )
 
     def __repr__(self):
+        """Return a developer-friendly string representation of the project."""
         return f"<Project id={self.id} name={self.name!r}>"
 
 
@@ -86,6 +118,23 @@ class Project(BaseModel, TimestampMixin):
 # Task
 # ---------------------------------------------------------------------------
 class Task(BaseModel, TimestampMixin):
+    """Represents a task within a project.
+
+    Tasks have a status and priority, can be assigned to multiple users
+    via Assignment, and can have notes attached. Tasks belong to exactly
+    one project and are created by one user.
+
+    Attributes:
+        id: Primary key.
+        title: Short task title, max 200 characters.
+        description: Optional longer description of the task.
+        status: Current status — one of 'todo', 'in_progress', 'completed'.
+        priority: Task priority — one of 'low', 'medium', 'high'.
+        due_date: Optional deadline for the task.
+        project_id: Foreign key referencing the parent Project.
+        created_by: Foreign key referencing the User who created the task.
+    """
+
     __tablename__ = "tasks"
 
     id          = Column(Integer, primary_key=True, index=True)
@@ -112,6 +161,7 @@ class Task(BaseModel, TimestampMixin):
     notes       = relationship("TaskNote", back_populates="task", cascade="all, delete")
 
     def __repr__(self):
+        """Return a developer-friendly string representation of the task."""
         return f"<Task id={self.id} title={self.title!r} status={self.status!r}>"
 
 
@@ -119,6 +169,19 @@ class Task(BaseModel, TimestampMixin):
 # Assignment  (many-to-many bridge: Tasks ↔ Users)
 # ---------------------------------------------------------------------------
 class Assignment(BaseModel):
+    """Represents the assignment of a user to a task.
+
+    Acts as a many-to-many bridge between Task and User. A unique
+    constraint prevents the same user from being assigned to the
+    same task more than once.
+
+    Attributes:
+        id: Primary key.
+        task_id: Foreign key referencing the assigned Task.
+        user_id: Foreign key referencing the assigned User.
+        assigned_at: Timestamp set automatically by the database on insertion.
+    """
+
     __tablename__ = "assignments"
     __table_args__ = (UniqueConstraint("task_id", "user_id", name="uq_task_assignment"),)
 
@@ -136,7 +199,9 @@ class Assignment(BaseModel):
     user = relationship("User", back_populates="assignments")
 
     def __repr__(self):
+        """Return a developer-friendly string representation of the assignment."""
         return f"<Assignment task_id={self.task_id} user_id={self.user_id}>"
-#----
-#The ProjectMember class is now in collab_models.py
-#----
+
+# ----
+# The ProjectMember class is now in collab_models.py
+# ----
