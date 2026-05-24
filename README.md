@@ -7,7 +7,7 @@ The application follows a 3-tier architecture using NiceGUI for the presentation
 It aims to:
 - Implement a clean 3-tier layered architecture with clear separation of concerns between UI, logic, and data
 - Validate all user input at the application boundary before processing or persisting
-- Use SQLAlchemy as a full ORM for all database access — no raw SQL
+- Use SQLAlchemy as a full ORM for all database access: no raw SQL
 - Cover core functionality with a meaningful automated test suite
 - Demonstrate collaborative team development across a four-person team
 
@@ -18,7 +18,6 @@ It aims to:
 Development teams lack a lightweight, role-aware tool for managing tasks within a project. Without structured access control, any team member can modify or delete any task, making it difficult to maintain clear ownership and accountability across a shared project.
 
 **Specific pain points:**
-- **Loss of accountability**: No clear record of who created, assigned, or modified tasks
 - **Uncontrolled access**: Team members can accidentally overwrite or delete critical work
 - **No clear delegation**: Task assignments lack visibility and status tracking
 - **Communication breakdown**: No integrated mechanism for task-related discussions
@@ -29,7 +28,6 @@ Development teams lack a lightweight, role-aware tool for managing tasks within 
 Collaboratory is designed for:
 - **Small development teams** (3–20 people) needing lightweight task management
 - **Project-based work** with clear ownership and role distinctions
-- **Teams using GitHub Codespaces** or local Python environments
 - **Educational and professional settings** requiring role-based access control
 
 ### Scenario
@@ -89,7 +87,6 @@ Collaboratory solves these problems through:
 - **Task Notes**: Assignees add and edit updates on tasks; Owners and Assignees can delete task notes.
 
 **Admin & Recovery**
-- ~~**Manage Admin Status**~~: *Admins can only self-revoke their own admin status; they cannot revoke other admins' status to prevent malicious lockout of the recovery admin.*
 
 > **Note:** Admin status is strictly a recovery/override mechanism, not a normal operational role. Admins can only revoke their own admin status, not other admins' status. This prevents malicious actors from locking the recovery admin out of the system.
 
@@ -596,8 +593,10 @@ Collaboratory/
 ├── database/
 │   ├── __init__.py             # shared db_conn singleton
 │   ├── connection.py           # DatabaseConnection façade
-│   ├── models.py               # core ORM models (User, Project, Task, Assignment)
-│   ├── collab_models.py        # collaboration ORM models (ProjectMember, notes)
+│   ├── models.py               # core ORM models 
+│   │                           (User,Project,Task,Assignment)
+│   ├── collab_models.py        # collaboration ORM model
+│   │                          (ProjectMember, notes)
 │   ├── mixins.py               # shared timestamp mixin
 │   └── seed.py                 # seeding for the database
 ├── logic/
@@ -614,10 +613,12 @@ Collaboratory/
 │   ├── layout.py               # reusable page frames and navigation
 │   └── pages/
 │       ├── __init__.py
-│       ├── login_page.py       # authentication (login/signup/password reset)
-│       ├── dashboard_page.py   # user dashboard with projects and tasks
-│       ├── project_page.py     # project detail view with collaborators and notes
-│       └── task_page.py        # task detail view with assignees and notes
+│       ├── login_page.py       # authentication 
+│       │                       (login/signup/password reset)
+│       ├── dashboard_page.py   # user dashboard: projects and tasks
+│       ├── project_page.py     # project detail view with
+│       │                        collaborators and notes
+│       └── task_page.py        # task detail: assignees and notes
 ├── docs/
 │   ├── screenshots/
 │   │   ├── login_page.png
@@ -629,7 +630,8 @@ Collaboratory/
 │   │   └── task_level.png
 │   └── er_diagram/
 │       └── er_diagram.png
-├── tests/                      # 68 pytest tests (database, workflows, permissions)
+├── tests/                      # 68 pytest tests 
+│                             (database, workflows, permissions)
 ├── .gitignore
 ├── LICENSE
 ├── README.md                   # this file
@@ -773,8 +775,9 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 |---|---|
 | Ayla Allen | Permissions system, collaboration logic, project management, UI framework, documentation |
 | Polina Yemelianenkova | User authentication, database models and infrastructure, login UI, database testing |
-| Sümeyya Güçlü-Babür | Task management, task UI, documentation |
 | Marta Greschuk | Application state, session abstraction, dashboard UI, test suite |
+| Sümeyya Güçlü-Babür | Task management, task UI, documentation |
+
 
 ---
 
@@ -837,6 +840,28 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 
 ---
 
+### Marta Greschuk
+
+**Role:** Application state, session abstraction, dashboard UI, and test suite.
+
+**Primary file ownership**
+- `logic/app_state.py`: `AppState` class managing the logged-in user across NiceGUI's page lifecycle (`login`, `logout`, `is_authenticated`, `get_current_user`, `is_admin`); shared global `app_state` instance used across all pages
+- `tests/conftest.py`: shared test fixtures and SQLite backend setup
+- `tests/test_models.py`: ORM model unit tests
+- `tests/test_task_manager_workflow.py`: end-to-end task manager workflow tests against a real SQLite backend
+- `tests/unit_testing.py`: unit test utilities
+
+**Shared file contributions**
+- `ui/layout.py`: contributed the initial dashboard layout structure and UI refinements during the sprint
+- `ui/pages/dashboard_page.py`: built the initial dashboard view including project and collaboration sub-windows and per-project task display; extended collaboratively with Polina during the sprint
+- `ui/pages/task_page.py`: contributed session and layout fixes alongside Sümeyya
+
+**Sprint activity**
+- Authored `AppState` session lifecycle (PR #17); added UI-level permission checks; fixed `is_admin()` crash and lazy-loaded relationship bug
+- Built initial dashboard with project/collaboration sub-windows; created `db_session` wrapper with optional session parameter; wrote task manager workflow tests
+
+---
+
 ### Sümeyya Güçlü-Babür
 
 **Role:** Task page, `TaskManager`, assignee management, permission debugging, and primary README author.
@@ -861,35 +886,15 @@ Collaboratory was built by a team of four over approximately eight weeks, with a
 
 ---
 
-### Marta Greschuk
-
-**Role:** Application state, session abstraction, dashboard UI, and test suite.
-
-**Primary file ownership**
-- `logic/app_state.py`: `AppState` class managing the logged-in user across NiceGUI's page lifecycle (`login`, `logout`, `is_authenticated`, `get_current_user`, `is_admin`); shared global `app_state` instance used across all pages
-- `tests/conftest.py`: shared test fixtures and SQLite backend setup
-- `tests/test_models.py`: ORM model unit tests
-- `tests/test_task_manager_workflow.py`: end-to-end task manager workflow tests against a real SQLite backend
-- `tests/unit_testing.py`: unit test utilities
-
-**Shared file contributions**
-- `ui/layout.py`: contributed the initial dashboard layout structure and UI refinements during the sprint
-- `ui/pages/dashboard_page.py`: built the initial dashboard view including project and collaboration sub-windows and per-project task display; extended collaboratively with Polina during the sprint
-- `ui/pages/task_page.py`: contributed session and layout fixes alongside Sümeyya
-
-**Sprint activity**
-- Authored `AppState` session lifecycle (PR #17); added UI-level permission checks; fixed `is_admin()` crash and lazy-loaded relationship bug
-- Built initial dashboard with project/collaboration sub-windows; created `db_session` wrapper with optional session parameter; wrote task manager workflow tests
-
----
-
 > **Note:** During the final sprint (18-24 May), all team members worked collaboratively across the codebase. The commit history reflects active parallel contributions to shared files, session management, and integration fixes across all layers. Attributions above reflect primary authorship based on commit history.
 
 ---
 
 ### 🤖 AI Assistance
 
-GitHub Copilot was used for initial project scaffolding (PR #1), README spelling and consistency fixes (PRs #5, #6), multi-file rename refactors, PR review checks, and as a learning aid throughout development. `database/connection.py` and `database/mixins.py` originated from the Copilot scaffold and were subsequently refined by the team.
+GitHub Copilot was used for initial project scaffolding (PR #1), README spelling and consistency fixes (PRs #5, #6), multi-file rename refactors, PR review checks. `database/connection.py` and `database/mixins.py` originated from the Copilot scaffold and were subsequently refined by the team.
+
+LLMs were used as a learning aid throughout development, to help identify code issues at regular intervals throughout development, to audit missing docstrings across the codebase, and to cross-check README claims against the actual repository structure and implementation.
 
 
 ## 🤝 Contributing
@@ -901,11 +906,11 @@ This is a closed academic project submitted for assessment. External contributio
 ### Known Limitations
 
 - **SQLite concurrency:** SQLite uses an exclusive file lock and does not support concurrent writes; simultaneous write requests will block or fail. It is also file-based and cannot be shared across multiple server instances, ruling out horizontal scaling.
-- **UI polish:** There is no inline editing for tasks or notes (a separate form is required), and destructive actions such as deleting a project or task have no confirmation dialog.
-- **No DAO layer:** Queries are embedded in the manager classes alongside permission checks. The tight coupling reduced testability and would make swapping the data source impractical; a clean DAO layer was deferred as out of scope.
+- **UI polish:** There is no inline editing for tasks or notes (a separate form is required), and there is no inline editing; all edits require opening a separate form or dialog.
+- **No DAO layer:** Queries are embedded in the manager classes alongside permission checks. The tight coupling reduced testability and would make swapping the data source impractical; a clean DAO layer was deferred as it would have required a rewrite which we were not confident we could complete with the time remaining.
 - **`Assignment.assigned_at` style inconsistency:** This column uses the SQLAlchemy 2.0 `mapped_column()` / `Mapped[datetime]` API while every other model column uses the legacy `Column()` style. The inconsistency was not corrected as the file is maintained by another team member.
-- **UI-level permission checks:** Button visibility is controlled by direct `check_permission()` calls in the UI layer rather than the permissions manager alone. This is a known deviation that would be resolved in a future refactor.
-- **Single concurrent user (`app_state`):** `logic/app_state.py` stores the currently logged-in user as a module-level Python singleton (`app_state = AppState()`). Because Python module state is shared across all browser connections on the same server process, logging in as a second user overwrites the first user's session — the first user's subsequent page loads will run under the second user's identity. The fix is to replace the in-memory `current_user` object with NiceGUI's per-connection `app.storage.user` (stores a user ID keyed to the browser session) and load the full `User` from the database in each page route. This requires setting a `storage_secret` in `ui.run()` and updating `app_state.py` and the three page route functions (`dashboard`, `project`, `task`). The application is safe for single-user use or sequential (non-overlapping) logins.
+- **UI-level permission checks:** Button visibility uses `check_permission()` calls directly in the UI layer. The managers enforce permissions via `require_permission()` (raising `PermissionDenied`), so access control is sound, but the pattern is inconsistent: `CollabManager` exposes dedicated `can_*` wrapper methods for UI use, while the other managers do not. A full refactor would add `can_*` methods across all managers so the UI has no direct dependency on the permissions module.
+- **Single concurrent user (`app_state`):** `logic/app_state.py` stores the currently logged-in user as a module-level Python singleton (`app_state = AppState()`). Because Python module state is shared across all browser connections on the same server process, logging in as a second user overwrites the first user's session, so the first user's subsequent page loads will run under the second user's identity. The fix is to replace the in-memory `current_user` object with NiceGUI's per-connection `app.storage.user` (stores a user ID keyed to the browser session) and load the full `User` from the database in each page route. This requires setting a `storage_secret` in `ui.run()` and updating `app_state.py` and the three page route functions (`dashboard`, `project`, `task`). The application is safe for single-user use or sequential (non-overlapping) logins.
 
 ### Deferred Decisions
 

@@ -317,25 +317,28 @@ class DashboardFrame(AuthenticatedFrame):
                                 f"{collaborator_count} collaborator(s)"
                             ).classes("text-sm text-grey")
 
-                        def delete_project(project_id=project.id):
-                            """Delete the project and reload the dashboard."""
-                            try:
-                                ok = pm.delete_project(
-                                    user=self.user,
-                                    project_id=project_id,
-                                )
-
-                                if ok:
-                                    ui.notify("Project deleted", color="positive")
-                                    dialog.close()
-                                    ui.navigate.reload()
-                                else:
-                                    ui.notify("Could not delete project", color="negative")
-
-                            except PermissionDenied:
-                                ui.notify("You do not have permission to delete this project", color="negative")
-                            except Exception as exc:
-                                ui.notify(f"Error deleting project: {exc}", color="negative")
+                        def delete_project(project_id=project.id, project_name=project.name):
+                            """Open a confirmation dialog before deleting the project."""
+                            with ui.dialog().props("persistent") as confirm_dlg, ui.card():
+                                ui.label(f'Delete "{project_name}"?').classes("font-bold")
+                                ui.label("This will permanently delete the project and all its tasks and notes.").classes("text-sm")
+                                with ui.row():
+                                    def confirm(_=None, pid=project_id):
+                                        try:
+                                            ok = pm.delete_project(user=self.user, project_id=pid)
+                                            if ok:
+                                                confirm_dlg.close()
+                                                dialog.close()
+                                                ui.navigate.reload()
+                                            else:
+                                                ui.notify("Could not delete project", color="negative")
+                                        except PermissionDenied:
+                                            ui.notify("You do not have permission to delete this project", color="negative")
+                                        except Exception as exc:
+                                            ui.notify(f"Error deleting project: {exc}", color="negative")
+                                    ui.button("Delete", on_click=confirm, color="red")
+                                    ui.button("Cancel", on_click=lambda _=None: confirm_dlg.close())
+                            confirm_dlg.open()
 
                         ui.button(
                             "Delete",
