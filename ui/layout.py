@@ -1,14 +1,31 @@
 from abc import ABC, abstractmethod
 
 from nicegui import ui
+from database import db_conn
 from database.models import User, Project, Task
 from logic.app_state import app_state
 from logic.project_manager import ProjectManager
 from logic.collab_manager import CollabManager
+from logic.user_manager import UserManager
+from logic.permissions_manager import check_permission, PermissionAction, PermissionDenied
+
 
 class UnauthenticatedFrame(ABC):
+    """Abstract base frame for pages accessible without authentication.
+
+    Renders the public header and login form. Subclasses must implement
+    on_login(), on_signup_open(), and on_forgot_open() to handle user
+    interactions. render_content() can optionally be overridden to inject
+    additional content such as dialogs below the form.
+    """
 
     def render(self) -> None:
+        """Render the public header and login form.
+
+        Redirects to /dashboard if the user is already authenticated.
+        Calls render_content() at the end to allow subclasses to inject
+        additional UI elements such as signup or forgot password dialogs.
+        """
         if app_state.is_authenticated():
             ui.navigate.to('/dashboard')
             return
@@ -27,40 +44,68 @@ class UnauthenticatedFrame(ABC):
                 with ui.row():
                     ui.button("Login", on_click=lambda: self.on_login(username_input.value, password_input.value, error_label))
                     ui.button("Sign Up", on_click=lambda: self.on_signup_open())
+                ui.link("Forgot your password?", '#').on('click', lambda: self.on_forgot_open())
 
         self.render_content()
 
     @abstractmethod
     def on_login(self, username: str, password: str, error_label) -> None:
-        """Handle login logic. Must be implemented by subclass."""
+        """Handle login form submission. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_signup_open(self) -> None:
-        """Open signup dialog. Must be implemented by subclass."""
+        """Open the signup dialog. Must be implemented by subclass."""
         pass
 
     def render_content(self) -> None:
-        """Optional: override to render extra content like dialogs."""
+        """Optional hook for subclasses to render extra content such as dialogs."""
+        pass
+
+    @abstractmethod
+    def on_forgot_open(self) -> None:
+        """Open the forgot password dialog. Must be implemented by subclass."""
         pass
 
 
 class AuthenticatedFrame(ABC):
+    """Abstract base frame for pages that require authentication.
+
+    Redirects to the login page if the user is not authenticated.
+    Provides shared navigation helpers on_logout() and on_dashboard().
+    Subclasses must implement render_content() to build the page UI.
+
+    Attributes:
+        user: The currently authenticated User object.
+    """
 
     def __init__(self, user: User) -> None:
+        """Initialise the frame with the currently authenticated user.
+
+        Args:
+            user: The logged-in User object.
+        """
         self.user = user
 
     def on_logout(self) -> None:
+        """Log the current user out and redirect to the login page."""
         app_state.logout()
         ui.navigate.to('/')
 
     def on_dashboard(self) -> None:
+        """Navigate to the dashboard page."""
         ui.navigate.to('/dashboard')
 
+    def _resolve_permissions(self) -> None:
+        """Compute and cache permission flags before rendering. Override in subclasses."""
+        pass
+
     def render(self) -> None:
+        """Render the page, redirecting to login if not authenticated."""
         if not app_state.is_authenticated():
             ui.navigate.to('/')
             return
+        self._resolve_permissions()
         self.render_content()
 
     @abstractmethod
@@ -70,155 +115,362 @@ class AuthenticatedFrame(ABC):
 
 
 class NoteableFrame(AuthenticatedFrame):
+    """Abstract base frame for pages that display notes.
 
-    def render_header(self, title: str, right_drawer) -> None:
+    Extends AuthenticatedFrame with shared header and note rendering.
+    Used by ProjectFrame and TaskFrame.
+    """
+
+    @abstractmethod
+    def on_delete_note(self, note) -> None:
+        """Delete the given note. Must be implemented by subclass."""
+        pass
+
+    def render_header(self, title: str, right_drawer, extra_buttons=None) -> None:
+        """Render the shared page header with navigation and a drawer toggle.
+
+        Args:
+            title: The page title displayed in the header.
+            right_drawer: The NiceGUI drawer element to toggle on menu click.
+            extra_buttons: Optional list of (label, callback) buttons to add after Dashboard.
+        """
         with ui.header(elevated=True).style('background-color: #3874c8').classes('items-center justify-between'):
             with ui.row():
                 ui.button('Logout', on_click=self.on_logout)
                 ui.button('Dashboard', on_click=self.on_dashboard)
+
+                if extra_buttons:
+                    for label, callback in extra_buttons:
+                        ui.button(label, on_click=callback)
+
             with ui.row():
                 ui.label(title).classes('text-3xl')
                 ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
 
-    def render_notes(self, notes) -> None:
-        ui.button('Manage Notes', on_click=self.on_manage_notes)
-        for note in notes:
-            with ui.list().props('bordered separator').classes('w-full'):
-                with ui.column().classes('w-full p-4'):
-                    ui.label(note.content)
-                    with ui.row().classes('w-full justify-between'):
-                        ui.label(note.author.username).classes('text-sm text-grey')
-                        ui.label(str(note.created_at)).classes('text-sm text-grey')
-                    if self.user and getattr(note, 'created_by', None) == self.user.id:
-                        ui.button('Edit', on_click=lambda _=None, n=note: self.on_edit_note(n)).classes('ml-2')
-        with ui.page_sticky(x_offset=18, y_offset=18):
-            ui.button('Create Note', on_click=self.on_create_note).props('fab')
+    def _render_note_card(self, note) -> None:
+        """Render a single note card with edit/delete buttons for the note author."""
+        with ui.card().classes('w-full p-3 bg-blue-50 shadow-sm'):
+            with ui.row().classes('w-full items-start justify-between'):
+                with ui.column().classes('flex-1'):
+                    ui.label(note.content).classes('text-sm')
+                    if hasattr(note, 'author') and note.author:
+                        ui.label(f"{note.author.name} • {note.created_at}").classes('text-xs text-grey-6')
+                if note.created_by == self.user.id:
+                    with ui.row().classes('gap-1'):
+                        ui.button('Edit', on_click=lambda _, n=note: self.on_edit_note(n)).props('size=sm')
+                        ui.button('Delete', on_click=lambda _, n=note: self.on_delete_note(n)).props('size=sm color=red')
 
     @abstractmethod
     def on_create_note(self) -> None:
+        """Open a dialog to create a new note. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_edit_note(self, note) -> None:
+        """Open a dialog to edit an existing note. Must be implemented by subclass.
+
+        Args:
+            note: The note object to edit.
+        """
         pass
 
     @abstractmethod
     def render_content(self) -> None:
+        """Build the page UI. Must be implemented by subclass."""
         pass
 
 
 class DashboardFrame(AuthenticatedFrame):
+    """Abstract base frame for the dashboard page.
 
-    def __init__(self, user: User) -> None:
+    Renders the full dashboard layout including the header, right drawer
+    with actions, owned projects, collaborations, and a task overview table.
+    Subclasses must implement on_create_project() and on_delete_account().
+
+    Attributes:
+        session: The active SQLAlchemy database session.
+    """
+
+    def __init__(self, user: User, session=None) -> None:
+        """Initialise the dashboard frame with a user and optional session.
+
+        Args:
+            user: The logged-in User object.
+            session: Optional SQLAlchemy session. Falls back to shared db_conn session.
+        """
         super().__init__(user)
+        self.session = session or db_conn.get_session()
 
     @abstractmethod
     def on_create_project(self) -> None:
+        """Open a dialog to create a new project. Must be implemented by subclass."""
         pass
 
+    @abstractmethod
+    def on_delete_account(self) -> None:
+        """Open a dialog to delete the current user's account. Must be implemented by subclass."""
+        pass
+
+    def on_manage_admins(self) -> None:
+        """Open a dialog to promote users to admin or revoke admin status."""
+        um = UserManager(session=self.session)
+
+        users = um.get_all_users()
+
+        non_admin_users = {
+            user.id: f"{user.name} ({user.email})"
+            for user in users
+            if not user.is_admin
+        }
+
+        admin_users = {
+            user.id: f"{user.name} ({user.email})"
+            for user in users
+            if user.is_admin and user.id != self.user.id
+        }
+
+        with ui.dialog().props("persistent") as dialog, ui.card().classes("w-[500px]"):
+            ui.label("Promote User to Admin").classes("text-h6")
+
+            if not non_admin_users:
+                ui.label("There are no non-admin users to promote.").classes("text-sm text-grey")
+            else:
+                selected_user = ui.select(
+                    options=non_admin_users,
+                    label="Select user",
+                ).classes("w-full")
+
+                def promote_user() -> None:
+                    """Promote the selected user to admin status."""
+                    if selected_user.value is None:
+                        ui.notify("Please select a user", color="negative")
+                        return
+                    try:
+                        ok = um.promote_user_to_admin(selected_user.value)
+                        if ok:
+                            ui.notify("User promoted to admin", color="positive")
+                            dialog.close()
+                            ui.navigate.reload()
+                        else:
+                            ui.notify("Could not promote user", color="negative")
+                    except Exception as exc:
+                        ui.notify(f"Error promoting user: {exc}", color="negative")
+
+                ui.button("Promote", on_click=promote_user)
+
+                ui.separator()
+
+                ui.label("Revoke Admin Status").classes("text-h6")
+
+                if not admin_users:
+                    ui.label("There are no other admins to revoke.").classes("text-sm text-grey")
+                else:
+                    selected_admin = ui.select(
+                        options=admin_users,
+                        label="Select admin",
+                    ).classes("w-full")
+
+                    def revoke_admin() -> None:
+                        """Revoke admin status from the selected admin user."""
+                        if selected_admin.value is None:
+                            ui.notify("Please select an admin", color="negative")
+                            return
+                        try:
+                            ok = um.revoke_admin_status(selected_admin.value)
+                            if ok:
+                                ui.notify("Admin status revoked", color="positive")
+                                dialog.close()
+                                ui.navigate.reload()
+                            else:
+                                ui.notify("Could not revoke admin status", color="negative")
+                        except Exception as exc:
+                            ui.notify(f"Error revoking admin status: {exc}", color="negative")
+
+                    with ui.row():
+                        ui.button("Revoke", on_click=revoke_admin, color="red")
+                ui.separator()
+
+                with ui.row().classes("w-full justify-end"):
+                    ui.button("Cancel", on_click=dialog.close)
+
+            dialog.open()
+
+    def on_manage_projects(self) -> None:
+        """Open a dialog to delete owned projects."""
+        pm = ProjectManager(session=self.session)
+
+        owned_projects = pm.get_projects_by_owner(self.user.id)
+
+        with ui.dialog().props("persistent") as dialog, ui.card().classes("w-[650px]"):
+            ui.label("Manage Projects").classes("text-h6")
+
+            if not owned_projects:
+                ui.label("You do not own any projects yet.").classes("text-sm text-grey")
+            else:
+                for project in owned_projects:
+                    collaborator_count = len(project.collaborator_memberships or [])
+
+                    with ui.row().classes("w-full items-center justify-between"):
+                        with ui.column().classes("gap-0"):
+                            ui.label(project.name).classes("font-bold")
+                            ui.label(
+                                f"{collaborator_count} collaborator(s)"
+                            ).classes("text-sm text-grey")
+
+                        def delete_project(project_id=project.id, project_name=project.name):
+                            """Open a confirmation dialog before deleting the project."""
+                            with ui.dialog().props("persistent") as confirm_dlg, ui.card():
+                                ui.label(f'Delete "{project_name}"?').classes("font-bold")
+                                ui.label("This will permanently delete the project and all its tasks and notes.").classes("text-sm")
+                                with ui.row():
+                                    def confirm(_=None, pid=project_id):
+                                        try:
+                                            ok = pm.delete_project(user=self.user, project_id=pid)
+                                            if ok:
+                                                confirm_dlg.close()
+                                                dialog.close()
+                                                ui.navigate.reload()
+                                            else:
+                                                ui.notify("Could not delete project", color="negative")
+                                        except PermissionDenied:
+                                            ui.notify("You do not have permission to delete this project", color="negative")
+                                        except Exception as exc:
+                                            ui.notify(f"Error deleting project: {exc}", color="negative")
+                                    ui.button("Delete", on_click=confirm, color="red")
+                                    ui.button("Cancel", on_click=lambda _=None: confirm_dlg.close())
+                            confirm_dlg.open()
+
+                        ui.button(
+                            "Delete",
+                            on_click=delete_project,
+                            color="red",
+                        )
+
+            with ui.row().classes("w-full justify-end"):
+                ui.button("Close", on_click=dialog.close)
+
+        dialog.open()
+
     def render_content(self) -> None:
-        pm = ProjectManager()
+        """Render the full dashboard layout."""
+        pm = ProjectManager(session=self.session)
 
         owned_projects = []
         collab_projects = []
         task_rows = []
+        assigned_tasks = []
 
         if self.user:
             owned_projects = pm.get_projects_by_owner(self.user.id)
-            collab_projects = pm.get_projects_by_collaborator(self.user.id)
-            owned_project_ids = {project.id for project in owned_projects}
-            collab_projects = [
-                project for project in collab_projects
-                if project.id not in owned_project_ids
-            ]
+            owned_project_ids = {p.id for p in owned_projects}
+
+            other_projects_raw = (
+                pm.get_projects_by_collaborator(self.user.id)
+                + pm.get_projects_by_task_assignment(self.user.id)
+            )
+            collab_projects = list(
+                {p.id: p for p in other_projects_raw if p.id not in owned_project_ids}.values()
+            )
 
             all_projects = owned_projects + collab_projects
 
             for project in all_projects:
                 tasks = pm.view_project_tasks(self.user, project.id)
-                
+
                 for task in tasks:
                     assigned_users = ", ".join(
-                            assignment.user.username for assignment in task.assignments
-                        )
+                        assignment.user.name for assignment in task.assignments
+                    )
                     task_rows.append({
-                            "id": task.id,
-                            "title": task.title,
-                            "project": project.name,
-                            "status": task.status,
-                            "priority": task.priority,
-                            "assigned_to": assigned_users if assigned_users else "-",
-                        })
+                        "id": task.id,
+                        "title": task.title,
+                        "project": project.name,
+                        "status": task.status,
+                        "priority": task.priority,
+                        "assigned_to": assigned_users if assigned_users else "-",
+                    })
 
+            for task in task_rows:
+                if self.user.name in task["assigned_to"]:
+                    assigned_tasks.append(task)
 
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
-            with ui.column().props('bordered separator'):
-                ui.label('Tasks').classes('font-bold')
-
-                if task_rows:
-                    for task in task_rows:
-                        ui.link(task["title"], f'/task/{task["id"]}')
-                else:
-                    ui.label('No tasks found.').classes('text-sm text-grey')
+            with ui.column().classes("w-full gap-3 p-3"):
+                ui.label("Actions").classes("text-xl font-bold")
+                ui.button("Create New Project", on_click=self.on_create_project).classes("w-full")
+                ui.button("Manage Projects", on_click=self.on_manage_projects).classes("w-full")
+                if self.user and self.user.is_admin:
+                    ui.button("Manage Admins", on_click=self.on_manage_admins).classes("w-full")
 
         with ui.header(elevated=True).style('background-color: #3874c8').classes('justify-between'):
             with ui.row():
+                with ui.button(icon='more_vert').props('flat color=white'):
+                    with ui.menu():
+                        ui.menu_item(
+                            'Delete Account',
+                            self.on_delete_account,
+                        ).classes('text-red')
                 ui.button('Logout', on_click=self.on_logout)
             with ui.row():
                 ui.label(f'Hello, {self.user.name}!').classes('text-3xl')
                 ui.button(on_click=lambda: right_drawer.toggle(), icon='menu').props('flat color=white')
 
-        with ui.left_drawer().style('background-color: #d7e3f4'):
-            with ui.column().props('dense separator'):
-                ui.button('Create Project', on_click=self.on_create_project)
+        with ui.column().classes("w-full p-6 gap-6"):
 
+            with ui.card().classes("w-full p-6 shadow-md"):
+                ui.label("Welcome to Collaboratory!").classes("text-3xl font-bold")
+                ui.label(
+                    "Manage your projects, collaborations, and assigned tasks."
+                ).classes("text-lg text-grey-8 mt-2")
                 ui.separator()
 
-                ui.label('Owned Projects').classes('font-bold')
-                if owned_projects:
-                    for project in owned_projects:
-                        ui.link(project.name, f'/project/{project.id}')
-                else:
-                    ui.label('—').classes('text-sm text-grey')
+                with ui.row().classes("gap-4 mt-2"):
+                    ui.badge(f"Owned Projects: {len(owned_projects)}", color="blue")
+                    ui.badge(f"Collaborations: {len(collab_projects)}", color="orange")
+                    ui.badge(f"Tasks: {len(task_rows)}", color="green")
 
-                ui.separator()
+            ui.separator()
 
-                ui.label('Collaborations').classes('font-bold')
-                if collab_projects:
-                    for project in collab_projects:
-                        ui.link(project.name, f'/project/{project.id}')
-                else:
-                    ui.label('—').classes('text-sm text-grey')
+            with ui.row().classes("w-full gap-6 items-start no-wrap"):
 
-        with ui.column().classes('items-center mx-auto p-4'):
-            ui.label('Welcome to Collaboratory!').classes('text-5xl font-bold')
+                with ui.card().classes("w-1/3 p-6 shadow-md"):
+                    ui.label("Owned Projects").classes("text-2xl font-bold mb-6")
 
-            with ui.row().classes('w-full gap-4'):
-                with ui.card().classes('p-4 shadow rounded'):
-                    ui.label('Owned Projects').classes('text-xl font-bold mb-2')
                     if owned_projects:
                         for project in owned_projects:
-                            ui.link(project.name, f'/project/{project.id}').classes('text-lg')
-                    else:
-                        ui.label('You do not own any projects yet.').classes('text-sm text-grey')
+                            with ui.card().classes("w-full bg-blue-50 p-4 mb-3 shadow-sm"):
+                                ui.link(
+                                    project.name,
+                                    f"/project/{project.id}"
+                                ).classes("text-blue-700 underline text-lg")
 
-                with ui.card().classes('p-4 shadow rounded'):
-                    ui.label('Collaborations').classes('text-xl font-bold mb-2')
+                with ui.card().classes("w-1/3 p-6 shadow-md"):
+                    ui.label("Collaborations").classes("text-2xl font-bold mb-6")
+
                     if collab_projects:
                         for project in collab_projects:
-                            ui.link(project.name, f'/project/{project.id}').classes('text-lg')
-                    else:
-                        ui.label('You are not collaborating on any projects yet.').classes('text-sm text-grey')
-                
-                with ui.card().classes('p-4 shadow rounded'):
-                    ui.label('Tasks').classes('text-xl font-bold mb-2')
-                    if task_rows:
-                        for task in task_rows:
-                            ui.link(task["title"], f'/task/{task["id"]}').classes('text-lg')
-                    else:
-                        ui.label('You have no tasks assigned yet.').classes('text-sm text-grey')
+                            with ui.card().classes("w-full bg-blue-50 p-4 mb-3 shadow-sm"):
+                                ui.link(
+                                    project.name,
+                                    f"/project/{project.id}"
+                                ).classes("text-blue-700 underline text-lg")
 
-            ui.label('Task Overview').classes('text-2xl font-bold mt-8')
+                with ui.card().classes("w-1/3 p-6 shadow-md"):
+                    ui.label("My Tasks").classes("text-2xl font-bold mb-6")
+
+                    if assigned_tasks:
+                        for task in assigned_tasks:
+                            with ui.card().classes("w-full bg-blue-50 p-4 mb-3 shadow-sm"):
+                                ui.link(
+                                    task["title"],
+                                    f"/task/{task['id']}"
+                                ).classes("text-blue-700 underline text-lg")
+                    else:
+                        ui.label("You are not assigned to any tasks yet.").classes("text-sm text-grey-6 italic")
+
+            ui.separator()
+
+            ui.label("Task Overview").classes("text-2xl font-bold mt-8")
 
             columns = [
                 {"name": "title", "label": "Task", "field": "title", "align": "left"},
@@ -226,161 +478,306 @@ class DashboardFrame(AuthenticatedFrame):
                 {"name": "status", "label": "Status", "field": "status", "align": "left"},
                 {"name": "priority", "label": "Priority", "field": "priority", "align": "left"},
                 {"name": "assigned_to", "label": "Assigned To", "field": "assigned_to", "align": "left"},
-            ]        
+            ]
 
-            ui.table(columns=columns, rows=task_rows).classes('w-full')
+            if task_rows:
+                ui.table(columns=columns, rows=task_rows).classes("w-full")
+            else:
+                with ui.card().classes("w-full p-4 shadow-sm"):
+                    ui.label("You do not have any tasks yet.").classes("text-sm text-grey-6 italic")
 
-            
+
 class ProjectFrame(NoteableFrame):
+    """Abstract base frame for the project detail page."""
 
-    def __init__(self, user: User, project: Project) -> None:
+    def __init__(self, user: User, project: Project, session=None) -> None:
         super().__init__(user)
         self.project = project
+        self.session = session or db_conn.get_session()
 
     @abstractmethod
     def on_create_task(self) -> None:
+        """Open the create-task dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_add_collaborator(self) -> None:
+        """Open the add-collaborator dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_create_note(self) -> None:
+        """Open the create-note dialog. Must be implemented by subclass."""
         pass
 
+    @abstractmethod
+    def on_edit_project_details(self) -> None:
+        """Open the edit-project-details dialog. Must be implemented by subclass."""
+        pass
+
+    @abstractmethod
+    def on_manage_tasks(self) -> None:
+        """Open the manage-tasks dialog. Must be implemented by subclass."""
+        pass
+
+    @abstractmethod
+    def on_manage_collaborators(self) -> None:
+        """Open the manage-collaborators dialog. Must be implemented by subclass."""
+        pass
+
+    @abstractmethod
+    def on_manage_notes(self) -> None:
+        """Open the manage-notes dialog. Must be implemented by subclass."""
+        pass
+
+    @abstractmethod
+    def on_edit_note(self, note) -> None:
+        """Open the edit-note dialog. Must be implemented by subclass."""
+        pass
+
+    def _resolve_permissions(self) -> None:
+        self.can_manage_collabs = check_permission(self.user, PermissionAction.MANAGE_COLLABORATOR, self.session, project=self.project)
+        self.can_edit_project = check_permission(self.user, PermissionAction.EDIT_PROJECT_DETAILS, self.session, project=self.project)
+        self.can_manage_tasks = check_permission(self.user, PermissionAction.CREATE_TASK, self.session, project=self.project)
+        self.can_create_project_note = check_permission(self.user, PermissionAction.WRITE_PROJECT_NOTE, self.session, project=self.project)
+        self.can_manage_project_notes = check_permission(self.user, PermissionAction.DELETE_PROJECT_NOTE, self.session, project=self.project)
+
+    @ui.refreshable
+    def _render_collaborators_panel(self) -> None:
+        if self.project.collaborator_memberships:
+            for membership in self.project.collaborator_memberships:
+                with ui.card().classes('w-full p-3 shadow-sm'):
+                    ui.label(membership.user.name).classes('font-bold')
+                    ui.link(membership.user.email, f'mailto:{membership.user.email}').classes('text-sm text-grey')
+
+    @ui.refreshable
+    def _render_project_info(self) -> None:
+        with ui.card().classes("w-full p-6 shadow-md relative"):
+            ui.label(self.project.name).classes("text-3xl font-bold")
+            if self.can_edit_project:
+                with ui.row().classes('gap-2 mt-2 flex-wrap'):
+                    ui.button('Edit Project Details', on_click=self.on_edit_project_details).props('size=sm')
+            ui.label(self.project.description or "No description").classes("text-lg text-grey-8 mt-2")
+            ui.separator()
+            with ui.row().classes("gap-4 mt-2 flex-wrap"):
+                ui.badge(f"Project ID: {self.project.id}", color="blue")
+                ui.badge(f"Tasks: {len(self.project.tasks or [])}", color="orange")
+
+    @ui.refreshable
+    def _render_tasks_card(self) -> None:
+        with ui.card().classes('w-full p-6 shadow-md relative'):
+            ui.label('Project Tasks').classes('text-2xl font-bold')
+            if self.can_manage_tasks:
+                with ui.row().classes('gap-2 mt-2 flex-wrap'):
+                    ui.button('Add or Remove Tasks', on_click=self.on_manage_tasks).props('size=sm')
+            if self.project.tasks:
+                with ui.column().classes('w-full gap-2 mt-3'):
+                    for task in self.project.tasks:
+                        with ui.row().classes('w-full items-center justify-between p-3 rounded bg-blue-50'):
+                            with ui.column().classes('gap-0'):
+                                ui.link(task.title, f'/task/{task.id}').classes('font-bold text-base')
+                                ui.label(task.description or 'No description').classes('text-sm text-grey-7')
+                            with ui.row().classes('gap-2'):
+                                ui.badge(task.status or 'no status', color='blue')
+                                ui.badge(task.priority or 'no priority', color='orange')
+            else:
+                ui.label('No tasks yet.').classes('text-sm text-grey-6 italic mt-2')
+
+    @ui.refreshable
+    def _render_notes_card(self) -> None:
+        cm = CollabManager(session=self.session)
+        with ui.card().classes('w-full p-6 shadow-md relative'):
+            ui.label('Project Notes').classes('text-2xl font-bold')
+            with ui.row().classes('gap-2 mt-2 flex-wrap'):
+                if self.can_create_project_note:
+                    ui.button('Create Note', on_click=self.on_create_note).props('size=sm')
+                if self.can_manage_project_notes:
+                    ui.button('Manage Notes', on_click=self.on_manage_notes).props('size=sm')
+            ui.label('Create, edit, or delete notes related to this project.').classes('text-grey-7')
+            try:
+                notes = cm.view_project_note(self.user, self.project.id) or []
+            except Exception:
+                notes = []
+            ui.separator()
+            if notes:
+                with ui.column().classes('w-full gap-2 mt-2'):
+                    for note in notes:
+                        self._render_note_card(note)
+            else:
+                ui.label('No notes yet.').classes('text-sm text-grey-6 italic')
+
     def render_content(self) -> None:
+        """Render the project detail layout with tasks, notes, and collaborators."""
         with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
-            cm = CollabManager()
-            can_manage_collabs = cm.can_add_collaborator(self.user, self.project)
-            if can_manage_collabs:
-                ui.button('Manage Collaborators', on_click=self.on_manage_collaborators)
-            ui.label('Collaborators')
-            with ui.column().props('w-full bordered separator'):
-                if self.project.collaborator_memberships:
-                    for membership in self.project.collaborator_memberships:
-                        with ui.card().classes('w-full p-2'):
-                            with ui.row().classes('items-center justify-between'):
-                                with ui.column():
-                                    ui.label(membership.user.username).classes('font-bold')
-                                    ui.label(membership.user.name).classes('text-sm text-grey')
-                                    ui.link(membership.user.email, f'mailto:{membership.user.email}').classes('text-sm text-grey')
+            with ui.column().classes('w-full p-4 gap-4'):
+                if self.can_manage_collabs:
+                    ui.button('Manage Collaborators', on_click=self.on_manage_collaborators).classes('w-full')
+
+                with ui.column().classes('gap-2'):
+                    ui.label('Project Owner').classes('font-bold text-lg')
+                    with ui.expansion('Role details', value=False).classes('text-xs text-grey-7 w-full'):
+                        ui.label(
+                            "The owner set up this project and has full management access:"
+                            " tasks, collaborators, and notes. Task status is owned by assignees, "
+                            "though the owner can assign themselves to a task if they need to step in."
+                        ).classes('text-sm text-grey-7')
+                    with ui.card().classes('w-full p-3 shadow-sm').style('background-color: #fff4e6'):
+                        ui.label(self.project.owner.name).classes('font-bold')
+                        ui.link(self.project.owner.email, f'mailto:{self.project.owner.email}').classes('text-sm text-grey')
+
+                with ui.column().classes('gap-2'):
+                    ui.label('Collaborators').classes('font-bold text-lg')
+                    with ui.expansion('Role details', value=False).classes('text-xs text-grey-7 w-full'):
+                        ui.label(
+                            "Collaborators have full visibility of this project. "
+                            "They can create and edit tasks, assign users, and write project notes. "
+                            "To update a task's status or write task notes, a collaborator also needs to be assigned to that task."
+                        ).classes('text-sm text-grey-7')
+                    self._render_collaborators_panel()
 
         self.render_header(self.project.name, right_drawer)
 
-        with ui.left_drawer().style('background-color: #d7e3f4'):
-            with ui.column().props('dense separator'):
-                ui.button('Add or Remove Tasks', on_click=self.on_manage_tasks)
-                ui.label('Tasks')
-                if self.project.tasks:
-                    for task in self.project.tasks:
-                        ui.link(task.title, f'/task/{task.id}')
-
         with ui.column().classes("w-full h-full p-6 gap-6"):
-            with ui.card().classes("w-full p-6 shadow-md"):
-                ui.label(self.project.name).classes("text-3xl font-bold")
+            self._render_project_info()
+            with ui.grid(columns='1fr 1fr').classes('w-full gap-4'):
+                self._render_tasks_card()
+                self._render_notes_card()
 
-                ui.label(self.project.description or "No description").classes("text-lg text-grey-8 mt-2")
-
-                ui.separator()
-
-                task_count = len(self.project.tasks or [])
-
-                with ui.row().classes("gap-4 mt-2"):
-                    ui.badge(f"Project ID: {self.project.id}", color="blue")
-                    ui.badge(f"Tasks: {task_count}", color="orange")
-
-            with ui.card().classes("w-full p-6 shadow-md"):
-                with ui.row().classes("w-full items-center justify-between"):
-                    ui.label("Project Tasks").classes("text-2xl font-bold")
-                    ui.button("Add or Remove Tasks", on_click=self.on_manage_tasks)
-
-                if self.project.tasks:
-                    with ui.column().classes("w-full gap-2 mt-3"):
-                        for task in self.project.tasks:
-                            with ui.row().classes(
-                                "w-full items-center justify-between p-3 rounded bg-blue-50"
-                            ):
-                                with ui.column().classes("gap-0"):
-                                    ui.link(task.title, f"/task/{task.id}").classes(
-                                        "font-bold text-base"
-                                    )
-                                    ui.label(task.description or "No description").classes(
-                                        "text-sm text-grey-7"
-                                    )
-
-                                with ui.row().classes("gap-2"):
-                                    ui.badge(task.status or "no status", color="blue")
-                                    ui.badge(task.priority or "no priority", color="orange")
-                else:
-                    ui.label("No tasks yet.").classes("text-sm text-grey-6 italic mt-2")
-
-            with ui.card().classes("w-full p-6 shadow-md"):
-                with ui.row().classes("w-full items-center justify-between"):
-                    ui.label("Project Notes").classes("text-2xl font-bold")
-
-                with ui.row().classes("gap-2"):
-                    ui.button("Manage Notes", on_click=self.on_manage_notes)
-                    ui.button("Create Note", on_click=self.on_create_note)
-
-                ui.label("Create, edit, or delete notes related to this project.").classes("text-grey-7")
-
-                cm = CollabManager()
-
-                try:
-                    notes = cm.view_project_note(self.user, self.project.id) or []
-                except Exception:
-                    notes = []
-
-                ui.separator()
-
-                if notes:
-                    with ui.column().classes("w-full gap-2 mt-2"):
-                        for note in notes:
-                            with ui.card().classes("w-full p-3 bg-blue-50 shadow-sm"):
-                                ui.label(note.content).classes("text-sm")
-
-                                if hasattr(note, "author") and note.author:
-                                    ui.label(
-                                        f"{note.author.username} • {note.created_at}"
-                                    ).classes("text-xs text-grey-6")
-                else:
-                    ui.label("No notes yet.").classes("text-sm text-grey-6 italic")
 
 class TaskFrame(NoteableFrame):
+    """Abstract base frame for the task detail page."""
 
-    def __init__(self, user: User, task: Task) -> None:
+    def __init__(self, user: User, task: Task, session=None) -> None:
         super().__init__(user)
         self.task = task
+        self.session = session or db_conn.get_session()
+        self.project = self.session.query(Project).filter_by(id=getattr(task, 'project_id', None)).first()
 
     @abstractmethod
     def on_assign_user(self) -> None:
+        """Open the assign-user dialog. Must be implemented by subclass."""
         pass
 
     @abstractmethod
     def on_create_note(self) -> None:
+        """Open the create-note dialog. Must be implemented by subclass."""
         pass
 
-    def render_content(self) -> None:
-        with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
-            ui.button('Manage Assignees', on_click=self.on_manage_assignees)
-            ui.label('Users Assigned to Tasks')
-            with ui.column().props('bordered separator'):
-                if self.task.assignments:
-                    for assignment in self.task.assignments:
-                        ui.label(assignment.user.username)
+    @abstractmethod
+    def on_manage_notes(self) -> None:
+        """Open the manage-notes dialog. Must be implemented by subclass."""
+        pass
 
-        self.render_header(self.task.title, right_drawer)
+    @abstractmethod
+    def on_manage_assignees(self, e=None) -> None:
+        """Open the manage-assignees dialog. Must be implemented by subclass."""
+        pass
 
-        with ui.left_drawer().style('background-color: #d7e3f4'):
-            with ui.column().props('dense separator'):
-                ui.label('Task details')
-                ui.label(self.task.description or '')
+    @abstractmethod
+    def on_edit_status(self, e=None) -> None:
+        """Open the edit-status dialog. Must be implemented by subclass."""
+        pass
 
-        with ui.column().classes('items-center mx-auto p-4'):
-            cm = CollabManager()
+    @abstractmethod
+    def on_edit_task_details(self, e=None) -> None:
+        """Open the edit-task-details dialog. Must be implemented by subclass."""
+        pass
+
+    @abstractmethod
+    def on_return_to_project(self) -> None:
+        """Navigate back to the project page. Must be implemented by subclass."""
+        pass
+
+    @abstractmethod
+    def on_edit_note(self, note) -> None:
+        """Open the edit-note dialog. Must be implemented by subclass."""
+        pass
+
+    def _resolve_permissions(self) -> None:
+        self.can_manage_assignees = check_permission(self.user, PermissionAction.ASSIGN_TASK, self.session, project=self.project, task=self.task)
+        self.can_change_status = check_permission(self.user, PermissionAction.CHANGE_TASK_STATUS, self.session, project=self.project, task=self.task)
+        self.can_edit_task_details = check_permission(self.user, PermissionAction.EDIT_TASK_DETAILS, self.session, project=self.project, task=self.task)
+        self.can_create_task_note = check_permission(self.user, PermissionAction.WRITE_TASK_NOTE, self.session, project=self.project, task=self.task)
+        self.can_manage_task_notes = check_permission(self.user, PermissionAction.DELETE_TASK_NOTE, self.session, project=self.project, task=self.task)
+
+    @ui.refreshable
+    def _render_assignees_panel(self) -> None:
+        with ui.column().props('w-full bordered separator'):
+            if self.task.assignments:
+                for assignment in self.task.assignments:
+                    with ui.card().classes('w-full p-2'):
+                        with ui.row().classes('items-center justify-between'):
+                            with ui.column():
+                                ui.label(assignment.user.name).classes('font-bold')
+                                ui.link(assignment.user.email, f'mailto:{assignment.user.email}').classes('text-sm text-grey')
+            else:
+                ui.label('No assignees yet').classes('text-sm text-grey')
+
+    @ui.refreshable
+    def _render_task_detail_card(self) -> None:
+        with ui.card().classes('w-full p-6 shadow-md relative'):
+            ui.label(self.task.title).classes('text-3xl font-bold text-blue-900')
+            with ui.row().classes('gap-2 mt-2 flex-wrap'):
+                if self.can_change_status:
+                    ui.button('Edit Status', on_click=self.on_edit_status).props('size=sm')
+                if self.can_edit_task_details:
+                    ui.button('Edit Task Details', on_click=self.on_edit_task_details).props('size=sm')
+            ui.separator().classes('my-4')
+            ui.label(self.task.description or 'No description').classes('text-lg text-grey-8')
+            with ui.row().classes('gap-4 mt-4 flex-wrap'):
+                ui.badge(self.task.status or 'No status', color='primary')
+                ui.badge(f"Priority: {self.task.priority or 'N/A'}", color='orange')
+            if self.task.due_date:
+                ui.badge(f"Due: {self.task.due_date}", color='blue')
+
+    @ui.refreshable
+    def _render_task_notes_card(self) -> None:
+        cm = CollabManager(session=self.session)
+        with ui.card().classes('w-full p-6 shadow-md relative'):
+            ui.label('Task Notes').classes('text-2xl font-bold')
+            with ui.row().classes('w-full items-center gap-2 mt-2 flex-wrap'):
+                if self.can_create_task_note:
+                    ui.button('Create Note', on_click=self.on_create_note).props('size=sm')
+                if self.can_manage_task_notes:
+                    ui.button('Manage Notes', on_click=self.on_manage_notes).props('size=sm')
+            ui.label('Create, edit, or delete notes related to this task.').classes('text-grey-7')
             try:
                 notes = cm.view_task_note(self.user, self.task.id) or []
             except Exception:
                 notes = []
-            self.render_notes(notes)
+            ui.separator()
+            if notes:
+                with ui.column().classes('w-full gap-2 mt-2'):
+                    for note in notes:
+                        self._render_note_card(note)
+            else:
+                ui.label('No notes yet.').classes('text-sm text-grey-6 italic')
+
+    def render_content(self) -> None:
+        """Render the task detail layout with notes and assignees."""
+        with ui.right_drawer().style('background-color: #ebf1fa') as right_drawer:
+            ui.label('Management').classes('font-bold text-lg mb-4')
+            if self.can_manage_assignees:
+                ui.button('Manage Assignees', on_click=self.on_manage_assignees)
+            ui.label('Assignees').classes('font-bold')
+            with ui.expansion('Role details', value=False).classes('text-xs text-grey-7 w-full'):
+                ui.label(
+                    "Assignees are responsible for this task. Only assignees"
+                    " can update the task status and write task notes: they know best whether the work is done."
+                ).classes('text-sm text-grey-7')
+            self._render_assignees_panel()
+            ui.space()
+            ui.label(
+                "Think this task needs breaking down further?"
+                " Reach out to a project collaborator or the owner to create additional tasks."
+            ).classes('text-sm text-grey-7 mt-4 italic')
+
+        self.render_header(
+            self.task.title,
+            right_drawer,
+            extra_buttons=[('Return to Project', self.on_return_to_project)]
+        )
+        with ui.column().classes("w-full h-full p-6 gap-6"):
+            with ui.grid(columns='1fr 1fr').classes('w-full gap-4'):
+                self._render_task_detail_card()
+                self._render_task_notes_card()

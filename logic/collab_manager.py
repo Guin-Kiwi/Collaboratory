@@ -1,23 +1,24 @@
 from database.models import User, Project, Task, Assignment
 from database.collab_models import ProjectNote as PNote, TaskNote as TNote, ProjectMember as PMember
-from database.collab_models import ProjectMember
 from database import db_conn
 from logic.permissions_manager import require_permission, PermissionAction, check_permission
 from sqlalchemy.orm import joinedload
 
 
 class CollabManager:
-    
+    """Manages collaborators, project notes, and task notes."""
+
     def __init__(self, session=None):
         self.session = session or db_conn.get_session()
 
 #------- helpers
 
     def get_project_by_id(self, project_id: int) -> Project:
+        """Fetch a project by ID with collaborators, tasks, and notes eager-loaded."""
         return (
             self.session.query(Project)
             .options(
-                joinedload(Project.collaborator_memberships).joinedload(ProjectMember.user),
+                joinedload(Project.collaborator_memberships).joinedload(PMember.user),
                 joinedload(Project.tasks),
                 joinedload(Project.notes),
             )
@@ -26,6 +27,7 @@ class CollabManager:
         )
 
     def get_project_list_as_collaborator(self, user_id: int) -> list[Project]:
+        """Return all projects the user is a collaborator on."""
         return (
             self.session.query(Project)
             .join(PMember, PMember.project_id == Project.id)
@@ -35,13 +37,15 @@ class CollabManager:
 
 #------- permission checks
 
-    def can_add_collaborator(self, user: User, project: Project) -> bool:
+    def can_manage_collaborator(self, user: User, project: Project) -> bool:
+        """Return True if user can manage collaborators on the project."""
         try:
-            return check_permission(user, PermissionAction.ADD_COLLABORATOR, self.session, project=project)
+            return check_permission(user, PermissionAction.MANAGE_COLLABORATOR, self.session, project=project)
         except Exception:
             return False
 
     def can_delete_project_note(self, user: User, project: Project) -> bool:
+        """Return True if user can delete notes on the project."""
         try:
             return check_permission(user, PermissionAction.DELETE_PROJECT_NOTE, self.session, project=project)
         except Exception:
@@ -80,7 +84,7 @@ class CollabManager:
         if existing:
             return False
 
-        require_permission(user, PermissionAction.ADD_COLLABORATOR, self.session, project = project)
+        require_permission(user, PermissionAction.MANAGE_COLLABORATOR, self.session, project = project)
         membership = PMember(project_id=project_id, user_id=user_id)
         self.session.add(membership)
         self.session.commit()
@@ -103,7 +107,7 @@ class CollabManager:
         if not membership:
             return False
 
-        require_permission(user, PermissionAction.ADD_COLLABORATOR, self.session, project = project)
+        require_permission(user, PermissionAction.MANAGE_COLLABORATOR, self.session, project = project)
         self.session.delete(membership)
         self.session.commit()
         return True
@@ -196,8 +200,8 @@ class CollabManager:
         task = self.session.query(Task).filter_by(id = task_id).first()
         if not task:
             return []
-
-        require_permission(user, PermissionAction.VIEW_TASK_NOTE, self.session, task = task)
+        project = self.session.query(Project).filter_by(id=task.project_id).first()
+        require_permission(user, PermissionAction.VIEW_TASK_NOTE, self.session, task = task, project=project)
         return task.notes
 
     def edit_task_note(self, user: User, task_id: int, tnote_id: int, content: str) -> bool:
@@ -233,7 +237,8 @@ class CollabManager:
             return True
 
         # Otherwise require the permission (admins / owners / assignees handled there)
-        require_permission(user, PermissionAction.DELETE_TASK_NOTE, self.session, task = task)
+        project = self.session.query(Project).filter_by(id=task.project_id).first()
+        require_permission(user, PermissionAction.DELETE_TASK_NOTE, self.session, task = task, project=project)
         self.session.delete(target_note)
         self.session.commit()
         return True

@@ -5,123 +5,52 @@ Allows users to view and edit tasks and manage task notes.
 Route: /task/{task_id}
 """
 
-from nicegui import ui
+from nicegui import ui, Client
 
 from logic.app_state import app_state
 from logic.task_manager import TaskManager
-from logic.user_manager import UserManager
 from logic.collab_manager import CollabManager
 from logic.permissions_manager import PermissionDenied
-from database import db_conn
+from logic.permissions_manager import check_permission, PermissionAction
 from database.models import Task, User
 from ui.layout import TaskFrame
+from logic.user_manager import UserManager
+from database import db_conn
 
 
 class TaskPage(TaskFrame):
-    def __init__(self, user, task, session):
-        super().__init__(user, task)
+    """Task detail page implementing TaskFrame for the /task/{task_id} route."""
 
-        self.user = user
-        self.task = task
-        self.session = session
-
-    def render_content(self) -> None:
-        with ui.header(elevated=True).style("background-color: #3874c8").classes("items-center justify-between"):
-            with ui.row():
-                ui.button("Logout", on_click=self.on_logout)
-                ui.button("Dashboard", on_click=self.on_dashboard)
-                ui.button("Back to Project", on_click=lambda: ui.navigate.to(f"/project/{self.task.project.id}")).classes("text-white")
-            ui.label(self.task.title).classes("text-white text-3xl font-bold")
-
-
-            with ui.card().classes("w-full p-6 shadow-md"):
-                with ui.row().classes("w-full items-center justify-between"):
-                    ui.button("Manage Assignees", on_click=self.on_manage_assignees)
-
-                with ui.column().classes("mt-2 gap-1"):
-                    ui.label("Description").classes("text-sm text-grey-6 uppercase")
-                    ui.label(self.task.description or "No description").classes("text-lg text-grey-8")
-
-                ui.separator()
-
-                with ui.row().classes("gap-4 mt-2"):
-
-                    ui.badge(
-                        f"Project: {self.task.project.name}",
-                        color="primary",
-                    )
-                    ui.badge(
-                        f"Status: {getattr(self.task, 'status', 'N/A')}",
-                        color="blue",
-                    )
-
-                    ui.badge(
-                        f"Priority: {getattr(self.task, 'priority', 'N/A')}",
-                        color="orange",
-                    )
-
-                due_date = getattr(self.task, "due_date", None)
-
-                if due_date:
-                    ui.label(f"Due date: {due_date}").classes(
-                        "text-sm text-grey-7 mt-2"
-                    )
-
-            with ui.card().classes("w-full p-6 shadow-md"):
-                with ui.row().classes("w-full items-center justify-between"):
-                    ui.label("Task Notes").classes("text-2xl font-bold")
-
-                    with ui.row().classes("gap-2"):
-                        ui.button("Manage Notes", on_click=self.on_manage_notes)
-                        ui.button("Create Note", on_click=self.on_create_note)
-
-                ui.label(
-                    "Create, edit, or delete notes related to this task."
-                ).classes("text-grey-7")
-
-                cm = CollabManager(session=self.session)
-
-                try:
-                    notes = cm.view_task_note(self.user, self.task.id) or []
-                except Exception:
-                    notes = []
-
-                ui.separator()
-
-                if notes:
-                    with ui.column().classes("w-full gap-2 mt-2"):
-                        for note in notes:
-                            with ui.card().classes("w-full p-3 bg-blue-50 shadow-sm"):
-                                ui.label(note.content).classes("text-sm")
-
-                                if hasattr(note, "author") and note.author:
-                                    ui.label(
-                                        f"{note.author.username} • {note.created_at}"
-                                    ).classes("text-xs text-grey-6")
-                else:
-                    ui.label("No notes yet.").classes("text-sm text-grey-6 italic")
-
-
-
+    def __init__(self, user, task, session=None):
+        super().__init__(user, task, session=session)
 
     def on_manage_assignees(self, e=None) -> None:
+        """Open a dialog to add or remove task assignees."""
         tm = TaskManager(session=self.session)
         assignees = tm.get_assignees(self.user, self.task.id)
 
         with ui.dialog() as dlg, ui.card().classes("w-[450px]"):
             ui.label("Manage Assignees").classes("text-h6")
+            ui.label("Assignees can update this task's status and write task notes. "
+            "They also get full visibility of the entire project: all tasks, all notes. "
+            "So they have the context they need.").classes("text-sm text-grey mb-4")
 
             def remove_user(user_id: int):
                 try:
                     ok = tm.remove_assignee(self.user, self.task.id, user_id)
+
                     if ok:
                         ui.notify("Assignee removed", color="positive")
                         dlg.close()
                         ui.navigate.reload()
                     else:
                         ui.notify("Could not remove assignee", color="negative")
+
                 except PermissionDenied:
-                    ui.notify("You do not have permission to remove this assignee", color="negative")
+                    ui.notify(
+                        "You do not have permission to remove this assignee",
+                        color="negative",
+                    )
 
                 except Exception as exc:
                     ui.notify(f"Error removing assignee: {exc}", color="negative")
@@ -129,23 +58,37 @@ class TaskPage(TaskFrame):
             if assignees:
                 for assignee in assignees:
                     with ui.row().classes("items-center gap-4"):
-                        ui.label(assignee.username)
+                        if assignee:
+                            ui.label(f'{assignee.name} ({assignee.email})')
+                        else:
+                            ui.label('Unknown')
 
-                        ui.button(
-                            "Remove",
-                            on_click=lambda _, user_id=assignee.id: remove_user(user_id),
-                        )
+                        can_remove = False
+                        try:
+                            can_remove = check_permission(self.user, PermissionAction.ASSIGN_TASK, self.session, project=self.project)
+                        except Exception:
+                            can_remove = False
+
+                        if can_remove:
+                            ui.button(
+                                "Remove",
+                                on_click=lambda _, user_id=assignee.id: remove_user(user_id),
+                            )
+
             else:
                 ui.label("No assignees yet")
 
             ui.separator()
 
-
             assigned_user_ids = [assignee.id for assignee in assignees]
-            users = self.session.query(User).all()
+            users = sorted(UserManager(session=self.session).get_all_users(), key=lambda u: u.name.lower())
 
-            options = {user.id: user.username for user in users
-                       if user.id not in assigned_user_ids}
+            options = {
+                user.id: f'{user.name} ({user.email})'
+                for user in users
+                if not user.is_admin
+                and user.id not in assigned_user_ids
+            }
 
             selected_user = ui.select(
                 options=options,
@@ -157,24 +100,30 @@ class TaskPage(TaskFrame):
                     ui.notify("Please select a user", color="negative")
                     return
 
+                project = tm.get_task_project(self.task.id)
+
                 try:
                     ok = tm.assign_task(
                         self.user,
-                        self.task.project,
+                        project,
                         self.task.id,
                         selected_user.value,
-                    )               
+                    )
 
                     if ok:
                         ui.notify("User assigned to task", color="positive")
                         dlg.close()
                         ui.navigate.reload()
+
                     else:
                         ui.notify("Could not assign user to task", color="negative")
 
                 except PermissionDenied:
-                    ui.notify("You do not have permission to assign this task", color="negative")
-                
+                    ui.notify(
+                        "You do not have permission to assign this task",
+                        color="negative",
+                    )
+
                 except Exception as exc:
                     ui.notify(f"Error assigning task: {exc}", color="negative")
 
@@ -185,89 +134,15 @@ class TaskPage(TaskFrame):
         dlg.open()
 
     def on_assign_user(self) -> None:
+        """Alias for on_manage_assignees."""
         self.on_manage_assignees()
 
     def on_create_note(self) -> None:
-        self.on_manage_notes()
-
-    def on_manage_notes(self, e=None) -> None:
+        """Open a dialog to create a new task note."""
         cm = CollabManager(session=self.session)
 
-        try:
-            notes = cm.view_task_note(self.user, self.task.id) or []
-
-        except Exception as exc:
-            ui.notify(f"Could not load notes: {exc}", color="negative")
-            return
-
         with ui.dialog().props("persistent") as dlg, ui.card().classes("w-[640px]"):
-            ui.label("Manage Task Notes").classes("text-h6")
-            ui.label("Delete notes")
-
-            checks = []
-
-            if notes:
-                with ui.column().classes("w-full gap-2"):
-                    for note in notes:
-                        with ui.row().classes("w-full items-center justify-between"):
-                            with ui.column().classes("flex-1"):
-                                ui.label(note.content).classes("text-sm")
-
-                                if hasattr(note, "author") and note.author:
-                                    ui.label(
-                                        f"{note.author.username} • {note.created_at}"
-                                    ).classes("text-xs text-grey")
-
-                            cb = ui.checkbox()
-                            checks.append((cb, note.id))
-
-            else:
-                ui.label("No notes available").classes("text-sm text-grey")
-
-            def delete_selected(_=None):
-                removed = 0
-
-                for cb, note_id in checks:
-                    if cb.value:
-                        try:
-                            ok = cm.delete_task_note(
-                                user=self.user,
-                                task_id=self.task.id,
-                                tnote_id=note_id,
-                            )
-
-                            if ok:
-                                removed += 1
-
-                        except PermissionDenied:
-                            ui.notify(
-                                "You do not have permission to delete one or more selected notes",
-                                color="negative",
-                            )
-                            return
-
-                        except Exception as exc:
-                            ui.notify(
-                                f"Error deleting note: {exc}",
-                                color="negative",
-                            )
-                            return
-
-                if removed:
-                    ui.notify(f"Removed {removed} note(s)", color="positive")
-                    dlg.close()
-                    ui.navigate.reload()
-
-                else:
-                    ui.notify("No notes selected", color="negative")
-
-            if notes:
-                with ui.row().classes("w-full justify-end"):
-                    ui.button("Delete Selected", on_click=delete_selected)
-
-            ui.separator()
-
-            ui.label("Add a new note")
+            ui.label("Create Task Note").classes("text-h6")
 
             content = ui.textarea("Note").props("autogrow").classes("w-full")
 
@@ -308,7 +183,93 @@ class TaskPage(TaskFrame):
 
         dlg.open()
 
+    def on_manage_notes(self, e=None) -> None:
+        """Open a dialog to view and delete task notes."""
+        cm = CollabManager(session=self.session)
+
+        try:
+            notes = cm.view_task_note(self.user, self.task.id) or []
+
+        except Exception as exc:
+            ui.notify(f"Could not load notes: {exc}", color="negative")
+            return
+
+        with ui.dialog().props("persistent") as dlg, ui.card().classes("w-[640px]"):
+            ui.label("Manage Task Notes").classes("text-h6")
+            ui.label("Delete notes").classes("text-h7")
+
+            checks = []
+
+            if notes:
+                with ui.column().classes("w-full gap-2"):
+                    for note in notes:
+                        with ui.row().classes("w-full items-center justify-between"):
+                            with ui.column().classes("flex-1"):
+                                ui.label(note.content).classes("text-sm")
+
+                                if hasattr(note, "author") and note.author:
+                                    ui.label(
+                                        f"{note.author.name} • {note.created_at}"
+                                    ).classes("text-xs text-grey")
+
+                            with ui.row().classes("gap-2"):
+                                cb = ui.checkbox()
+                                checks.append((cb, note.id))
+
+
+            else:
+                ui.label("No notes available").classes("text-sm text-grey")
+
+            def delete_selected(_=None):
+                removed = 0
+
+                for cb, note_id in checks:
+                    if cb.value:
+                        try:
+                            ok = cm.delete_task_note(
+                                user=self.user,
+                                task_id=self.task.id,
+                                tnote_id=note_id,
+                            )
+
+                            if ok:
+                                removed += 1
+                            else:
+                                ui.notify("Could not delete one or more notes", color="negative")
+
+                        except PermissionDenied:
+                            ui.notify(
+                                "You do not have permission to delete one or more selected notes",
+                                color="negative",
+                            )
+                            return
+
+                        except Exception as exc:
+                            ui.notify(
+                                f"Error deleting note: {exc}",
+                                color="negative",
+                            )
+                            return
+
+                if removed:
+                    ui.notify(f"Removed {removed} note(s)", color="positive")
+                    dlg.close()
+                    ui.navigate.reload()
+
+                else:
+                    ui.notify("No notes selected", color="negative")
+
+            if notes:
+                with ui.row().classes("w-full justify-end"):
+                    ui.button("Delete Selected", on_click=delete_selected)
+
+            with ui.row():
+                ui.button("Cancel", on_click=lambda _=None: dlg.close())
+
+        dlg.open()
+
     def on_edit_note(self, note) -> None:
+        """Open a dialog to edit an existing task note."""
         cm = CollabManager(session=self.session)
 
         with ui.dialog().props("persistent") as dlg, ui.card().classes("w-[640px]"):
@@ -357,41 +318,168 @@ class TaskPage(TaskFrame):
 
         dlg.open()
 
+    def on_delete_note(self, note) -> None:
+        """Open a confirmation dialog before deleting a task note.
+
+        Args:
+            note: The TaskNote object to delete.
+        """
+        cm = CollabManager(session=self.session)
+
+        with ui.dialog().props('persistent') as dlg, ui.card().classes('w-[640px]'):
+            ui.label('Delete Note').classes('text-h6')
+            ui.label('Are you sure you want to delete this note? This cannot be undone.').classes('text-sm')
+            ui.label(f'"{note.content}"').classes('text-sm text-grey italic')
+
+            def confirm(_=None):
+                try:
+                    ok = cm.delete_task_note(
+                        user=self.user,
+                        task_id=self.task.id,
+                        tnote_id=note.id,
+                    )
+                    if ok:
+                        ui.notify('Note deleted', color='positive')
+                        dlg.close()
+                        ui.navigate.reload()
+                    else:
+                        ui.notify('Could not delete note', color='negative')
+                except PermissionDenied:
+                    ui.notify('You do not have permission to delete this note', color='negative')
+                except Exception as exc:
+                    ui.notify(f'Error: {exc}', color='negative')
+
+            with ui.row():
+                ui.button('Delete', on_click=confirm, color='red')
+                ui.button('Cancel', on_click=lambda _=None: dlg.close())
+
+        dlg.open()
+
+    def on_edit_status(self, e=None) -> None:
+        """Open a dialog to change the task's status."""
+        tm = TaskManager(session=self.session)
+
+        with ui.dialog().props("persistent") as dlg, ui.card().classes("w-[450px]"):
+            ui.label("Change Task Status").classes("text-h6")
+
+            status_select = ui.select(
+                ["todo", "in_progress", "completed"],
+                value=self.task.status,
+                label="Status",
+            ).classes("w-full")
+
+            def save_status():
+                try:
+                    ok = tm.change_task_status(
+                        user=self.user,
+                        project=self.project,
+                        task_id=self.task.id,
+                        status=status_select.value,
+                    )
+
+                    if ok:
+                        ui.notify("Task status updated", color="positive")
+                        dlg.close()
+                        ui.navigate.reload()
+
+                    else:
+                        ui.notify("Could not update task status", color="negative")
+
+                except PermissionDenied:
+                    ui.notify(
+                        "You do not have permission to change this status",
+                        color="negative",
+                    )
+
+                except Exception as exc:
+                    ui.notify(f"Error changing status: {exc}", color="negative")
+
+            with ui.row():
+                ui.button("Save", on_click=save_status)
+                ui.button("Cancel", on_click=dlg.close)
+
+        dlg.open()
+
+    def on_edit_task_details(self, e=None) -> None:
+        """Open a dialog to edit the task title and description."""
+        tm = TaskManager(session=self.session)
+
+        with ui.dialog().props("persistent") as dlg, ui.card().classes("w-[640px]"):
+            ui.label("Edit Task Details").classes("text-h6")
+            ui.separator()
+            
+            # Input fields
+            title_input = ui.input(label="Task Title", value=self.task.title or "").classes("w-full")
+            description_input = ui.textarea(label="Description", value=self.task.description or "").props("autogrow").classes("w-full")
+            
+            def save(_=None):
+                title = (title_input.value or "").strip()
+                description = (description_input.value or "").strip()
+                
+                if not title:
+                    ui.notify("Task title cannot be empty", color="negative")
+                    return
+                
+                try:
+                    ok = tm.update_task(
+                        user=self.user,
+                        project=self.project,
+                        task_id=self.task.id,
+                        title=title,
+                        description=description
+                    )
+                    if ok:
+                        ui.notify("Task details updated", color="positive")
+                        dlg.close()
+                        ui.navigate.reload()
+                    else:
+                        ui.notify("Could not update task details", color="negative")
+                except PermissionDenied:
+                    ui.notify("You do not have permission to edit this task", color="negative")
+                except Exception as exc:
+                    ui.notify(f"Error updating task: {exc}", color="negative")
+            
+            with ui.row():
+                ui.button("Save", on_click=save)
+                ui.button("Cancel", on_click=lambda _=None: dlg.close())
+        
+        dlg.open()
+
+    def on_return_to_project(self, e=None) -> None:
+        """Navigate back to the parent project page."""
+        ui.navigate.to(f"/project/{self.project.id}")
+
 
 @ui.page("/task/{task_id}")
-def task(task_id: int) -> None:
+async def task(task_id: int, client: Client) -> None:
+    """Load and render the task page for the given task_id."""
     if not app_state.is_authenticated():
         ui.navigate.to("/")
         return
 
     user = app_state.get_current_user()
-
     session = db_conn.get_session()
-    task_manager = TaskManager(session=session)
-
-    raw_task = session.query(Task).filter_by(id=task_id).first()
-
-    if raw_task is None:
-        ui.notify("Task not found", color="negative")
-        return
-
     try:
-        loaded_task = task_manager.get_task_by_id(
-            user=user,
-            project=raw_task.project,
-            task_id=task_id,
-        )
+        task_manager = TaskManager(session=session)
 
-    except PermissionDenied:
-        ui.notify("Access denied", color="negative")
-        return
+        try:
+            loaded_task = task_manager.get_task_by_id(
+                user=user,
+                project=None,
+                task_id=task_id,
+            )
+        except PermissionDenied:
+            ui.notify("Access denied", color="negative")
+            return
+        except Exception as exc:
+            ui.notify(f"Error loading task: {exc}", color="negative")
+            return
 
-    except Exception as exc:
-        ui.notify(f"Error loading task: {exc}", color="negative")
-        return
+        if loaded_task is None:
+            ui.notify("Task not found", color="negative")
+            return
 
-    if loaded_task is None:
-        ui.notify("Task not found", color="negative")
-        return
-
-    TaskPage(user, loaded_task, session=session).render()
+        TaskPage(user, loaded_task, session=session).render()
+        await client.disconnected()
+    finally:
+        session.close()

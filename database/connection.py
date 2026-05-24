@@ -13,7 +13,7 @@ class DatabaseConnection:
     """Manages the SQLAlchemy engine and session factory for a SQLite database.
     """ 
     
-    def __init__(self, db_path:  str | None = None) -> None:
+    def __init__(self, db_path:  str = "data/tracker_app.db") -> None:
         
         
         """Initialise the connection with the path to the SQLite file.
@@ -22,8 +22,11 @@ class DatabaseConnection:
             db_path: Filesystem path for the SQLite database file.
                      Use ``":memory:"`` for an in-memory database.
         """
-        if db_path is None:
-            db_path = Path(__file__).resolve().parent / "tracker_app.db"
+
+        # ensure the data folder exists before SQLAlchemy tries to open the file
+        if db_path != ":memory:":
+            Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+        
         self._db_url = f"sqlite:///{db_path}"
         self._engine: Engine | None = None
         self._session_factory: sessionmaker | None = None

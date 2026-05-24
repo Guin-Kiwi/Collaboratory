@@ -9,17 +9,20 @@ from logic.permissions_manager import require_permission, PermissionAction
 from sqlalchemy.orm import joinedload
 
 class ProjectManager:
-    def __init__(self):
-        self.session = db_conn.get_session()
+    """Manages project lifecycle: create, view, edit, and delete."""
+
+    def __init__(self, session=None):
+        self.session = session or db_conn.get_session() 
 
 ###----------- helper functions for the project manager (e.g. get project by id, get projects by user, etc.) -----------
     
     def get_project_by_id(self, project_id: int) -> Project | None:
+        """Fetch a project by ID with collaborators, tasks, and notes eager-loaded."""
         return (
             self.session.query(Project)
             .options(
                 joinedload(Project.collaborator_memberships).joinedload(ProjectMember.user),
-                joinedload(Project.tasks),
+                joinedload(Project.tasks).joinedload(Task.assignments).joinedload(Assignment.user),
                 joinedload(Project.notes),
             )
             .filter_by(id=project_id)
@@ -33,6 +36,17 @@ class ProjectManager:
     def get_projects_by_collaborator(self, user_id: int) -> list[Project]:
         """Get all projects a user is collaborating on."""
         return self.session.query(Project).join(ProjectMember).filter(ProjectMember.user_id == user_id).all()
+
+    def get_projects_by_task_assignment(self, user_id: int) -> list[Project]:
+        """Get all projects where the user is assigned to at least one task."""
+        return (
+            self.session.query(Project)
+            .join(Task, Task.project_id == Project.id)
+            .join(Assignment, Assignment.task_id == Task.id)
+            .filter(Assignment.user_id == user_id)
+            .distinct()
+            .all()
+        )
 
 
 ###----------- core functions of the project manager (e.g. CRUD ) -----------

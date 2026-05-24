@@ -14,6 +14,7 @@ from logic.permissions_manager import require_permission, PermissionAction
 
 
 class TaskManager:
+    """Manages task lifecycle including creation, assignment, and status changes."""
 
     def __init__(self, session=None):
         self.session = session or db_conn.get_session()
@@ -55,7 +56,7 @@ class TaskManager:
     def get_task_by_id(
         self,
         user: User,
-        project: Project,
+        project: Project | None,
         task_id: int,
     ) -> Task | None:
         """Get task by ID"""
@@ -64,6 +65,9 @@ class TaskManager:
 
         if not task:
             return None
+
+        if project is None:
+            project = self.session.query(Project).filter_by(id=task.project_id).first()
 
         require_permission(
             user,
@@ -83,7 +87,7 @@ class TaskManager:
         if not task:
             return None
 
-        return task.project
+        return self.session.query(Project).filter_by(id=task.project_id).first()
 
     def get_tasks_by_user(
         self,
@@ -195,19 +199,27 @@ class TaskManager:
 
         return True
 
-    def get_assignees(self, user: User, task_id: int) -> list[User]:
+    def get_assignees(self, user: User, task_id: int, project: Project | None = None) -> list[User]:
         """Get all assignees of a task"""
 
-        task = self.session.query(Task).filter_by(id=task_id).first()
+        task = (
+            self.session.query(Task)
+            .options()
+            .filter_by(id=task_id)
+            .first()
+        )
 
         if not task:
             return []
+
+        if project is None:
+            project = self.session.query(Project).filter_by(id=task.project_id).first()
 
         require_permission(
             user,
             PermissionAction.VIEW_TASK,
             self.session,
-            project=task.project,
+            project=project,
             task=task,
         )
 
@@ -218,6 +230,7 @@ class TaskManager:
         user: User,
         task_id: int,
         assigned_user_id: int,
+        project: Project | None = None,
     ) -> bool:
         """Remove an assignee from a task"""
 
@@ -226,11 +239,14 @@ class TaskManager:
         if not task:
             return False
 
+        if project is None:
+            project = self.session.query(Project).filter_by(id=task.project_id).first()
+
         require_permission(
             user,
             PermissionAction.ASSIGN_TASK,
             self.session,
-            project=task.project,
+            project=project,
             task=task,
         )
 
