@@ -4,6 +4,14 @@ Collaboratory is a web-based team task management application built in Python. I
 
 The application follows a 3-tier architecture using NiceGUI for the presentation layer, Python for the application logic, and SQLite with SQLAlchemy for data persistence.
 
+## 📦 Archive Status
+
+This repository is prepared for archive as a completed academic project.
+
+- **Maintenance status:** No further feature development is planned.
+- **Scope:** Preserved as submitted for course grading and demonstration purposes.
+- **Issue/PR handling:** New contributions are not expected; see the Contributing section.
+
 It aims to:
 - Implement a clean 3-tier layered architecture with clear separation of concerns between UI, logic, and data
 - Validate all user input at the application boundary before processing or persisting
@@ -896,6 +904,28 @@ GitHub Copilot was used for initial project scaffolding (PR #1), README spelling
 
 LLMs were used as a learning aid throughout development, to help identify code issues at regular intervals throughout development, to audit missing docstrings across the codebase, and to cross-check README claims against the actual repository structure and implementation.
 
+## 🎓 Final Evaluation Summary (Course Grading)
+
+Final course grading outcome:
+
+- **Total points:** 84 / 100
+- **Final comments:** Grade 5.7
+- **Final grade:** 5.5
+
+### Category Breakdown
+
+| Category | Weight | Points | Weighted Points | Summary |
+|---|---:|---:|---:|---|
+| Functionality | 30% | 80 | 24.0 | Almost all user stories implemented correctly; minor feature gaps remained. |
+| Application of Python course content | 30% | 80 | 24.0 | Strong OOP layering and ORM usage; clear architecture and maintainable structure. |
+| Presentation | 20% | 80 | 16.0 | Clear and structured presentation with solid Q&A performance and live demo coverage. |
+| Documentation | 10% | 95 | 9.5 | Very high-quality README and project documentation with minor issues. |
+| Project Management & Engagement | 10% | 100 | 10.0 | Goals and task distribution were clear, commitment strong, progress steady. |
+
+### Noted Functional Gaps
+
+- Project editing does not include a project status field/workflow, despite this being mentioned in README use cases.
+- Task editing supports title and description, but not priority and due date in the task edit flow.
 
 ## 🤝 Contributing
 
@@ -905,6 +935,7 @@ This is a closed academic project submitted for assessment. External contributio
 
 ### Known Limitations
 
+- **Partial use-case coverage in edit flows:** The documented project/task edit capabilities are broader than the current UI implementation. In particular, project status is not implemented as a field/workflow, and task edit currently does not expose priority or due-date editing.
 - **SQLite concurrency:** SQLite uses an exclusive file lock and does not support concurrent writes; simultaneous write requests will block or fail. It is also file-based and cannot be shared across multiple server instances, ruling out horizontal scaling.
 - **UI polish:** There is no inline editing for tasks or notes (a separate form is required), and there is no inline editing; all edits require opening a separate form or dialog.
 - **No DAO layer:** Queries are embedded in the manager classes alongside permission checks. The tight coupling reduced testability and would make swapping the data source impractical; a clean DAO layer was deferred as it would have required a rewrite which we were not confident we could complete with the time remaining.
